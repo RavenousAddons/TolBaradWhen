@@ -1,5 +1,5 @@
 ## Interface: 100005
-## Version: 1.0.0
+## Version: 1.0.1
 
 ## Name: Tol Barad When?
 ## Title: |cff64c7e7Tol Barad When?|r
@@ -10,7 +10,7 @@
 
 ## X-License: Public Domain
 ## X-Website: https://github.com/RavenousAddons/TolBaradWhen
-## X-Curse-Project-ID: 274452
-## X-WoWI-ID: 24005
+## X-Curse-Project-ID: 827514
+## X-WoWI-ID: 26553
 
 TolBaradWhen.xml
