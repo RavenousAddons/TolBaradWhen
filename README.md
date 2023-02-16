@@ -16,6 +16,10 @@ If you want, you can also share the next start time with Party or Raid members:
 
 `/tbw share`
 
+## Special thanks
+
+- All my good friends whom I see on a wonderfully-often basis, still, in Tol Barad.
+
 ## License
 
 Public Domain

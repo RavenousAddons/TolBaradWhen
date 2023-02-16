@@ -40,7 +40,7 @@ function ns:CheckPrint(message, raidWarning)
     local warmodeFormatted = "(WM |cff" .. (TBW_data.warmode and "44ff44On" or "ff4444Off") .. "|r|cff" .. ns.color .. ")|r"
     DEFAULT_CHAT_FRAME:AddMessage("|cff" .. ns.color .. localizedName .. " " .. warmodeFormatted .. " |r" .. message)
     if raidWarning then
-        RaidNotice_AddMessage(RaidWarningFrame, localizedName .. " (WM " .. (TBW_data.warmode and "On" or "Off") .. ") " .. message, ChatTypeInfo["RAID_WARNING"])
+        RaidNotice_AddMessage(RaidWarningFrame, "The Battle for " .. localizedName .. " (WM " .. (TBW_data.warmode and "On" or "Off") .. ") " .. message, ChatTypeInfo["RAID_WARNING"])
     end
 end
 
@@ -56,18 +56,21 @@ function ns:SetDefaultSettings()
     end
     if TBW_data.options == nil then
         TBW_data.options = {}
-        for k, v in pairs(optionDefaults) do
-            TBW_data.options[k] = TBW_data.options[k] and TBW_data.options[k] or v
+        for key, value in pairs(optionDefaults) do
+            if TBW_data.options[key] == nil then
+                TBW_data.options[key] = value
+            end
         end
     end
 end
 
-function ns:Check(forcedOutput, playerLogin)
-    local mapLinks = C_Map.GetMapLinksForMap(244);
-    for i, mapLink in ipairs(mapLinks) do
-        print(i)
+function ns:PlaySoundFile(id)
+    if TBW_data.options.sound then
+        PlaySoundFile(id)
     end
+end
 
+function ns:Check(forcedOutput, playerLogin)
     local now = GetServerTime()
     local _, _, _, _, secondsLeft, _ = GetWorldPVPAreaInfo(2)
 
@@ -81,7 +84,7 @@ function ns:Check(forcedOutput, playerLogin)
         else
             -- If a reply is required, give warning message about no info
             if forcedOutput then
-                ns:PrettyPrint("Unfortunately, |cff" .. ns.color .. "Tol Barad|r information is unavailable here! You'll have to go to |cff" .. ns.color .. "Tol Barad|r or ask for a group member to share their data with you.")
+                ns:PrettyPrint("Unfortunately, |cff" .. ns.color .. localizedName .. "|r information is unavailable here! You'll have to go to |cff" .. ns.color .. localizedName .. "|r or ask for a group member to share their data with you.")
             end
             return
         end
@@ -89,8 +92,8 @@ function ns:Check(forcedOutput, playerLogin)
 
     -- If we are in Tol Barad or require a reply from the AddOn, proceed
     if contains(mapIDs, C_Map.GetBestMapForUnit("player")) or forcedOutput or (playerLogin and TBW_data.startTimestamp + 900 > now) then
-        local startTimestamp = now + secondsLeft
         local minutesLeft = math.floor(secondsLeft / 60)
+        local startTimestamp = now + secondsLeft
         local startTime = date(GetCVar("timeMgrUseMilitaryTime") and "%H:%M" or "%I:%M %p", startTimestamp)
 
         -- Save the results to cache
@@ -100,17 +103,17 @@ function ns:Check(forcedOutput, playerLogin)
         -- Begin timers for 2 minutes and Begin
         if not settings.timing and secondsLeft > 0 then
             settings.timing = true
-            PlaySoundFile(567436) -- alarmclockwarning1.ogg
+            ns:PlaySoundFile(567436) -- alarmclockwarning1.ogg
             ns:PrettyPrint("Timer has been set!")
 
             if secondsLeft >= 120 then
                 C_Timer.After(secondsLeft - 120, function()
-                    PlaySoundFile(567458) -- alarmclockwarning3.ogg
+                    ns:PlaySoundFile(567458) -- alarmclockwarning3.ogg
                     ns:CheckPrint(("begins in 2 minutes at %s!"):format(startTime), true)
                 end)
             elseif seceondsLeft >= 60 then
                 C_Timer.After(secondsLeft - 60, function()
-                    PlaySoundFile(567458) -- alarmclockwarning3.ogg
+                    ns:PlaySoundFile(567458) -- alarmclockwarning3.ogg
                     ns:CheckPrint(("begins in 1 minute at %s!"):format(startTime), true)
                 end)
             end
@@ -139,19 +142,23 @@ function ns:Check(forcedOutput, playerLogin)
     end
 end
 
-function ns:SendStart()
+function ns:SendStart(type)
     local now = GetServerTime()
     if TBW_data.startTimestamp + 900 > now and not settings.recentlySentStart then
         toggle("recentlySentStart", 30)
 
+        if type then
+            C_ChatInfo.SendAddonMessage(ADDON_NAME, "S:" .. TBW_data.warmode .. ":" .. TBW_data.startTimestamp, string.upper(type))
+        end
+
         local partyMembers = GetNumSubgroupMembers()
         local raidMembers = IsInRaid() and GetNumGroupMembers() or 0
         if raidMembers > 0 then
-            C_ChatInfo.SendAddonMessage(ADDON_NAME, TBW_data.startTimestamp, "RAID")
+            C_ChatInfo.SendAddonMessage(ADDON_NAME, "S:" .. TBW_data.warmode .. ":" .. TBW_data.startTimestamp, "RAID")
         elseif partyMembers > 0 then
-            C_ChatInfo.SendAddonMessage(ADDON_NAME, TBW_data.startTimestamp, "PARTY")
+            C_ChatInfo.SendAddonMessage(ADDON_NAME, "S:" .. TBW_data.warmode .. ":" .. TBW_data.startTimestamp, "PARTY")
         else
-            C_ChatInfo.SendAddonMessage(ADDON_NAME, TBW_data.startTimestamp, "GUILD")
+            C_ChatInfo.SendAddonMessage(ADDON_NAME, "S:" .. TBW_data.warmode .. ":" .. TBW_data.startTimestamp, "GUILD")
         end
     end
 end
@@ -160,6 +167,7 @@ function TolBaradWhen_OnLoad(self)
     self:RegisterEvent("PLAYER_LOGIN")
     self:RegisterEvent("CHAT_MSG_ADDON")
     self:RegisterEvent("ZONE_CHANGED_NEW_AREA")
+    self:RegisterEvent("RECEIVED_ACHIEVEMENT_LIST")
 end
 
 function TolBaradWhen_OnEvent(self, event, arg, ...)
@@ -168,25 +176,38 @@ function TolBaradWhen_OnEvent(self, event, arg, ...)
         ns:Check(false, true)
     elseif event == "CHAT_MSG_ADDON" and arg == ADDON_NAME then
         local message, channel, sender, _ = ...
-        local now = GetServerTime()
-        if tonumber(message) + 900 > now and not settings.recentlyReceivedStart then
-            toggle("recentlyReceivedStart", 60)
+        if message:match("S:") then
+            local warmode, startTimestamp = strsplit(":", message:gsub("S:", ""))
+            local now = GetServerTime()
+            if warmode == TBW_data.warmode and tonumber(message) + 900 > now and not settings.recentlyReceivedStart then
+                toggle("recentlyReceivedStart", 60)
 
-            TBW_data.startTimestamp = tonumber(message)
-            ns:Check()
+                TBW_data.startTimestamp = tonumber(message)
+                ns:Check()
+            end
         end
     elseif event == "ZONE_CHANGED_NEW_AREA" then
         ns:Check()
+    elseif event == "RECEIVED_ACHIEVEMENT_LIST" and contains(mapIDs, C_Map.GetBestMapForUnit("player")) then
+        print("about to check for end of TB")
+        C_Timer.After(3, function()
+            ns:Check(true)
+        end)
     end
 end
 
 SlashCmdList["TOLBARADWHEN"] = function(message)
-    if message == "version" or message == "v" then
+    if message == "v" or message:match("ver") then
         ns:PrettyPrint(ns.version)
-    elseif message == "share" then
+    elseif message == "h" or message:match("help") or message:match("config") then
+        ns:PrettyPrint("This AddOn runs without any manual input—the only thing you need to do is zone into " .. localizedName .. " to get alerts running.")
+        print("If you need ")
+    elseif message == "s" or message:match("send") or message:match("share") then
         ns:SendStart(TBW_data.startTimestamp)
-    elseif message == "share" then
-        ns:SendStart(TBW_data.startTimestamp)
+    elseif message == "so" or message:match("sound") then
+        TBW_data.options.sound = TBW_data.options.sound == true and false or true
+        print(TBW_data.options.sound)
+        ns:PrettyPrint(("Sound alerts are now |cff%s|r."):format(TBW_data.options.sound and "44ff44On" or "ff4444Off"))
     else
         ns:Check(true)
     end
