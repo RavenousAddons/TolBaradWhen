@@ -1,8 +1,8 @@
 local ADDON_NAME, ns = ...
 
-local _, localizedName, _, _, _, _ = GetWorldPVPAreaInfo(2)
-
-local mapIDs = {244, 245}
+local optionDefaults = {
+    sounds = true
+}
 
 local settings = {
     timing = false,
@@ -10,6 +10,10 @@ local settings = {
     recentlySentStart = false,
     recentlyReceivedStart = false
 }
+
+local _, localizedName, _, _, _, _ = GetWorldPVPAreaInfo(2)
+
+local mapIDs = {244, 245}
 
 local function contains(table, input)
     for index, value in ipairs(table) do
@@ -50,9 +54,20 @@ function ns:SetDefaultSettings()
     if TBW_data.warmode == nil then
         TBW_data.warmode = C_PvP.IsWarModeDesired()
     end
+    if TBW_data.options == nil then
+        TBW_data.options = {}
+        for k, v in pairs(optionDefaults) do
+            TBW_data.options[k] = TBW_data.options[k] and TBW_data.options[k] or v
+        end
+    end
 end
 
 function ns:Check(forcedOutput, playerLogin)
+    local mapLinks = C_Map.GetMapLinksForMap(244);
+    for i, mapLink in ipairs(mapLinks) do
+        print(i)
+    end
+
     local now = GetServerTime()
     local _, _, _, _, secondsLeft, _ = GetWorldPVPAreaInfo(2)
 
@@ -168,7 +183,9 @@ end
 SlashCmdList["TOLBARADWHEN"] = function(message)
     if message == "version" or message == "v" then
         ns:PrettyPrint(ns.version)
-    elseif message == "share" or message == "s" then
+    elseif message == "share" then
+        ns:SendStart(TBW_data.startTimestamp)
+    elseif message == "share" then
         ns:SendStart(TBW_data.startTimestamp)
     else
         ns:Check(true)
