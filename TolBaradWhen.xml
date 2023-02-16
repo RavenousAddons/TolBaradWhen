@@ -1,0 +1,11 @@
+<Ui>
+    <Script file="metadata.lua" />
+    <Script file="core.lua" />
+
+    <Frame name="TolBaradWhen">
+        <Scripts>
+            <OnLoad function="TolBaradWhen_OnLoad" />
+            <OnEvent function="TolBaradWhen_OnEvent" />
+        </Scripts>
+    </Frame>
+</Ui>
