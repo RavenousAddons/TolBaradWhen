@@ -8,7 +8,8 @@ local settings = {
     timing = false,
     recentlyOutput = false,
     recentlySentStart = false,
-    recentlyReceivedStart = false
+    recentlyReceivedStart = false,
+    recentlyEnded = false
 }
 
 local _, localizedName, _, _, _, _ = GetWorldPVPAreaInfo(2)
@@ -188,8 +189,9 @@ function TolBaradWhen_OnEvent(self, event, arg, ...)
         end
     elseif event == "ZONE_CHANGED_NEW_AREA" then
         ns:Check()
-    elseif event == "RECEIVED_ACHIEVEMENT_LIST" and contains(mapIDs, C_Map.GetBestMapForUnit("player")) then
-        print("about to check for end of TB")
+    elseif event == "RECEIVED_ACHIEVEMENT_LIST" and contains(mapIDs, C_Map.GetBestMapForUnit("player")) and not settings.recentlyEnded then
+        toggle("recentlyEnded", 3)
+
         C_Timer.After(3, function()
             ns:Check(true)
         end)
