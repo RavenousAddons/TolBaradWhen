@@ -1,7 +1,7 @@
 local ADDON_NAME, ns = ...
 
-local optionDefaults = {
-    sounds = true
+local options = {
+    sound = true
 }
 
 local settings = {
@@ -57,7 +57,7 @@ function ns:SetDefaultSettings()
     end
     if TBW_data.options == nil then
         TBW_data.options = {}
-        for key, value in pairs(optionDefaults) do
+        for key, value in pairs(options) do
             if TBW_data.options[key] == nil then
                 TBW_data.options[key] = value
             end
@@ -207,8 +207,11 @@ SlashCmdList["TOLBARADWHEN"] = function(message)
     elseif message == "s" or message:match("send") or message:match("share") then
         ns:SendStart(TBW_data.startTimestamp)
     elseif message == "so" or message:match("sound") then
-        TBW_data.options.sound = TBW_data.options.sound == true and false or true
-        print(TBW_data.options.sound)
+        if TBW_data.options.sound then
+            TBW_data.options.sound = false
+        else
+            TBW_data.options.sound = true
+        end
         ns:PrettyPrint(("Sound alerts are now |cff%s|r."):format(TBW_data.options.sound and "44ff44On" or "ff4444Off"))
     else
         ns:Check(true)
