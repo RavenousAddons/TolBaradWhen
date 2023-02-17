@@ -143,24 +143,34 @@ function ns:Check(forcedOutput, playerLogin)
     end
 end
 
-function ns:SendStart(type)
-    local now = GetServerTime()
-    if TBW_data.startTimestamp + 900 > now and not settings.recentlySentStart then
-        toggle("recentlySentStart", 30)
+function ns:SendStart(channel, target)
+    if not settings.recentlySentStart then
+        if TBW_data.startTimestamp + 900 > now then
+            local now = GetServerTime()
+            local partyMembers = GetNumSubgroupMembers()
+            local raidMembers = IsInRaid() and GetNumGroupMembers() or 0
+            TBW_data.warmode = C_PvP.IsWarModeDesired()
 
-        if type then
-            C_ChatInfo.SendAddonMessage(ADDON_NAME, "S:" .. TBW_data.warmode .. ":" .. TBW_data.startTimestamp, string.upper(type))
-        end
+            if channel then
+                toggle("recentlySentStart", 3)
 
-        local partyMembers = GetNumSubgroupMembers()
-        local raidMembers = IsInRaid() and GetNumGroupMembers() or 0
-        if raidMembers > 0 then
-            C_ChatInfo.SendAddonMessage(ADDON_NAME, "S:" .. TBW_data.warmode .. ":" .. TBW_data.startTimestamp, "RAID")
-        elseif partyMembers > 0 then
-            C_ChatInfo.SendAddonMessage(ADDON_NAME, "S:" .. TBW_data.warmode .. ":" .. TBW_data.startTimestamp, "PARTY")
+                C_ChatInfo.SendAddonMessage(ADDON_NAME, "S:" .. (TBW_data.warmode and "1" or "0") .. ":" .. TBW_data.startTimestamp, string.upper(channel), target)
+            elseif raidMembers > 0 then
+                toggle("recentlySentStart", 20)
+
+                C_ChatInfo.SendAddonMessage(ADDON_NAME, "S:" .. (TBW_data.warmode and "1" or "0") .. ":" .. TBW_data.startTimestamp, "RAID")
+            elseif partyMembers > 0 then
+                toggle("recentlySentStart", 20)
+
+                C_ChatInfo.SendAddonMessage(ADDON_NAME, "S:" .. (TBW_data.warmode and "1" or "0") .. ":" .. TBW_data.startTimestamp, "PARTY")
+            else
+                ns:PrettyPrint("You must either be in a group or specify a channel (e.g. party, raid, guild) in order to share your " .. localizedName .. " data.")
+            end
         else
-            C_ChatInfo.SendAddonMessage(ADDON_NAME, "S:" .. TBW_data.warmode .. ":" .. TBW_data.startTimestamp, "GUILD")
+            ns:PrettyPrint("Your " .. localizedName .. " data doesn't contain any upcoming alerts that you can share.")
         end
+    else
+        ns:PrettyPrint("You must wait a short time before sharing your " .. localizedName .. " data again.")
     end
 end
 
@@ -180,7 +190,7 @@ function TolBaradWhen_OnEvent(self, event, arg, ...)
         if message:match("S:") then
             local warmode, startTimestamp = strsplit(":", message:gsub("S:", ""))
             local now = GetServerTime()
-            if warmode == TBW_data.warmode and tonumber(message) + 900 > now and not settings.recentlyReceivedStart then
+            if tonumber(warmode) == TBW_data.warmode and tonumber(message) + 900 > now and not settings.recentlyReceivedStart then
                 toggle("recentlyReceivedStart", 60)
 
                 TBW_data.startTimestamp = tonumber(message)
@@ -205,7 +215,8 @@ SlashCmdList["TOLBARADWHEN"] = function(message)
         ns:PrettyPrint("This AddOn runs without any manual input—the only thing you need to do is zone into " .. localizedName .. " to get alerts running.")
         print("If you need ")
     elseif message == "s" or message:match("send") or message:match("share") then
-        ns:SendStart(TBW_data.startTimestamp)
+        local message, channel, target = strsplit(" ", message)
+        ns:SendStart(channel, target)
     elseif message == "so" or message:match("sound") then
         if TBW_data.options.sound then
             TBW_data.options.sound = false
