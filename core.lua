@@ -122,8 +122,8 @@ function ns:Check(forcedOutput, playerLogin)
             C_Timer.After(secondsLeft, function()
                 toggle("recentlyOutput", 90)
 
-                PlaySoundFile(567399) -- alarmclockwarning2.ogg
-                ns:CheckPrint("has begun! 15 minutes remaining.", true)
+                ns:PlaySoundFile(567399) -- alarmclockwarning2.ogg
+                ns:CheckPrint(("has begun! 15 minutes remaining from %s."):format(startTime), true)
                 settings.timing = false
             end)
         end
@@ -144,9 +144,9 @@ function ns:Check(forcedOutput, playerLogin)
 end
 
 function ns:SendStart(channel, target)
+    local now = GetServerTime()
     if not settings.recentlySentStart then
         if TBW_data.startTimestamp + 900 > now then
-            local now = GetServerTime()
             local partyMembers = GetNumSubgroupMembers()
             local raidMembers = IsInRaid() and GetNumGroupMembers() or 0
             TBW_data.warmode = C_PvP.IsWarModeDesired()

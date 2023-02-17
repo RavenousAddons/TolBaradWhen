@@ -1,8 +1,8 @@
 ## Interface: 100005
-## Version: 1.0.5
+## Version: 1.0.6
 
 ## Name: Tol Barad When?
-## Title: |cff64c7e7Tol Barad When?|r
+## Title: Tol Barad When?
 ## Notes: Keep track of the next Tol Barad battle.|n|n|cffbbbbbbSlash command: /tb|r
 ## Author: RavenousAddons
 
