@@ -1,5 +1,6 @@
 <Ui>
     <Script file="metadata.lua" />
+    <Script file="data.lua" />
     <Script file="core.lua" />
 
     <Frame name="TolBaradWhen">
