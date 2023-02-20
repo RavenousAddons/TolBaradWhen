@@ -26,19 +26,19 @@ function ns:SetDefaultOptions()
     if TBW_data == nil then
         TBW_data = {}
     end
+    if TBW_data.options == nil then
+        TBW_data.options = {}
+    end
+    for key, value in pairs(ns.data.defaults) do
+        if TBW_data.options[key] == nil then
+            TBW_data.options[key] = value
+        end
+    end
     if TBW_data.startTimestampWM == nil then
         TBW_data.startTimestampWM = 0
     end
     if TBW_data.startTimestamp == nil then
         TBW_data.startTimestamp = 0
-    end
-    if TBW_data.options == nil then
-        TBW_data.options = {}
-        for key, value in pairs(ns.data.defaults) do
-            if TBW_data.options[key] == nil then
-                TBW_data.options[key] = value
-            end
-        end
     end
 end
 
@@ -55,7 +55,7 @@ end
 function ns:BattlePrint(warmode, message, raidWarning)
     local warmodeFormatted = "(WM |cff" .. (warmode and "44ff44On" or "ff4444Off") .. "|r|cff" .. ns.color .. ")|r"
     DEFAULT_CHAT_FRAME:AddMessage("|cff" .. ns.color .. "Tol Barad " .. warmodeFormatted .. " |r" .. message)
-    if raidWarning then
+    if raidWarning and TBW_data.options.raidwarning then
         RaidNotice_AddMessage(RaidWarningFrame, "The Battle for " .. "Tol Barad (WM " .. (warmode and "On" or "Off") .. ") " .. message, ChatTypeInfo["RAID_WARNING"])
     end
 end
@@ -109,7 +109,7 @@ function ns:SetBattleAlarms(warmode, now, startTimestamp, forced)
         if secondsLeft > 120 then
             C_Timer.After(secondsLeft - 120, function()
                 ns:PlaySoundFile(567458) -- alarmclockwarning3.ogg
-                ns:BattlePrint(warmode, (L.Alert2Min):format(startTime), true)
+                ns:BattlePrint(warmode, L.Alert2Min:format(startTime), true)
             end)
         end
 
@@ -120,7 +120,7 @@ function ns:SetBattleAlarms(warmode, now, startTimestamp, forced)
                 toggle("recentlyOutput")
             end
             ns:PlaySoundFile(567399) -- alarmclockwarning2.ogg
-            ns:BattlePrint(warmode, (L.AlertStart):format(startTime), true)
+            ns:BattlePrint(warmode, L.AlertStart:format(startTime), true)
             if warmode then
                 ns.data.toggles.timingWM = false
             else
@@ -140,9 +140,9 @@ function ns:SetBattleAlarms(warmode, now, startTimestamp, forced)
         if secondsLeft <= 3 then
             ns:BattlePrint(warmode, L.AlertStartUnsure, true)
         elseif minutesLeft <= 5 then
-            ns:BattlePrint(warmode, (L.AlertShort):format(minutesLeft, math.fmod(secondsLeft, 60), startTime))
+            ns:BattlePrint(warmode, L.AlertShort:format(minutesLeft, math.fmod(secondsLeft, 60), startTime))
         else
-            ns:BattlePrint(warmode, (L.AlertLong):format(minutesLeft, startTime))
+            ns:BattlePrint(warmode, L.AlertLong:format(minutesLeft, startTime))
         end
     end
 end
@@ -151,10 +151,12 @@ function ns:SendStart(channel, target)
     local now = GetServerTime()
     if not ns.data.toggles.recentlySentStart then
         if not channel and not IsInGroup(LE_PARTY_CATEGORY_INSTANCE) then
-            if raidMembers == 0 and partyMembers > ns.data.partyMembers then
-                channel = "PARTY"
-            elseif raidMembers > ns.data.raidMembers then
+            ns.data.partyMembers = GetNumSubgroupMembers()
+            ns.data.raidMembers = IsInRaid() and GetNumGroupMembers() or 0
+            if ns.data.raidMembers > 1 then
                 channel = "RAID"
+            elseif ns.data.partyMembers > 1 then
+                channel = "PARTY"
             end
         end
         if channel then
@@ -194,12 +196,14 @@ end
 function TolBaradWhen_OnEvent(self, event, arg, ...)
     if event == "PLAYER_LOGIN" then
         ns:SetDefaultOptions()
-        if not TBW_version then
-            ns:PrettyPrint(L.Install:format(ns.color, ns.version))
-        elseif TBW_version ~= ns.version then
-            ns:PrettyPrint(L.Update:format(ns.color, ns.version))
+        if not ns.version:match("-") then
+            if not TBW_version then
+                ns:PrettyPrint(L.Install:format(ns.color, ns.version))
+            elseif TBW_version ~= ns.version then
+                ns:PrettyPrint(L.Update:format(ns.color, ns.version))
+            end
+            TBW_version = ns.version
         end
-        TBW_version = ns.version
         ns:BattleCheck(true)
     elseif event == "GROUP_ROSTER_UPDATE" then
         local partyMembers = GetNumSubgroupMembers()
@@ -215,23 +219,29 @@ function TolBaradWhen_OnEvent(self, event, arg, ...)
         ns.data.raidMembers = raidMembers
     elseif event == "CHAT_MSG_ADDON" and arg == ADDON_NAME then
         local message, channel, sender, _ = ...
-        if message:match("V:") and not ns.toggles.updateFound then
+        if message:match("V:") and not ns.data.toggles.updateFound then
             local version = message:gsub("V:", "")
-            local v1, v2, v3 = strsplit(".", version)
-            local c1, c2, c3 = strsplit(".", ns.version)
-            if not v3:match("-") and (v1 > c1 or (v1 == c1 and v2 > c2) or (v1 == c1 and v2 == c2 and v3 > c3)) then
-                ns:PrettyPrint(L.UpdateFound:format(version))
-                ns.toggles.updateFound = true
+            if not version:match("-") then
+                local v1, v2, v3 = strsplit(".", version)
+                local c1, c2, c3 = strsplit(".", ns.version)
+                if v1 > c1 or (v1 == c1 and v2 > c2) or (v1 == c1 and v2 == c2 and v3 > c3) then
+                    ns:PrettyPrint(L.UpdateFound:format(version))
+                    ns.data.toggles.updateFound = true
+                end
             end
         elseif message:match("S:") then
-            local startTimestampWM, startTimestamp = strsplit(":", message:gsub("S:", ""))
-            if not ns.data.toggles.recentlyReceivedStart then
-                toggle("recentlyReceivedStart")
+            local timestamps = message:gsub("S:", "")
+            local startTimestampWM, startTimestamp = strsplit(":", timestamps)
+            if not ns.data.toggles.recentlyReceivedStartWM then
                 if tonumber(startTimestampWM) > TBW_data.startTimestampWM then
+                    toggle("recentlyReceivedStartWM", 30)
                     TBW_data.startTimestampWM = tonumber(startTimestampWM)
                     ns:BattleCheck()
                 end
+            end
+            if not ns.data.toggles.recentlyReceivedStart then
                 if tonumber(startTimestamp) > TBW_data.startTimestamp then
+                    toggle("recentlyReceivedStart", 30)
                     TBW_data.startTimestamp = tonumber(startTimestamp)
                     ns:BattleCheck()
                 end
@@ -268,15 +278,15 @@ SlashCmdList["TOLBARADWHEN"] = function(message)
             else
                 TBW_data.options[key] = true
             end
-            ns:PrettyPrint((L.Toggled):format(key, TBW_data.options[key] and "44ff44On" or "ff4444Off"))
+            ns:PrettyPrint(L.Toggled:format(key, TBW_data.options[key] and "44ff44On" or "ff4444Off"))
         else
-            print(#ns.data.defaults)
-            local s = ""
-            for i, option in ipairs(ns.data.defaults) do
-                print(option)
-                s = s .. (i > 1 and ", " or "") .. option
+            local i = 1
+            local options = ""
+            for key, _ in pairs(ns.data.defaults) do
+                options = options .. (i > 1 and ", " or "") .. key
+                i = i + 1
             end
-            ns:PrettyPrint(L.NotAnOption:format(s))
+            ns:PrettyPrint(L.NotAnOption:format(options))
         end
     elseif message == "so" or message:match("sound") then
         if TBW_data.options.sound then
@@ -284,7 +294,7 @@ SlashCmdList["TOLBARADWHEN"] = function(message)
         else
             TBW_data.options.sound = true
         end
-        ns:PrettyPrint((L.Sound):format(TBW_data.options.sound and "44ff44On" or "ff4444Off"))
+        ns:PrettyPrint(L.Sound:format(TBW_data.options.sound and "44ff44On" or "ff4444Off"))
     elseif message == "d" or message:match("bug") then
         local now = GetServerTime()
         print(TBW_data.startTimestampWM - now)

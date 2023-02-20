@@ -2,11 +2,12 @@ local _, ns = ...
 
 ns.data = {
     defaults = {
-        sound = true
+        sound = true,
+        raidwarning = true,
     },
     timeouts = {
         short = 10,
-        long = 60
+        long = 60,
     },
     toggles = {
         timingWM = false,
@@ -14,6 +15,7 @@ ns.data = {
         recentlyOutputWM = false,
         recentlyOutput = false,
         recentlySentStart = false,
+        recentlyReceivedStartWM = false,
         recentlyReceivedStart = false,
         recentlyEnded = false,
         updateFound = false,
