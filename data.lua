@@ -4,7 +4,10 @@ ns.data = {
     defaults = {
         sound = true
     },
-    location = C_Map.GetBestMapForUnit("player"),
+    timeouts = {
+        short = 10,
+        long = 60
+    },
     toggles = {
         timingWM = false,
         timing = false,
@@ -12,10 +15,14 @@ ns.data = {
         recentlyOutput = false,
         recentlySentStart = false,
         recentlyReceivedStart = false,
-        recentlyEnded = false
+        recentlyEnded = false,
+        updateFound = false,
     },
     mapIDs = {
         244,
         245
-    }
+    },
+    location = C_Map.GetBestMapForUnit("player"),
+    partyMembers = 0,
+    raidMembers = 0,
 }

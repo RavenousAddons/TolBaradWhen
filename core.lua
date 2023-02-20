@@ -1,4 +1,5 @@
 local ADDON_NAME, ns = ...
+local L = ns.L
 
 -- Utility Functions
 
@@ -12,7 +13,7 @@ local function contains(table, input)
 end
 
 local function toggle(toggle, timeout)
-    timeout = timeout and timeout or 60
+    timeout = timeout and timeout or ns.data.timeouts.long
     ns.data.toggles[toggle] = true
     C_Timer.After(timeout, function()
         ns.data.toggles[toggle] = false
@@ -77,7 +78,7 @@ function ns:BattleCheck(forced)
     -- If the cached battles are in the past, exit BattleCheck()
     if (TBW_data.startTimestampWM + 900) < now and (TBW_data.startTimestamp + 900) < now then
         if forced then
-            ns:PrettyPrint("Unfortunately, |cff" .. ns.color .. "Tol Barad|r information is unavailable here! You'll have to go to |cff" .. ns.color .. "Tol Barad|r or ask for a group member to share their data with you.")
+            ns:PrettyPrint(L.WarningNoInfo)
         end
         return
     end
@@ -103,19 +104,23 @@ function ns:SetBattleAlarms(warmode, now, startTimestamp, forced)
         end
 
         ns:PlaySoundFile(567436) -- alarmclockwarning1.ogg
-        ns:PrettyPrint("Timer has been set!")
+        ns:PrettyPrint(L.AlertSet)
 
         if secondsLeft > 120 then
             C_Timer.After(secondsLeft - 120, function()
                 ns:PlaySoundFile(567458) -- alarmclockwarning3.ogg
-                ns:BattlePrint(warmode, ("begins in 2 minutes at %s!"):format(startTime), true)
+                ns:BattlePrint(warmode, (L.Alert2Min):format(startTime), true)
             end)
         end
 
         C_Timer.After(secondsLeft, function()
-            toggle("recentlyOutput", 90)
+            if warmode then
+                toggle("recentlyOutputWM")
+            else
+                toggle("recentlyOutput")
+            end
             ns:PlaySoundFile(567399) -- alarmclockwarning2.ogg
-            ns:BattlePrint(warmode, ("has begun! 15 minutes remaining from %s."):format(startTime), true)
+            ns:BattlePrint(warmode, (L.AlertStart):format(startTime), true)
             if warmode then
                 ns.data.toggles.timingWM = false
             else
@@ -127,17 +132,17 @@ function ns:SetBattleAlarms(warmode, now, startTimestamp, forced)
     -- Inform the player about starting time
     if secondsLeft + 900 > 0 and (forced or (warmode and not ns.data.toggles.recentlyOutputWM) or (not warmode and not ns.data.toggles.recentlyOutput)) then
         if warmode then
-            toggle("recentlyOutputWM", 90)
+            toggle("recentlyOutputWM")
         else
-            toggle("recentlyOutput", 90)
+            toggle("recentlyOutput")
         end
 
         if secondsLeft <= 3 then
-            ns:BattlePrint(warmode, "has begun!", true)
+            ns:BattlePrint(warmode, L.AlertStartUnsure, true)
         elseif minutesLeft <= 5 then
-            ns:BattlePrint(warmode, ("begins in %sm%ss at %s."):format(minutesLeft, math.fmod(secondsLeft, 60), startTime))
+            ns:BattlePrint(warmode, (L.AlertShort):format(minutesLeft, math.fmod(secondsLeft, 60), startTime))
         else
-            ns:BattlePrint(warmode, ("begins in %s minutes at %s."):format(minutesLeft, startTime))
+            ns:BattlePrint(warmode, (L.AlertLong):format(minutesLeft, startTime))
         end
     end
 end
@@ -145,26 +150,35 @@ end
 function ns:SendStart(channel, target)
     local now = GetServerTime()
     if not ns.data.toggles.recentlySentStart then
-        local partyMembers = GetNumSubgroupMembers()
-        local raidMembers = IsInRaid() and GetNumGroupMembers() or 0
-        channel = channel and channel or
-            raidMembers > 0 and "RAID" or
-            partyMembers > 0 and "PARTY" or
-            nil
-
+        if not channel and not IsInGroup(LE_PARTY_CATEGORY_INSTANCE) then
+            if raidMembers == 0 and partyMembers > ns.data.partyMembers then
+                channel = "PARTY"
+            elseif raidMembers > ns.data.raidMembers then
+                channel = "RAID"
+            end
+        end
         if channel then
             if TBW_data.startTimestampWM + 900 > now or TBW_data.startTimestamp + 900 > now then
                 toggle("recentlySentStart", 20)
                 C_ChatInfo.SendAddonMessage(ADDON_NAME, "S:" .. TBW_data.startTimestampWM .. ":" .. TBW_data.startTimestamp, string.upper(channel), target)
             else
-                ns:PrettyPrint("Your Tol Barad data doesn't contain any upcoming alerts that you can share.")
+                ns:PrettyPrint(L.WarningNoData)
             end
         else
-            ns:PrettyPrint("You must either be in a group or specify a channel (e.g. party, raid, guild) in order to share your Tol Barad data.")
+            ns:PrettyPrint(L.WarningNoShare)
         end
     else
-        ns:PrettyPrint("You must wait a short time before sharing your Tol Barad data again.")
+        ns:PrettyPrint(L.WarningFastShare)
     end
+end
+
+function ns:SendUpdate(type)
+    local now = GetServerTime()
+    if TBW_data.updateTimeoutTime and TBW_data.updateTimeoutTime > now then
+        return
+    end
+    TBW_data.updateTimeoutTime = now + ns.data.timeouts.short
+    C_ChatInfo.SendAddonMessage(ADDON_NAME, "V:" .. ns.version, type)
 end
 
 -- Setup Functions
@@ -172,6 +186,7 @@ end
 function TolBaradWhen_OnLoad(self)
     self:RegisterEvent("PLAYER_LOGIN")
     self:RegisterEvent("CHAT_MSG_ADDON")
+    self:RegisterEvent("GROUP_ROSTER_UPDATE")
     self:RegisterEvent("ZONE_CHANGED_NEW_AREA")
     self:RegisterEvent("RAID_BOSS_EMOTE")
 end
@@ -179,19 +194,44 @@ end
 function TolBaradWhen_OnEvent(self, event, arg, ...)
     if event == "PLAYER_LOGIN" then
         ns:SetDefaultOptions()
+        if not TBW_version then
+            ns:PrettyPrint(L.Install:format(ns.color, ns.version))
+        elseif TBW_version ~= ns.version then
+            ns:PrettyPrint(L.Update:format(ns.color, ns.version))
+        end
+        TBW_version = ns.version
         ns:BattleCheck(true)
+    elseif event == "GROUP_ROSTER_UPDATE" then
+        local partyMembers = GetNumSubgroupMembers()
+        local raidMembers = IsInRaid() and GetNumGroupMembers() or 0
+        if not IsInGroup(LE_PARTY_CATEGORY_INSTANCE) then
+            if raidMembers == 0 and partyMembers > ns.data.partyMembers then
+                ns:SendUpdate("PARTY")
+            elseif raidMembers > ns.data.raidMembers then
+                ns:SendUpdate("RAID")
+            end
+        end
+        ns.data.partyMembers = partyMembers
+        ns.data.raidMembers = raidMembers
     elseif event == "CHAT_MSG_ADDON" and arg == ADDON_NAME then
         local message, channel, sender, _ = ...
-        if message:match("S:") then
+        if message:match("V:") and not ns.toggles.updateFound then
+            local version = message:gsub("V:", "")
+            local v1, v2, v3 = strsplit(".", version)
+            local c1, c2, c3 = strsplit(".", ns.version)
+            if not v3:match("-") and (v1 > c1 or (v1 == c1 and v2 > c2) or (v1 == c1 and v2 == c2 and v3 > c3)) then
+                ns:PrettyPrint(L.UpdateFound:format(version))
+                ns.toggles.updateFound = true
+            end
+        elseif message:match("S:") then
             local startTimestampWM, startTimestamp = strsplit(":", message:gsub("S:", ""))
-            local now = GetServerTime()
             if not ns.data.toggles.recentlyReceivedStart then
-                toggle("recentlyReceivedStart", 60)
-                if tonumber(startTimestampWM) + 900 > now then
+                toggle("recentlyReceivedStart")
+                if tonumber(startTimestampWM) > TBW_data.startTimestampWM then
                     TBW_data.startTimestampWM = tonumber(startTimestampWM)
                     ns:BattleCheck()
                 end
-                if tonumber(startTimestamp) + 900 > now then
+                if tonumber(startTimestamp) > TBW_data.startTimestamp then
                     TBW_data.startTimestamp = tonumber(startTimestamp)
                     ns:BattleCheck()
                 end
@@ -212,11 +252,11 @@ end
 
 SlashCmdList["TOLBARADWHEN"] = function(message)
     if message == "v" or message:match("ver") then
-        ns:PrettyPrint(ns.version)
+        ns:PrettyPrint(L.Version:format(ns.version))
     elseif message == "h" or message:match("help") or message:match("config") then
-        ns:PrettyPrint("This AddOn runs without any manual input. The only thing you need to do is zone into Tol Barad to get alerts running.")
-        print("You can share your Tol Barad timer with group members:\n/tb share")
-        print("You can also toggle sounds on and off:\n/tb sound")
+        ns:PrettyPrint(L.Help1)
+        print(L.Help2)
+        print(L.Help3)
     elseif message == "s" or message:match("send") or message:match("share") then
         local message, channel, target = strsplit(" ", message)
         ns:SendStart(channel, target)
@@ -228,7 +268,7 @@ SlashCmdList["TOLBARADWHEN"] = function(message)
             else
                 TBW_data.options[key] = true
             end
-            ns:PrettyPrint(("Toggled %s: |cff%s|r"):format(key, TBW_data.options[key] and "44ff44On" or "ff4444Off"))
+            ns:PrettyPrint((L.Toggled):format(key, TBW_data.options[key] and "44ff44On" or "ff4444Off"))
         else
             print(#ns.data.defaults)
             local s = ""
@@ -236,7 +276,7 @@ SlashCmdList["TOLBARADWHEN"] = function(message)
                 print(option)
                 s = s .. (i > 1 and ", " or "") .. option
             end
-            ns:PrettyPrint("That option doesn't exist.\nOptions are: " .. s)
+            ns:PrettyPrint(L.NotAnOption:format(s))
         end
     elseif message == "so" or message:match("sound") then
         if TBW_data.options.sound then
@@ -244,7 +284,7 @@ SlashCmdList["TOLBARADWHEN"] = function(message)
         else
             TBW_data.options.sound = true
         end
-        ns:PrettyPrint(("Sound alerts are now |cff%s|r."):format(TBW_data.options.sound and "44ff44On" or "ff4444Off"))
+        ns:PrettyPrint((L.Sound):format(TBW_data.options.sound and "44ff44On" or "ff4444Off"))
     elseif message == "d" or message:match("bug") then
         local now = GetServerTime()
         print(TBW_data.startTimestampWM - now)
