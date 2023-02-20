@@ -114,10 +114,8 @@ function ns:SetBattleAlarms(warmode, now, startTimestamp, forced)
 
         C_Timer.After(secondsLeft, function()
             toggle("recentlyOutput", 90)
-
             ns:PlaySoundFile(567399) -- alarmclockwarning2.ogg
             ns:BattlePrint(warmode, ("has begun! 15 minutes remaining from %s."):format(startTime), true)
-
             if warmode then
                 ns.data.toggles.timingWM = false
             else
@@ -144,18 +142,6 @@ function ns:SetBattleAlarms(warmode, now, startTimestamp, forced)
     end
 end
 
-function ns:BattleEnded()
-    if not ns.data.toggles.recentlyEnded then
-        local now = GetServerTime()
-        local warmode = C_PvP.IsWarModeDesired() == 1 and true or false
-        local startTime = date(GetCVar("timeMgrUseMilitaryTime") and "%H:%M" or "%I:%M %p", now + select(5, GetWorldPVPAreaInfo(2)))
-        toggle("recentlyEnded", 3)
-        C_Timer.After(2, function()
-            ns:BattlePrint(warmode, ("begins in 1 hour at %s."):format(startTime))
-        end)
-    end
-end
-
 function ns:SendStart(channel, target)
     local now = GetServerTime()
     if not ns.data.toggles.recentlySentStart then
@@ -169,7 +155,6 @@ function ns:SendStart(channel, target)
         if channel then
             if TBW_data.startTimestampWM + 900 > now or TBW_data.startTimestamp + 900 > now then
                 toggle("recentlySentStart", 20)
-
                 C_ChatInfo.SendAddonMessage(ADDON_NAME, "S:" .. TBW_data.startTimestampWM .. ":" .. TBW_data.startTimestamp, string.upper(channel), target)
             else
                 ns:PrettyPrint("Your Tol Barad data doesn't contain any upcoming alerts that you can share.")
@@ -202,7 +187,6 @@ function TolBaradWhen_OnEvent(self, event, arg, ...)
             local now = GetServerTime()
             if not ns.data.toggles.recentlyReceivedStart then
                 toggle("recentlyReceivedStart", 60)
-
                 if tonumber(startTimestampWM) + 900 > now then
                     TBW_data.startTimestampWM = tonumber(startTimestampWM)
                     ns:BattleCheck()
@@ -217,7 +201,12 @@ function TolBaradWhen_OnEvent(self, event, arg, ...)
         ns.data.location = C_Map.GetBestMapForUnit("player")
         ns:BattleCheck(contains(ns.data.mapIDs, ns.data.location) and true or false)
     elseif event == "RAID_BOSS_EMOTE" and contains(ns.data.mapIDs, ns.data.location) then
-        ns:BattleEnded()
+        if not ns.data.toggles.recentlyEnded then
+            toggle("recentlyEnded", 3)
+            C_Timer.After(2, function()
+                ns:BattleCheck(true)
+            end)
+        end
     end
 end
 
