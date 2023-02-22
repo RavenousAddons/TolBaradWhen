@@ -102,21 +102,15 @@ function ns:BattleCheck(forced)
         local textureIndex = C_AreaPoiInfo.GetAreaPOIInfo(244, 2485) and C_AreaPoiInfo.GetAreaPOIInfo(244, 2485).textureIndex or C_AreaPoiInfo.GetAreaPOIInfo(244, 2486).textureIndex
         if secondsLeft <= 0 then
             if warmode then
-                print("WM on")
                 if textureIndex == 46 then
-                    print("46")
                     TBW_data.statusWM = "alliance"
                 else
-                    print("48")
                     TBW_data.statusWM = "horde"
                 end
             else
-                print("WM off")
                 if textureIndex == 46 then
-                    print("46")
                     TBW_data.status = "alliance"
                 else
-                    print("48")
                     TBW_data.status = "horde"
                 end
             end
