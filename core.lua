@@ -179,10 +179,12 @@ function ns:SetBattleAlerts(warmode, now, startTimestamp, forced)
                 toggle("recentlyOutput")
             end
             ns:PlaySoundFile(567399) -- alarmclockwarning2.ogg
-            ns:BattlePrint(warmode, L.AlertStart:format(minutesLeft, math.fmod(secondsLeft, 60), startTime), true)
+            ns:BattlePrint(warmode, L.AlertStart:format(startTime), true)
             if warmode then
+                toggle("recentlyOutputWM")
                 ns.data.toggles.timingWM = false
             else
+                toggle("recentlyOutput")
                 ns.data.toggles.timing = false
             end
         end)
@@ -201,7 +203,7 @@ function ns:SetBattleAlerts(warmode, now, startTimestamp, forced)
             minutesLeft = minutesLeft * -1
             secondsLeft = secondsLeft * -1
             ns:PlaySoundFile(567399) -- alarmclockwarning2.ogg
-            ns:BattlePrint(warmode, L.AlertStart:format(minutesLeft, math.fmod(secondsLeft, 60), startTime), true)
+            ns:BattlePrint(warmode, L.AlertStartElapsed:format(minutesLeft, math.fmod(secondsLeft, 60), startTime), true)
         elseif minutesLeft <= 5 then
             ns:BattlePrint(warmode, L.AlertShort:format(minutesLeft, math.fmod(secondsLeft, 60), startTime))
         else
@@ -321,7 +323,7 @@ function TolBaradWhen_OnEvent(self, event, arg, ...)
             end)
         end
         ns.data.location = C_Map.GetBestMapForUnit("player")
-    elseif event == "RAID_BOSS_EMOTE" and contains(ns.data.mapIDs, ns.data.location) and (arg:match("has successfully defended") or arg:match("has successfully taken")) then
+    elseif event == "RAID_BOSS_EMOTE" and contains(ns.data.mapIDs, ns.data.location) and arg:match(select(2, GetWorldPVPAreaInfo(2))) then
         if not ns.data.toggles.recentlyEnded then
             toggle("recentlyEnded", 3)
             C_Timer.After(2, function()
