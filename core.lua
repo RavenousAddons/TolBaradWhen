@@ -29,9 +29,9 @@ function ns:SetDefaultOptions()
     if TBW_data.options == nil then
         TBW_data.options = {}
     end
-    for key, value in pairs(ns.data.defaults) do
-        if TBW_data.options[key] == nil then
-            TBW_data.options[key] = value
+    for option, default in pairs(ns.data.defaults) do
+        if TBW_data.options[option] == nil then
+            TBW_data.options[option] = default
         end
     end
     if TBW_data.startTimestampWM == nil then
@@ -40,6 +40,34 @@ function ns:SetDefaultOptions()
     if TBW_data.startTimestamp == nil then
         TBW_data.startTimestamp = 0
     end
+end
+
+function ns:DoToggle(option)
+    if TBW_data.options[option] ~= nil then
+        if TBW_data.options[option] then
+            TBW_data.options[option] = false
+        else
+            TBW_data.options[option] = true
+        end
+        ns:PrettyPrint(L.Toggled:format(option, TBW_data.options[option] and "44ff44On" or "ff4444Off"))
+    else
+        local i = 1
+        local options = ""
+        for option, _ in pairs(ns.data.defaults) do
+            options = options .. (i > 1 and ", " or "") .. option
+            i = i + 1
+        end
+        ns:PrettyPrint(L.NotAnOption:format(options))
+    end
+end
+
+function ns:SendUpdate(type)
+    local now = GetServerTime()
+    if TBW_data.updateSentTimestamp and TBW_data.updateSentTimestamp > now then
+        return
+    end
+    TBW_data.updateSentTimestamp = now + ns.data.timeouts.short
+    C_ChatInfo.SendAddonMessage(ADDON_NAME, "V:" .. ns.version, type)
 end
 
 function ns:PlaySoundFile(id)
@@ -52,26 +80,62 @@ function ns:PrettyPrint(message)
     DEFAULT_CHAT_FRAME:AddMessage("|cff" .. ns.color .. ns.name .. "|r " .. message)
 end
 
+-- Battle Functions
+
 function ns:BattlePrint(warmode, message, raidWarning)
-    local warmodeFormatted = "(WM |cff" .. (warmode and "44ff44On" or "ff4444Off") .. "|r|cff" .. ns.color .. ")|r"
-    DEFAULT_CHAT_FRAME:AddMessage("|cff" .. ns.color .. "Tol Barad " .. warmodeFormatted .. " |r" .. message)
+    local warmodeFormatted = "|cff" .. (warmode and "44ff44On" or "ff4444Off") .. "|r"
+    local controlledFormatted = warmode and (TBW_data.statusWM == "alliance" and "|cff0078ffAlliance|r" or "|cffb30000Horde|r") or (TBW_data.status == "alliance" and "|cff0078ffAlliance|r" or "|cffb30000Horde|r")
+    DEFAULT_CHAT_FRAME:AddMessage("|cff" .. ns.color .. "Tol Barad (WM " .. warmodeFormatted .. "|cff888888,|r " .. controlledFormatted .. ") |r" .. message)
     if raidWarning and TBW_data.options.raidwarning then
-        RaidNotice_AddMessage(RaidWarningFrame, "The Battle for " .. "Tol Barad (WM " .. (warmode and "On" or "Off") .. ") " .. message, ChatTypeInfo["RAID_WARNING"])
+        local controlled = warmode and (TBW_data.statusWM == "alliance" and "Alliance" or "Horde") or (TBW_data.status == "alliance" and "Alliance" or "Horde")
+        RaidNotice_AddMessage(RaidWarningFrame, "The Battle for " .. "Tol Barad (WM " .. (warmode and "On" or "Off") .. ", " .. controlled .. ") " .. message, ChatTypeInfo["RAID_WARNING"])
     end
 end
 
 function ns:BattleCheck(forced)
     local now = GetServerTime()
-    local warmode = C_PvP.IsWarModeDesired() == 1 and true or false
-    local secondsLeft
+    local warmode = C_PvP.IsWarModeDesired()
+    local secondsLeft = select(5, GetWorldPVPAreaInfo(2))
 
-    -- If we're in Tol Barad, GetWorldPVPAreaInfo() is reliable
+    -- If we're in Tol Barad, secondsLeft is reliable
     if contains(ns.data.mapIDs, ns.data.location) then
-        secondsLeft = select(5, GetWorldPVPAreaInfo(2))
-        if warmode then
-            TBW_data.startTimestampWM = now + secondsLeft
+        local textureIndex = C_AreaPoiInfo.GetAreaPOIInfo(244, 2485) and C_AreaPoiInfo.GetAreaPOIInfo(244, 2485).textureIndex or C_AreaPoiInfo.GetAreaPOIInfo(244, 2486).textureIndex
+        if secondsLeft <= 0 then
+            if warmode then
+                print("WM on")
+                if textureIndex == 46 then
+                    print("46")
+                    TBW_data.statusWM = "alliance"
+                else
+                    print("48")
+                    TBW_data.statusWM = "horde"
+                end
+            else
+                print("WM off")
+                if textureIndex == 46 then
+                    print("46")
+                    TBW_data.status = "alliance"
+                else
+                    print("48")
+                    TBW_data.status = "horde"
+                end
+            end
         else
-            TBW_data.startTimestamp = now + secondsLeft
+            if warmode then
+                TBW_data.startTimestampWM = now + secondsLeft
+                if textureIndex == 46 then
+                    TBW_data.statusWM = "alliance"
+                else
+                    TBW_data.statusWM = "horde"
+                end
+            else
+                TBW_data.startTimestamp = now + secondsLeft
+                if textureIndex == 46 then
+                    TBW_data.status = "alliance"
+                else
+                    TBW_data.status = "horde"
+                end
+            end
         end
     end
 
@@ -84,18 +148,19 @@ function ns:BattleCheck(forced)
     end
 
     -- If we are in Tol Barad OR Forced
+    -- THEN send data over to SetBattleAlerts()
     if contains(ns.data.mapIDs, ns.data.location) or forced then
-        ns:SetBattleAlarms(true, now, TBW_data.startTimestampWM, forced)
-        ns:SetBattleAlarms(false, now, TBW_data.startTimestamp, forced)
+        ns:SetBattleAlerts(true, now, TBW_data.startTimestampWM, forced)
+        ns:SetBattleAlerts(false, now, TBW_data.startTimestamp, forced)
     end
 end
 
-function ns:SetBattleAlarms(warmode, now, startTimestamp, forced)
+function ns:SetBattleAlerts(warmode, now, startTimestamp, forced)
     local secondsLeft = startTimestamp - now
     local minutesLeft = math.floor(secondsLeft / 60)
     local startTime = date(GetCVar("timeMgrUseMilitaryTime") and "%H:%M" or "%I:%M %p", startTimestamp)
 
-    -- If the Battle has not started yet, set Alarms
+    -- If the Battle has not started yet, set Alerts
     if secondsLeft > 0 and ((warmode and not ns.data.toggles.timingWM) or (not warmode and not ns.data.toggles.timing)) then
         if warmode then
             ns.data.toggles.timingWM = true
@@ -120,7 +185,7 @@ function ns:SetBattleAlarms(warmode, now, startTimestamp, forced)
                 toggle("recentlyOutput")
             end
             ns:PlaySoundFile(567399) -- alarmclockwarning2.ogg
-            ns:BattlePrint(warmode, L.AlertStart:format(startTime), true)
+            ns:BattlePrint(warmode, L.AlertStart:format(minutesLeft, math.fmod(secondsLeft, 60), startTime), true)
             if warmode then
                 ns.data.toggles.timingWM = false
             else
@@ -137,8 +202,12 @@ function ns:SetBattleAlarms(warmode, now, startTimestamp, forced)
             toggle("recentlyOutput")
         end
 
-        if secondsLeft <= 3 then
-            ns:BattlePrint(warmode, L.AlertStartUnsure, true)
+        if secondsLeft <= 0 then
+            -- Convert to absolute values to present elapsed time
+            minutesLeft = minutesLeft * -1
+            secondsLeft = secondsLeft * -1
+            ns:PlaySoundFile(567399) -- alarmclockwarning2.ogg
+            ns:BattlePrint(warmode, L.AlertStart:format(minutesLeft, math.fmod(secondsLeft, 60), startTime), true)
         elseif minutesLeft <= 5 then
             ns:BattlePrint(warmode, L.AlertShort:format(minutesLeft, math.fmod(secondsLeft, 60), startTime))
         else
@@ -162,7 +231,7 @@ function ns:SendStart(channel, target)
         if channel then
             if TBW_data.startTimestampWM + 900 > now or TBW_data.startTimestamp + 900 > now then
                 toggle("recentlySentStart", 20)
-                C_ChatInfo.SendAddonMessage(ADDON_NAME, "S:" .. TBW_data.startTimestampWM .. ":" .. TBW_data.startTimestamp, string.upper(channel), target)
+                C_ChatInfo.SendAddonMessage(ADDON_NAME, "S:" .. (TBW_data.statusWM == "alliance" and "A" or "H") .. TBW_data.startTimestampWM .. ":" .. (TBW_data.status == "alliance" and "A" or "H") .. TBW_data.startTimestamp, string.upper(channel), target)
             else
                 ns:PrettyPrint(L.WarningNoData)
             end
@@ -172,15 +241,6 @@ function ns:SendStart(channel, target)
     else
         ns:PrettyPrint(L.WarningFastShare)
     end
-end
-
-function ns:SendUpdate(type)
-    local now = GetServerTime()
-    if TBW_data.updateTimeoutTime and TBW_data.updateTimeoutTime > now then
-        return
-    end
-    TBW_data.updateTimeoutTime = now + ns.data.timeouts.short
-    C_ChatInfo.SendAddonMessage(ADDON_NAME, "V:" .. ns.version, type)
 end
 
 -- Setup Functions
@@ -204,7 +264,7 @@ function TolBaradWhen_OnEvent(self, event, arg, ...)
             end
             TBW_version = ns.version
         end
-        ns:BattleCheck(true)
+        ns:BattleCheck()
     elseif event == "GROUP_ROSTER_UPDATE" then
         local partyMembers = GetNumSubgroupMembers()
         local raidMembers = IsInRaid() and GetNumGroupMembers() or 0
@@ -220,6 +280,9 @@ function TolBaradWhen_OnEvent(self, event, arg, ...)
     elseif event == "CHAT_MSG_ADDON" and arg == ADDON_NAME then
         local message, channel, sender, _ = ...
         if message:match("V:") and not ns.data.toggles.updateFound then
+            if TBW_data.options.debug then
+                ns:PrettyPrint(sender .. " " .. message)
+            end
             local version = message:gsub("V:", "")
             if not version:match("-") then
                 local v1, v2, v3 = strsplit(".", version)
@@ -229,32 +292,46 @@ function TolBaradWhen_OnEvent(self, event, arg, ...)
                     ns.data.toggles.updateFound = true
                 end
             end
-        elseif message:match("S:") then
+        elseif message:match("S:") and (message:match("A") or message:match("H")) then
+            if TBW_data.options.debug then
+                ns:PrettyPrint("Received a message from " .. sender .. " in " .. channel .. ":\n" .. message)
+            end
             local timestamps = message:gsub("S:", "")
-            local startTimestampWM, startTimestamp = strsplit(":", timestamps)
+            local dataWM, data = strsplit(":", timestamps)
+            local statusWM = dataWM:match("A") and "alliance" or "horde"
+            local status = data:match("A") and "alliance" or "horde"
+            local startTimestampWM = dataWM:gsub("A", ""):gsub("H", "")
+            local startTimestamp = data:gsub("A", ""):gsub("H", "")
             if not ns.data.toggles.recentlyReceivedStartWM then
                 if tonumber(startTimestampWM) > TBW_data.startTimestampWM then
                     toggle("recentlyReceivedStartWM", 30)
+                    TBW_data.statusWM = statusWM
                     TBW_data.startTimestampWM = tonumber(startTimestampWM)
-                    ns:BattleCheck()
+                    ns:BattleCheck(true)
                 end
             end
             if not ns.data.toggles.recentlyReceivedStart then
                 if tonumber(startTimestamp) > TBW_data.startTimestamp then
                     toggle("recentlyReceivedStart", 30)
+                    TBW_data.status = status
                     TBW_data.startTimestamp = tonumber(startTimestamp)
-                    ns:BattleCheck()
+                    ns:BattleCheck(true)
                 end
             end
         end
     elseif event == "ZONE_CHANGED_NEW_AREA" then
+        local newLocation = C_Map.GetBestMapForUnit("player")
+        if not contains(ns.data.mapIDs, ns.data.location) or not contains(ns.data.mapIDs, newLocation) then
+            C_Timer.After(1, function()
+                ns:BattleCheck()
+            end)
+        end
         ns.data.location = C_Map.GetBestMapForUnit("player")
-        ns:BattleCheck(contains(ns.data.mapIDs, ns.data.location) and true or false)
-    elseif event == "RAID_BOSS_EMOTE" and contains(ns.data.mapIDs, ns.data.location) then
+    elseif event == "RAID_BOSS_EMOTE" and contains(ns.data.mapIDs, ns.data.location) and (arg:match("has successfully defended") or arg:match("has successfully taken")) then
         if not ns.data.toggles.recentlyEnded then
             toggle("recentlyEnded", 3)
             C_Timer.After(2, function()
-                ns:BattleCheck(true)
+                ns:BattleCheck()
             end)
         end
     end
@@ -271,23 +348,8 @@ SlashCmdList["TOLBARADWHEN"] = function(message)
         local message, channel, target = strsplit(" ", message)
         ns:SendStart(channel, target)
     elseif message:match("tog") and message:match(" ") then
-        local _, key = strsplit(" ", message)
-        if TBW_data.options[key] ~= nil then
-            if TBW_data.options[key] then
-                TBW_data.options[key] = false
-            else
-                TBW_data.options[key] = true
-            end
-            ns:PrettyPrint(L.Toggled:format(key, TBW_data.options[key] and "44ff44On" or "ff4444Off"))
-        else
-            local i = 1
-            local options = ""
-            for key, _ in pairs(ns.data.defaults) do
-                options = options .. (i > 1 and ", " or "") .. key
-                i = i + 1
-            end
-            ns:PrettyPrint(L.NotAnOption:format(options))
-        end
+        local _, option = strsplit(" ", message)
+        ns:DoToggle(option)
     elseif message == "so" or message:match("sound") then
         if TBW_data.options.sound then
             TBW_data.options.sound = false
