@@ -1,6 +1,8 @@
 local ADDON_NAME, ns = ...
 local L = ns.L
 
+local tolbarad = select(2, GetWorldPVPAreaInfo(2))
+
 -- Utility Functions
 
 local function contains(table, input)
@@ -39,25 +41,6 @@ function ns:SetDefaultOptions()
     end
     if TBW_data.startTimestamp == nil then
         TBW_data.startTimestamp = 0
-    end
-end
-
-function ns:DoToggle(option)
-    if TBW_data.options[option] ~= nil then
-        if TBW_data.options[option] then
-            TBW_data.options[option] = false
-        else
-            TBW_data.options[option] = true
-        end
-        ns:PrettyPrint(L.Toggled:format(option, TBW_data.options[option] and "44ff44On" or "ff4444Off"))
-    else
-        local i = 1
-        local options = ""
-        for option, _ in pairs(ns.data.defaults) do
-            options = options .. (i > 1 and ", " or "") .. option
-            i = i + 1
-        end
-        ns:PrettyPrint(L.NotAnOption:format(options))
     end
 end
 
@@ -100,14 +83,17 @@ function ns:BattleCheck(forced)
     -- If we're in Tol Barad, secondsLeft is reliable
     if contains(ns.data.mapIDs, ns.data.location) then
         local textureIndex = C_AreaPoiInfo.GetAreaPOIInfo(244, 2485) and C_AreaPoiInfo.GetAreaPOIInfo(244, 2485).textureIndex or C_AreaPoiInfo.GetAreaPOIInfo(244, 2486).textureIndex
-        if secondsLeft <= 0 then
+        -- If Tol Barad is active
+        if secondsLeft == 0 then
             if warmode then
+                TBW_data.startTimestampWM = now > TBW_data.startTimestampWM + 900 and now or TBW_data.startTimestampWM
                 if textureIndex == 46 then
                     TBW_data.statusWM = "alliance"
                 else
                     TBW_data.statusWM = "horde"
                 end
             else
+                TBW_data.startTimestamp = now > TBW_data.startTimestamp + 900 and now or TBW_data.startTimestamp
                 if textureIndex == 46 then
                     TBW_data.status = "alliance"
                 else
@@ -198,7 +184,10 @@ function ns:SetBattleAlerts(warmode, now, startTimestamp, forced)
             toggle("recentlyOutput")
         end
 
-        if secondsLeft <= 0 then
+        if secondsLeft == 0 then
+            ns:PlaySoundFile(567399) -- alarmclockwarning2.ogg
+            ns:BattlePrint(warmode, L.AlertStartUnsure, true)
+        elseif secondsLeft < 0 then
             -- Convert to absolute values to present elapsed time
             minutesLeft = minutesLeft * -1
             secondsLeft = secondsLeft * -1
@@ -252,6 +241,7 @@ end
 function TolBaradWhen_OnEvent(self, event, arg, ...)
     if event == "PLAYER_LOGIN" then
         ns:SetDefaultOptions()
+        ns:CreateSettingsPanel()
         if not ns.version:match("-") then
             if not TBW_version then
                 ns:PrettyPrint(L.Install:format(ns.color, ns.version))
@@ -323,7 +313,7 @@ function TolBaradWhen_OnEvent(self, event, arg, ...)
             end)
         end
         ns.data.location = C_Map.GetBestMapForUnit("player")
-    elseif event == "RAID_BOSS_EMOTE" and contains(ns.data.mapIDs, ns.data.location) and arg:match(select(2, GetWorldPVPAreaInfo(2))) then
+    elseif event == "RAID_BOSS_EMOTE" and contains(ns.data.mapIDs, ns.data.location) and arg:match(tolbarad) then
         if not ns.data.toggles.recentlyEnded then
             toggle("recentlyEnded", 3)
             C_Timer.After(2, function()
@@ -343,20 +333,10 @@ SlashCmdList["TOLBARADWHEN"] = function(message)
     elseif message == "s" or message:match("send") or message:match("share") then
         local message, channel, target = strsplit(" ", message)
         ns:SendStart(channel, target)
-    elseif message:match("tog") and message:match(" ") then
-        local _, option = strsplit(" ", message)
-        ns:DoToggle(option)
-    elseif message == "so" or message:match("sound") then
-        if TBW_data.options.sound then
-            TBW_data.options.sound = false
-        else
-            TBW_data.options.sound = true
-        end
-        ns:PrettyPrint(L.Sound:format(TBW_data.options.sound and "44ff44On" or "ff4444Off"))
     elseif message == "d" or message:match("bug") then
         local now = GetServerTime()
-        print(TBW_data.startTimestampWM - now)
-        print(TBW_data.startTimestamp - now)
+        print("|cff44ff44On|r " .. (TBW_data.startTimestampWM - now))
+        print("|cffff4444Off|r " .. (TBW_data.startTimestamp - now))
     else
         ns:BattleCheck(true)
     end

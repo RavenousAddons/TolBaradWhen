@@ -2,9 +2,9 @@ local _, ns = ...
 
 ns.data = {
     defaults = {
-        debug = false,
         sound = true,
         raidwarning = true,
+        debug = false,
     },
     timeouts = {
         short = 10,

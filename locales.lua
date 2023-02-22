@@ -22,13 +22,25 @@ L.AlertShort = "begins in %sm%ss at %s."
 L.AlertLong = "begins in %s minutes at %s."
 L.AlertStart = "has begun! 15 minutes remaining from %s."
 L.AlertStartElapsed = "has begun! %sm%ss elapsed from %s."
-L.Toggled = "Toggled %s: |cff%s|r"
-L.NotAnOption = "That option doesn't exist.\nOptions are: %s"
-L.Sound = "Sound alerts are now |cff%s|r."
+L.AlertStartUnsure = "has begun!"
 L.WarningNoInfo = "Unfortunately, Tol Barad information is unavailable here! You'll have to go to Tol Barad or ask for a group member to share their data with you."
 L.WarningNoData = "Your Tol Barad data doesn't contain any upcoming alerts that you can share."
 L.WarningNoShare = "You must either be in a group or specify a channel (e.g. party, raid, guild) in order to share your Tol Barad data."
 L.WarningFastShare = "You must wait a short time before sharing your Tol Barad data again."
+L.Options = {
+    sound = {
+        name = "Alert Sounds",
+        tooltip = "Sounds TT",
+    },
+    raidwarning = {
+        name = "Dislpay Raid Warnings",
+        tooltip = "Raid Warning TT",
+    },
+    debug = {
+        name = "Debugging Alerts",
+        tooltip = "Debug TT",
+    },
+}
 
 -- Check locale and assign appropriate
 local CURRENT_LOCALE = GetLocale()
