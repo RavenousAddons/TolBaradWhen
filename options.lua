@@ -17,9 +17,7 @@ function ns:CreateSettingsPanel()
     layout:AddInitializer(CreateSettingsListSectionHeaderInitializer(_G.GAMEOPTIONS_MENU .. ":"))
 
     for option, _ in pairs(ns.data.defaults) do
-        if option ~= "debug" then
-            CreateCheckBox(category, option, L.Options[option].name, L.Options[option].tooltip)
-        end
+        CreateCheckBox(category, option, L.Options[option].name, L.Options[option].tooltip)
     end
 
     Settings.RegisterAddOnCategory(category)

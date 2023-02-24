@@ -16,10 +16,18 @@ end
 
 local function toggle(toggle, timeout)
     timeout = timeout and timeout or ns.data.timeouts.long
-    ns.data.toggles[toggle] = true
-    C_Timer.After(timeout, function()
-        ns.data.toggles[toggle] = false
-    end)
+    if ns.data.toggles[toggle] == false then
+        ns.data.toggles[toggle] = true
+        if TBW_data.options.debug then
+            ns:PrettyPrint("\n" .. toggle .. " = true (" .. timeout .. "s timeout)")
+        end
+        C_Timer.After(timeout, function()
+            ns.data.toggles[toggle] = false
+            if TBW_data.options.debug then
+                ns:PrettyPrint("\n" .. toggle .. " = false")
+            end
+        end)
+    end
 end
 
 -- General Functions
@@ -46,7 +54,7 @@ end
 
 function ns:SendUpdate(type)
     local now = GetServerTime()
-    if TBW_data.updateSentTimestamp and TBW_data.updateSentTimestamp > now then
+    if not ns.version:match("-") and (TBW_data.updateSentTimestamp and TBW_data.updateSentTimestamp > now) then
         return
     end
     TBW_data.updateSentTimestamp = now + ns.data.timeouts.short
@@ -129,7 +137,7 @@ function ns:BattleCheck(forced)
 
     -- If we are in Tol Barad OR Forced
     -- THEN send data over to SetBattleAlerts()
-    if contains(ns.data.mapIDs, ns.data.location) or forced then
+    if (not ns.data.toggles.timingWM and TBW_data.startTimestampWM > now) or (not ns.data.toggles.timing and TBW_data.startTimestamp > now) or contains(ns.data.mapIDs, ns.data.location) or forced then
         ns:SetBattleAlerts(true, now, TBW_data.startTimestampWM, forced)
         ns:SetBattleAlerts(false, now, TBW_data.startTimestamp, forced)
     end
@@ -265,12 +273,12 @@ function TolBaradWhen_OnEvent(self, event, arg, ...)
         ns.data.raidMembers = raidMembers
     elseif event == "CHAT_MSG_ADDON" and arg == ADDON_NAME then
         local message, channel, sender, _ = ...
+        if TBW_data.options.debug then
+            ns:PrettyPrint("\n" .. sender .. " in " .. channel .. "\n" .. message)
+        end
         if message:match("V:") and not ns.data.toggles.updateFound then
-            if TBW_data.options.debug then
-                ns:PrettyPrint(sender .. " " .. message)
-            end
             local version = message:gsub("V:", "")
-            if not version:match("-") then
+            if not message:match("-") then
                 local v1, v2, v3 = strsplit(".", version)
                 local c1, c2, c3 = strsplit(".", ns.version)
                 if v1 > c1 or (v1 == c1 and v2 > c2) or (v1 == c1 and v2 == c2 and v3 > c3) then
@@ -279,9 +287,6 @@ function TolBaradWhen_OnEvent(self, event, arg, ...)
                 end
             end
         elseif message:match("S:") and (message:match("A") or message:match("H")) then
-            if TBW_data.options.debug then
-                ns:PrettyPrint("Received a message from " .. sender .. " in " .. channel .. ":\n" .. message)
-            end
             local timestamps = message:gsub("S:", "")
             local dataWM, data = strsplit(":", timestamps)
             local statusWM = dataWM:match("A") and "alliance" or "horde"
@@ -329,7 +334,6 @@ SlashCmdList["TOLBARADWHEN"] = function(message)
     elseif message == "h" or message:match("help") or message:match("config") then
         ns:PrettyPrint(L.Help1)
         print(L.Help2)
-        print(L.Help3)
     elseif message == "s" or message:match("send") or message:match("share") then
         local message, channel, target = strsplit(" ", message)
         ns:SendStart(channel, target)

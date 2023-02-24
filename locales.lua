@@ -14,8 +14,7 @@ L.Install = "Thanks for installing version |cff%1$s%2$s|r!" -- ns.color, ns.vers
 L.Update = "Thanks for updating to version |cff%1$s%2$s|r!" -- ns.color, ns.version
 L.UpdateFound = "Version %s is now available for download. Please update!" -- sentVersion
 L.Help1 = "This AddOn runs without any manual input. The only thing you need to do is zone into Tol Barad to get alerts running."
-L.Help3 = "You can share your Tol Barad timer with group members:\n/tb share"
-L.Help3 = "You can also toggle sounds on and off:\n/tb sound"
+L.Help2 = "You can share your Tol Barad timer with group members:\n/tb share"
 L.AlertSet = "Timer has been set!"
 L.Alert2Min = "begins in 2 minutes at %s!"
 L.AlertShort = "begins in %sm%ss at %s."
@@ -30,15 +29,15 @@ L.WarningFastShare = "You must wait a short time before sharing your Tol Barad d
 L.Options = {
     sound = {
         name = "Alert Sounds",
-        tooltip = "Sounds TT",
+        tooltip = "When important alerts go off, they will be accompanied by a sound, in addition to the chat box alert.",
     },
     raidwarning = {
-        name = "Dislpay Raid Warnings",
-        tooltip = "Raid Warning TT",
+        name = "Alert Raid Warnings",
+        tooltip = "When important alerts go off, they will be accompanied by a Raid Warning, in addition to the chat box alert.",
     },
     debug = {
-        name = "Debugging Alerts",
-        tooltip = "Debug TT",
+        name = "Debugging",
+        tooltip = "Enables messages for debugging.",
     },
 }
 
