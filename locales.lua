@@ -16,9 +16,8 @@ L.UpdateFound = "Version %s is now available for download. Please update!" -- se
 L.Help1 = "This AddOn runs without any manual input. The only thing you need to do is zone into Tol Barad to get alerts running."
 L.Help2 = "You can share your Tol Barad timer with group members:\n/tb share"
 L.AlertSet = "Timer has been set!"
-L.Alert2Min = "begins in 2 minutes at %s!"
-L.AlertShort = "begins in %sm%ss at %s."
-L.AlertLong = "begins in %s minutes at %s."
+L.AlertShort = "starts in %sm%ss at %s."
+L.AlertLong = "starts in %s minutes at %s."
 L.AlertStart = "has begun! 15 minutes remaining from %s."
 L.AlertStartElapsed = "has begun! %sm%ss elapsed from %s."
 L.AlertStartUnsure = "has begun!"
@@ -26,16 +25,43 @@ L.WarningNoInfo = "Unfortunately, Tol Barad information is unavailable here! You
 L.WarningNoData = "Your Tol Barad data doesn't contain any upcoming alerts that you can share."
 L.WarningNoShare = "You must either be in a group or specify a channel (e.g. party, raid, guild) in order to share your Tol Barad data."
 L.WarningFastShare = "You must wait a short time before sharing your Tol Barad data again."
-L.Options = {
-    sound = {
+L.OptionsWhen = {
+    [1] = {
+        key = "alertStart",
+        name = "Start of Battle",
+        tooltip = "Sets up an alert for the start of the battle.",
+    },
+    [2] = {
+        key = "alert1Minute",
+        name = "1 minute before",
+        tooltip = "Sets up an alert 1 minute before the battle.",
+    },
+    [3] = {
+        key = "alert2Minutes",
+        name = "2 minutes before",
+        tooltip = "Sets up an alert 2 minutes before the battle.",
+    },
+    [4] = {
+        key = "alert10Minutes",
+        name = "10 minutes before",
+        tooltip = "Sets up an alert 10 minutes before the battle.",
+    },
+}
+L.OptionsHow = {
+    [1] = {
+        key = "sound",
         name = "Alert Sounds",
         tooltip = "When important alerts go off, they will be accompanied by a sound, in addition to the chat box alert.",
     },
-    raidwarning = {
-        name = "Alert Raid Warnings",
+    [2] = {
+        key = "raidwarning",
+        name = "Raid Warnings",
         tooltip = "When important alerts go off, they will be accompanied by a Raid Warning, in addition to the chat box alert.",
     },
-    debug = {
+}
+L.OptionsExtra = {
+    [1] = {
+        key = "debug",
         name = "Debugging",
         tooltip = "Enables messages for debugging.",
     },

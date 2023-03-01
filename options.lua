@@ -14,10 +14,25 @@ end
 function ns:CreateSettingsPanel()
     local category, layout = Settings.RegisterVerticalLayoutCategory(ns.name)
 
-    layout:AddInitializer(CreateSettingsListSectionHeaderInitializer(_G.GAMEOPTIONS_MENU .. ":"))
+    layout:AddInitializer(CreateSettingsListSectionHeaderInitializer("When do you want to be alerted?"))
 
-    for option, _ in pairs(ns.data.defaults) do
-        CreateCheckBox(category, option, L.Options[option].name, L.Options[option].tooltip)
+    for index = 1, #L.OptionsWhen do
+        local option = L.OptionsWhen[index]
+        CreateCheckBox(category, option.key, option.name, option.tooltip)
+    end
+
+    layout:AddInitializer(CreateSettingsListSectionHeaderInitializer("How do you want to be alerted?"))
+
+    for index = 1, #L.OptionsHow do
+        local option = L.OptionsHow[index]
+        CreateCheckBox(category, option.key, option.name, option.tooltip)
+    end
+
+    layout:AddInitializer(CreateSettingsListSectionHeaderInitializer("Extra Options:"))
+
+    for index = 1, #L.OptionsExtra do
+        local option = L.OptionsExtra[index]
+        CreateCheckBox(category, option.key, option.name, option.tooltip)
     end
 
     Settings.RegisterAddOnCategory(category)

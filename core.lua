@@ -149,7 +149,7 @@ function ns:SetBattleAlerts(warmode, now, startTimestamp, forced)
     local startTime = date(GetCVar("timeMgrUseMilitaryTime") and "%H:%M" or "%I:%M %p", startTimestamp)
 
     -- If the Battle has not started yet, set Alerts
-    if secondsLeft > 0 and ((warmode and not ns.data.toggles.timingWM) or (not warmode and not ns.data.toggles.timing)) then
+    if secondsLeft > 0 and (TBW_data.options.alertStart or TBW_data.options.alert2Minutes or TBW_data.options.alert10Minutes) and ((warmode and not ns.data.toggles.timingWM) or (not warmode and not ns.data.toggles.timing)) then
         if warmode then
             ns.data.toggles.timingWM = true
         else
@@ -159,29 +159,45 @@ function ns:SetBattleAlerts(warmode, now, startTimestamp, forced)
         ns:PlaySoundFile(567436) -- alarmclockwarning1.ogg
         ns:PrettyPrint(L.AlertSet)
 
-        if secondsLeft > 120 then
-            C_Timer.After(secondsLeft - 120, function()
+        if minutesLeft >= 10 and TBW_data.options.alert2Minutes then
+            C_Timer.After(secondsLeft - 600, function()
                 ns:PlaySoundFile(567458) -- alarmclockwarning3.ogg
-                ns:BattlePrint(warmode, L.Alert2Min:format(startTime), true)
+                ns:BattlePrint(warmode, L.AlertLong:format(10, startTime), true)
             end)
         end
 
-        C_Timer.After(secondsLeft, function()
-            if warmode then
-                toggle("recentlyOutputWM")
-            else
-                toggle("recentlyOutput")
-            end
-            ns:PlaySoundFile(567399) -- alarmclockwarning2.ogg
-            ns:BattlePrint(warmode, L.AlertStart:format(startTime), true)
-            if warmode then
-                toggle("recentlyOutputWM")
-                ns.data.toggles.timingWM = false
-            else
-                toggle("recentlyOutput")
-                ns.data.toggles.timing = false
-            end
-        end)
+        if minutesLeft >= 2 and TBW_data.options.alert10Minutes then
+            C_Timer.After(secondsLeft - 120, function()
+                ns:PlaySoundFile(567458) -- alarmclockwarning3.ogg
+                ns:BattlePrint(warmode, L.AlertLong:format(2, startTime), true)
+            end)
+        end
+
+        if minutesLeft >= 1 and TBW_data.options.alert1Minute then
+            C_Timer.After(secondsLeft - 60, function()
+                ns:PlaySoundFile(567458) -- alarmclockwarning3.ogg
+                ns:BattlePrint(warmode, L.AlertLong:format(1, startTime), true)
+            end)
+        end
+
+        if TBW_data.options.alertStart then
+            C_Timer.After(secondsLeft, function()
+                if warmode then
+                    toggle("recentlyOutputWM")
+                else
+                    toggle("recentlyOutput")
+                end
+                ns:PlaySoundFile(567399) -- alarmclockwarning2.ogg
+                ns:BattlePrint(warmode, L.AlertStart:format(startTime), true)
+                if warmode then
+                    toggle("recentlyOutputWM")
+                    ns.data.toggles.timingWM = false
+                else
+                    toggle("recentlyOutput")
+                    ns.data.toggles.timing = false
+                end
+            end)
+        end
     end
 
     -- Inform the player about starting time
@@ -318,7 +334,7 @@ function TolBaradWhen_OnEvent(self, event, arg, ...)
             end)
         end
         ns.data.location = C_Map.GetBestMapForUnit("player")
-    elseif event == "RAID_BOSS_EMOTE" and contains(ns.data.mapIDs, ns.data.location) and arg:match(tolbarad) then
+    elseif event == "RAID_BOSS_EMOTE" and contains(ns.data.mapIDs, ns.data.location) and arg:match(tolbarad) and not arg:match("1") then
         if not ns.data.toggles.recentlyEnded then
             toggle("recentlyEnded", 3)
             C_Timer.After(2, function()
@@ -331,9 +347,10 @@ end
 SlashCmdList["TOLBARADWHEN"] = function(message)
     if message == "v" or message:match("ver") then
         ns:PrettyPrint(L.Version:format(ns.version))
-    elseif message == "h" or message:match("help") or message:match("config") then
-        ns:PrettyPrint(L.Help1)
-        print(L.Help2)
+    elseif message == "c" or message:match("con") or message == "h" or message:match("help") or message == "o" or message:match("opt") or message == "s" or message:match("sett") or message:match("togg") then
+        PlaySound(SOUNDKIT.IG_MAINMENU_OPEN)
+        -- Settings.OpenToCategory(ns.name)
+        local settingsCategoryID = _G[ADDON_NAME].categoryID
     elseif message == "s" or message:match("send") or message:match("share") then
         local message, channel, target = strsplit(" ", message)
         ns:SendStart(channel, target)

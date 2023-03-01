@@ -5,6 +5,10 @@ ns.data = {
         sound = true,
         raidwarning = true,
         debug = false,
+        alertStart =  true,
+        alert1Minute =  false,
+        alert2Minutes =  true,
+        alert10Minutes =  true,
     },
     timeouts = {
         short = 10,
