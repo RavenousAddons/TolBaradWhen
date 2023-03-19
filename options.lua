@@ -11,6 +11,14 @@ local function CreateCheckBox(category, variable, name, tooltip)
     Settings.CreateCheckBox(category, setting, tooltip)
 end
 
+local function CreateDropDown(category, variable, name, options, tooltip)
+    local setting = Settings.RegisterAddOnSetting(category, name, variable, type(defaults[variable]), TBW_data.options[variable])
+    Settings.SetOnValueChangedCallback(variable, function(event)
+        TBW_data.options[variable] = setting:GetValue()
+    end)
+    Settings.CreateDropDown(category, setting, options, tooltip)
+end
+
 function ns:CreateSettingsPanel()
     local category, layout = Settings.RegisterVerticalLayoutCategory(ns.name)
 
@@ -20,6 +28,16 @@ function ns:CreateSettingsPanel()
         local option = L.OptionsWhen[index]
         CreateCheckBox(category, option.key, option.name, option.tooltip)
     end
+
+    local function GetCustomAlertOptions()
+        local container = Settings.CreateControlTextContainer()
+        container:Add(1, "Disabled")
+        for i = 15, 55, 5 do
+            container:Add(i, i .. " minutes")
+        end
+        return container:GetData()
+    end
+    CreateDropDown(category, L.OptionsWhenCustom.key, L.OptionsWhenCustom.name, GetCustomAlertOptions, L.OptionsWhenCustom.tooltip)
 
     layout:AddInitializer(CreateSettingsListSectionHeaderInitializer("How do you want to be alerted?"))
 

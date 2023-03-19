@@ -16,7 +16,7 @@ end
 
 local function toggle(toggle, timeout)
     timeout = timeout and timeout or ns.data.timeouts.long
-    if ns.data.toggles[toggle] == false then
+    if not ns.data.toggles[toggle] then
         ns.data.toggles[toggle] = true
         if TBW_data.options.debug then
             ns:PrettyPrint("\n" .. toggle .. " = true (" .. timeout .. "s timeout)")
@@ -27,6 +27,23 @@ local function toggle(toggle, timeout)
                 ns:PrettyPrint("\n" .. toggle .. " = false")
             end
         end)
+    end
+end
+
+local function PlaySound(id)
+    if TBW_data.options.sound then
+        PlaySoundFile(id)
+    end
+end
+
+local function StartStopwatch(minutes, seconds)
+    if not ns.data.toggles.stopwatch then
+        minutes = minutes or 0
+        seconds = seconds or 0
+        toggle("stopwatch", (minutes * 60) + seconds)
+        StopwatchFrame:Show()
+        Stopwatch_StartCountdown(0, minutes, seconds)
+        Stopwatch_Play()
     end
 end
 
@@ -59,12 +76,6 @@ function ns:SendUpdate(type)
     end
     TBW_data.updateSentTimestamp = now + ns.data.timeouts.short
     C_ChatInfo.SendAddonMessage(ADDON_NAME, "V:" .. ns.version, type)
-end
-
-function ns:PlaySoundFile(id)
-    if TBW_data.options.sound then
-        PlaySoundFile(id)
-    end
 end
 
 function ns:PrettyPrint(message)
@@ -149,55 +160,63 @@ function ns:SetBattleAlerts(warmode, now, startTimestamp, forced)
     local startTime = date(GetCVar("timeMgrUseMilitaryTime") and "%H:%M" or "%I:%M %p", startTimestamp)
 
     -- If the Battle has not started yet, set Alerts
-    if secondsLeft > 0 and (TBW_data.options.alertStart or TBW_data.options.alert2Minutes or TBW_data.options.alert10Minutes) and ((warmode and not ns.data.toggles.timingWM) or (not warmode and not ns.data.toggles.timing)) then
+    if secondsLeft > 0 and (TBW_data.options.alertStart or TBW_data.options.alert1Minute or TBW_data.options.alert2Minutes or TBW_data.options.alert10Minutes or TBW_data.options.alertCustomMinutes > 1) and ((warmode and not ns.data.toggles.timingWM) or (not warmode and not ns.data.toggles.timing)) then
+        -- Timing has begun
         if warmode then
-            ns.data.toggles.timingWM = true
+            toggle("timingWM", secondsLeft)
         else
-            ns.data.toggles.timing = true
+            toggle("timing", secondsLeft)
         end
 
-        ns:PlaySoundFile(567436) -- alarmclockwarning1.ogg
+        -- Alert that a timer will be set
         ns:PrettyPrint(L.AlertSet)
+        PlaySound(567436) -- alarmclockwarning1.ogg
 
-        if minutesLeft >= 10 and TBW_data.options.alert2Minutes then
-            C_Timer.After(secondsLeft - 600, function()
-                ns:PlaySoundFile(567458) -- alarmclockwarning3.ogg
-                ns:BattlePrint(warmode, L.AlertLong:format(10, startTime), true)
-            end)
+        -- Set Custom Alerts
+        for i = 15, 55, 5 do
+            if secondsLeft >= (i * 60) then
+                C_Timer.After(secondsLeft - (i * 60), function()
+                    if i == TBW_data.options.alertCustomMinutes then
+                        ns:BattlePrint(warmode, L.AlertLong:format(i, startTime), true)
+                        PlaySound(567458) -- alarmclockwarning3.ogg
+                        if TBW_data.options.stopwatch then
+                            StartStopwatch(i, 0)
+                        end
+                    end
+                end)
+            end
         end
 
-        if minutesLeft >= 2 and TBW_data.options.alert10Minutes then
-            C_Timer.After(secondsLeft - 120, function()
-                ns:PlaySoundFile(567458) -- alarmclockwarning3.ogg
-                ns:BattlePrint(warmode, L.AlertLong:format(2, startTime), true)
-            end)
+        -- Set Pre-Defined Alerts
+        for default, minutes in pairs(ns.data.timers) do
+            if secondsLeft >= (minutes * 60) then
+                C_Timer.After(secondsLeft - (minutes * 60), function()
+                    if TBW_data.options[default] then
+                        ns:BattlePrint(warmode, L.AlertLong:format(minutes, startTime), true)
+                        PlaySound(567458) -- alarmclockwarning3.ogg
+                        if TBW_data.options.stopwatch then
+                            StartStopwatch(minutes, 0)
+                        end
+                    end
+                end)
+            end
         end
 
-        if minutesLeft >= 1 and TBW_data.options.alert1Minute then
-            C_Timer.After(secondsLeft - 60, function()
-                ns:PlaySoundFile(567458) -- alarmclockwarning3.ogg
-                ns:BattlePrint(warmode, L.AlertLong:format(1, startTime), true)
-            end)
-        end
-
-        if TBW_data.options.alertStart then
-            C_Timer.After(secondsLeft, function()
+        -- Set Start Alert
+        C_Timer.After(secondsLeft, function()
+            if TBW_data.options.alertStart then
                 if warmode then
                     toggle("recentlyOutputWM")
                 else
                     toggle("recentlyOutput")
                 end
-                ns:PlaySoundFile(567399) -- alarmclockwarning2.ogg
                 ns:BattlePrint(warmode, L.AlertStart:format(startTime), true)
-                if warmode then
-                    toggle("recentlyOutputWM")
-                    ns.data.toggles.timingWM = false
-                else
-                    toggle("recentlyOutput")
-                    ns.data.toggles.timing = false
+                PlaySound(567399) -- alarmclockwarning2.ogg
+                if TBW_data.options.stopwatch then
+                    StopwatchFrame:Hide()
                 end
-            end)
-        end
+            end
+        end)
     end
 
     -- Inform the player about starting time
@@ -208,17 +227,21 @@ function ns:SetBattleAlerts(warmode, now, startTimestamp, forced)
             toggle("recentlyOutput")
         end
 
+        -- Start time is unknown
         if secondsLeft == 0 then
-            ns:PlaySoundFile(567399) -- alarmclockwarning2.ogg
             ns:BattlePrint(warmode, L.AlertStartUnsure, true)
+            PlaySound(567399) -- alarmclockwarning2.ogg
+        -- Battle has started, print elapsed
         elseif secondsLeft < 0 then
             -- Convert to absolute values to present elapsed time
             minutesLeft = minutesLeft * -1
             secondsLeft = secondsLeft * -1
-            ns:PlaySoundFile(567399) -- alarmclockwarning2.ogg
             ns:BattlePrint(warmode, L.AlertStartElapsed:format(minutesLeft, math.fmod(secondsLeft, 60), startTime), true)
-        elseif minutesLeft <= 5 then
+            PlaySound(567399) -- alarmclockwarning2.ogg
+        -- 15 minutes or less to next battle
+        elseif secondsLeft <= 300 then
             ns:BattlePrint(warmode, L.AlertShort:format(minutesLeft, math.fmod(secondsLeft, 60), startTime))
+        -- Print time to next battle
         else
             ns:BattlePrint(warmode, L.AlertLong:format(minutesLeft, startTime))
         end
@@ -271,11 +294,12 @@ function TolBaradWhen_OnEvent(self, event, arg, ...)
                 ns:PrettyPrint(L.Install:format(ns.color, ns.version))
             elseif TBW_version ~= ns.version then
                 ns:PrettyPrint(L.Update:format(ns.color, ns.version))
+                print("This version includes some new options: new timers (including a custom timer!), and the ability to display a stopwatch with alerts.")
             end
             TBW_version = ns.version
         end
         ns:BattleCheck()
-    elseif event == "GROUP_ROSTER_UPDATE" then
+    elseif event == "GROUP_ROSTER_UPDATE" and not ns.version:match("-") and TBW_data.options.share then
         local partyMembers = GetNumSubgroupMembers()
         local raidMembers = IsInRaid() and GetNumGroupMembers() or 0
         if not IsInGroup(LE_PARTY_CATEGORY_INSTANCE) then
@@ -287,7 +311,7 @@ function TolBaradWhen_OnEvent(self, event, arg, ...)
         end
         ns.data.partyMembers = partyMembers
         ns.data.raidMembers = raidMembers
-    elseif event == "CHAT_MSG_ADDON" and arg == ADDON_NAME then
+    elseif event == "CHAT_MSG_ADDON" and arg == ADDON_NAME and TBW_data.options.share then
         local message, channel, sender, _ = ...
         if TBW_data.options.debug then
             ns:PrettyPrint("\n" .. sender .. " in " .. channel .. "\n" .. message)
@@ -352,8 +376,12 @@ SlashCmdList["TOLBARADWHEN"] = function(message)
         -- Settings.OpenToCategory(ns.name)
         local settingsCategoryID = _G[ADDON_NAME].categoryID
     elseif message == "s" or message:match("send") or message:match("share") then
-        local message, channel, target = strsplit(" ", message)
-        ns:SendStart(channel, target)
+        if TBW_data.options.share then
+            local message, channel, target = strsplit(" ", message)
+            ns:SendStart(channel, target)
+        else
+            ns:PrettyPrint(L.WarningDisabledShare)
+        end
     elseif message == "d" or message:match("bug") then
         local now = GetServerTime()
         print("|cff44ff44On|r " .. (TBW_data.startTimestampWM - now))
