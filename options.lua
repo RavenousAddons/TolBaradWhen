@@ -4,17 +4,17 @@ local L = ns.L
 local defaults = ns.data.defaults
 
 local function CreateCheckBox(category, variable, name, tooltip)
-    local setting = Settings.RegisterAddOnSetting(category, name, variable, type(defaults[variable]), TBW_data.options[variable])
+    local setting = Settings.RegisterAddOnSetting(category, name, variable, type(defaults[variable]), TBW_options[variable])
     Settings.SetOnValueChangedCallback(variable, function(event)
-        TBW_data.options[variable] = setting:GetValue()
+        TBW_options[variable] = setting:GetValue()
     end)
     Settings.CreateCheckBox(category, setting, tooltip)
 end
 
 local function CreateDropDown(category, variable, name, options, tooltip)
-    local setting = Settings.RegisterAddOnSetting(category, name, variable, type(defaults[variable]), TBW_data.options[variable])
+    local setting = Settings.RegisterAddOnSetting(category, name, variable, type(defaults[variable]), TBW_options[variable])
     Settings.SetOnValueChangedCallback(variable, function(event)
-        TBW_data.options[variable] = setting:GetValue()
+        TBW_options[variable] = setting:GetValue()
     end)
     Settings.CreateDropDown(category, setting, options, tooltip)
 end

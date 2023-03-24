@@ -18,12 +18,12 @@ local function toggle(toggle, timeout)
     timeout = timeout and timeout or ns.data.timeouts.long
     if not ns.data.toggles[toggle] then
         ns.data.toggles[toggle] = true
-        if TBW_data.options.debug then
+        if TBW_options.debug then
             ns:PrettyPrint("\n" .. toggle .. " = true (" .. timeout .. "s timeout)")
         end
         C_Timer.After(timeout, function()
             ns.data.toggles[toggle] = false
-            if TBW_data.options.debug then
+            if TBW_options.debug then
                 ns:PrettyPrint("\n" .. toggle .. " = false")
             end
         end)
@@ -31,7 +31,7 @@ local function toggle(toggle, timeout)
 end
 
 local function PlaySound(id)
-    if TBW_data.options.sound then
+    if TBW_options.sound then
         PlaySoundFile(id)
     end
 end
@@ -53,12 +53,12 @@ function ns:SetDefaultOptions()
     if TBW_data == nil then
         TBW_data = {}
     end
-    if TBW_data.options == nil then
-        TBW_data.options = {}
+    if TBW_options == nil then
+        TBW_options = {}
     end
     for option, default in pairs(ns.data.defaults) do
-        if TBW_data.options[option] == nil then
-            TBW_data.options[option] = default
+        if TBW_options[option] == nil then
+            TBW_options[option] = default
         end
     end
     if TBW_data.startTimestampWM == nil then
@@ -88,7 +88,7 @@ function ns:BattlePrint(warmode, message, raidWarning)
     local warmodeFormatted = "|cff" .. (warmode and "44ff44On" or "ff4444Off") .. "|r"
     local controlledFormatted = warmode and (TBW_data.statusWM == "alliance" and "|cff0078ffAlliance|r" or "|cffb30000Horde|r") or (TBW_data.status == "alliance" and "|cff0078ffAlliance|r" or "|cffb30000Horde|r")
     DEFAULT_CHAT_FRAME:AddMessage("|cff" .. ns.color .. "Tol Barad (WM " .. warmodeFormatted .. "|cff888888,|r " .. controlledFormatted .. ") |r" .. message)
-    if raidWarning and TBW_data.options.raidwarning then
+    if raidWarning and TBW_options.raidwarning then
         local controlled = warmode and (TBW_data.statusWM == "alliance" and "Alliance" or "Horde") or (TBW_data.status == "alliance" and "Alliance" or "Horde")
         RaidNotice_AddMessage(RaidWarningFrame, "The Battle for " .. "Tol Barad (WM " .. (warmode and "On" or "Off") .. ", " .. controlled .. ") " .. message, ChatTypeInfo["RAID_WARNING"])
     end
@@ -160,7 +160,7 @@ function ns:SetBattleAlerts(warmode, now, startTimestamp, forced)
     local startTime = date(GetCVar("timeMgrUseMilitaryTime") and "%H:%M" or "%I:%M %p", startTimestamp)
 
     -- If the Battle has not started yet, set Alerts
-    if secondsLeft > 0 and (TBW_data.options.alertStart or TBW_data.options.alert1Minute or TBW_data.options.alert2Minutes or TBW_data.options.alert10Minutes or TBW_data.options.alertCustomMinutes > 1) and ((warmode and not ns.data.toggles.timingWM) or (not warmode and not ns.data.toggles.timing)) then
+    if secondsLeft > 0 and (TBW_options.alertStart or TBW_options.alert1Minute or TBW_options.alert2Minutes or TBW_options.alert10Minutes or TBW_options.alertCustomMinutes > 1) and ((warmode and not ns.data.toggles.timingWM) or (not warmode and not ns.data.toggles.timing)) then
         -- Timing has begun
         if warmode then
             toggle("timingWM", secondsLeft)
@@ -176,10 +176,10 @@ function ns:SetBattleAlerts(warmode, now, startTimestamp, forced)
         for i = 15, 55, 5 do
             if secondsLeft >= (i * 60) then
                 C_Timer.After(secondsLeft - (i * 60), function()
-                    if i == TBW_data.options.alertCustomMinutes then
+                    if i == TBW_options.alertCustomMinutes then
                         ns:BattlePrint(warmode, L.AlertLong:format(i, startTime), true)
                         PlaySound(567458) -- alarmclockwarning3.ogg
-                        if TBW_data.options.stopwatch then
+                        if TBW_options.stopwatch then
                             StartStopwatch(i, 0)
                         end
                     end
@@ -191,10 +191,10 @@ function ns:SetBattleAlerts(warmode, now, startTimestamp, forced)
         for default, minutes in pairs(ns.data.timers) do
             if secondsLeft >= (minutes * 60) then
                 C_Timer.After(secondsLeft - (minutes * 60), function()
-                    if TBW_data.options[default] then
+                    if TBW_options[default] then
                         ns:BattlePrint(warmode, L.AlertLong:format(minutes, startTime), true)
                         PlaySound(567458) -- alarmclockwarning3.ogg
-                        if TBW_data.options.stopwatch then
+                        if TBW_options.stopwatch then
                             StartStopwatch(minutes, 0)
                         end
                     end
@@ -204,7 +204,7 @@ function ns:SetBattleAlerts(warmode, now, startTimestamp, forced)
 
         -- Set Start Alert
         C_Timer.After(secondsLeft, function()
-            if TBW_data.options.alertStart then
+            if TBW_options.alertStart then
                 if warmode then
                     toggle("recentlyOutputWM")
                 else
@@ -212,7 +212,7 @@ function ns:SetBattleAlerts(warmode, now, startTimestamp, forced)
                 end
                 ns:BattlePrint(warmode, L.AlertStart:format(startTime), true)
                 PlaySound(567399) -- alarmclockwarning2.ogg
-                if TBW_data.options.stopwatch then
+                if TBW_options.stopwatch then
                     StopwatchFrame:Hide()
                 end
             end
@@ -294,11 +294,14 @@ function TolBaradWhen_OnEvent(self, event, arg, ...)
                 ns:PrettyPrint(L.Install:format(ns.color, ns.version))
             elseif TBW_version ~= ns.version then
                 ns:PrettyPrint(L.Update:format(ns.color, ns.version))
+                -- Version-specific message
+                print("This version now saves your options per-character rather than globally, allowing you to have different alert preferences based on which character you are playing.")
+                print("As long as the AddOn is enabled, even if alerts are off, it will still keep track of Tol Barad battles you have seen on any character.")
             end
             TBW_version = ns.version
         end
         ns:BattleCheck()
-    elseif event == "GROUP_ROSTER_UPDATE" and not ns.version:match("-") and TBW_data.options.share then
+    elseif event == "GROUP_ROSTER_UPDATE" and not ns.version:match("-") and TBW_options.share then
         local partyMembers = GetNumSubgroupMembers()
         local raidMembers = IsInRaid() and GetNumGroupMembers() or 0
         if not IsInGroup(LE_PARTY_CATEGORY_INSTANCE) then
@@ -310,9 +313,9 @@ function TolBaradWhen_OnEvent(self, event, arg, ...)
         end
         ns.data.partyMembers = partyMembers
         ns.data.raidMembers = raidMembers
-    elseif event == "CHAT_MSG_ADDON" and arg == ADDON_NAME and TBW_data.options.share then
+    elseif event == "CHAT_MSG_ADDON" and arg == ADDON_NAME and TBW_options.share then
         local message, channel, sender, _ = ...
-        if TBW_data.options.debug then
+        if TBW_options.debug then
             ns:PrettyPrint("\n" .. sender .. " in " .. channel .. "\n" .. message)
         end
         if message:match("V:") and not ns.data.toggles.updateFound then
@@ -375,7 +378,7 @@ SlashCmdList["TOLBARADWHEN"] = function(message)
         -- Settings.OpenToCategory(ns.name)
         local settingsCategoryID = _G[ADDON_NAME].categoryID
     elseif message == "s" or message:match("send") or message:match("share") then
-        if TBW_data.options.share then
+        if TBW_options.share then
             local message, channel, target = strsplit(" ", message)
             ns:SendStart(channel, target)
         else
