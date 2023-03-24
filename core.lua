@@ -294,7 +294,6 @@ function TolBaradWhen_OnEvent(self, event, arg, ...)
                 ns:PrettyPrint(L.Install:format(ns.color, ns.version))
             elseif TBW_version ~= ns.version then
                 ns:PrettyPrint(L.Update:format(ns.color, ns.version))
-                print("This version includes some new options: new timers (including a custom timer!), and the ability to display a stopwatch with alerts.")
             end
             TBW_version = ns.version
         end
