@@ -294,9 +294,7 @@ function TolBaradWhen_OnEvent(self, event, arg, ...)
                 ns:PrettyPrint(L.Install:format(ns.color, ns.version))
             elseif TBW_version ~= ns.version then
                 ns:PrettyPrint(L.Update:format(ns.color, ns.version))
-                -- Version-specific message
-                print("This version now saves your options per-character rather than globally, allowing you to have different alert preferences based on which character you are playing.")
-                print("As long as the AddOn is enabled, even if alerts are off, it will still keep track of Tol Barad battles you have seen on any character.")
+                -- Version-specific messages
             end
             TBW_version = ns.version
         end
