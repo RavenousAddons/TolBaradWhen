@@ -368,13 +368,16 @@ function TolBaradWhen_OnEvent(self, event, arg, ...)
     end
 end
 
+function TolBaradWhen_SettingsOpen()
+    PlaySound(SOUNDKIT.IG_MAINMENU_OPEN)
+    Settings.OpenToCategory(ns.Settings:GetID())
+end
+
 SlashCmdList["TOLBARADWHEN"] = function(message)
     if message == "v" or message:match("ver") then
         ns:PrettyPrint(L.Version:format(ns.version))
     elseif message == "c" or message:match("con") or message == "h" or message:match("help") or message == "o" or message:match("opt") or message == "s" or message:match("sett") or message:match("togg") then
-        PlaySound(SOUNDKIT.IG_MAINMENU_OPEN)
-        -- Settings.OpenToCategory(ns.name)
-        local settingsCategoryID = _G[ADDON_NAME].categoryID
+        TolBaradWhen_SettingsOpen()
     elseif message == "s" or message:match("send") or message:match("share") then
         if TBW_options.share then
             local message, channel, target = strsplit(" ", message)
