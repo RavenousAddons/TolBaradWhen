@@ -1,11 +1,12 @@
 ## Interface: 100100
-## Version: 1.1.14
+## Version: 1.1.15
 
 ## Name: Tol Barad When?
 ## Title: Tol Barad When?
 ## Notes: Keep track of the next Tol Barad battle.|n|n|cffbbbbbbSlash command: /tbw|r
 ## Author: RavenousAddons
-## AddonCompartmentFunc: TolBaradWhen_SettingsOpen
+## AddonCompartmentFunc: TolBaradWhen_OnAddonCompartmentClick
+## AddonCompartmentFuncOnEnter: TolBaradWhen_OnAddonCompartmentEnter
 ## IconAtlas: CrossedFlagsWithTimer
 
 ## SavedVariables: TBW_version, TBW_data

@@ -275,6 +275,11 @@ function ns:SendStart(channel, target)
     end
 end
 
+function ns:OpenSettings()
+    PlaySound(SOUNDKIT.IG_MAINMENU_OPEN)
+    Settings.OpenToCategory(ns.Settings:GetID())
+end
+
 -- Setup Functions
 
 function TolBaradWhen_OnLoad(self)
@@ -368,16 +373,28 @@ function TolBaradWhen_OnEvent(self, event, arg, ...)
     end
 end
 
-function TolBaradWhen_SettingsOpen()
-    PlaySound(SOUNDKIT.IG_MAINMENU_OPEN)
-    Settings.OpenToCategory(ns.Settings:GetID())
+function TolBaradWhen_OnAddonCompartmentClick(addonName, buttonName)
+    if buttonName == "RightButton" then
+        ns:SendStart()
+        return
+    end
+    ns:OpenSettings()
+end
+
+function TolBaradWhen_OnAddonCompartmentEnter()
+    GameTooltip:SetOwner(AddonCompartmentFrame, "ANCHOR_TOPRIGHT")
+    GameTooltip:SetText(ns.name .. "        v" .. ns.version)
+    GameTooltip:AddLine(" ", 1, 1, 1, true)
+    GameTooltip:AddLine(L.AddonCompartmentTooltip1, 1, 1, 1, true)
+    GameTooltip:AddLine(L.AddonCompartmentTooltip2, 1, 1, 1, true)
+    GameTooltip:Show()
 end
 
 SlashCmdList["TOLBARADWHEN"] = function(message)
     if message == "v" or message:match("ver") then
         ns:PrettyPrint(L.Version:format(ns.version))
     elseif message == "c" or message:match("con") or message == "h" or message:match("help") or message == "o" or message:match("opt") or message == "s" or message:match("sett") or message:match("togg") then
-        TolBaradWhen_SettingsOpen()
+        ns:OpenSettings()
     elseif message == "s" or message:match("send") or message:match("share") then
         if TBW_options.share then
             local message, channel, target = strsplit(" ", message)
