@@ -37,7 +37,7 @@ local function PlaySound(id)
 end
 
 local function StartStopwatch(minutes, seconds)
-    if not ns.data.toggles.stopwatch then
+    if TBW_options.stopwatch and not ns.data.toggles.stopwatch then
         minutes = minutes or 0
         seconds = seconds or 0
         toggle("stopwatch", (minutes * 60) + seconds)
@@ -87,7 +87,7 @@ end
 function ns:BattlePrint(warmode, message, raidWarning)
     local warmodeFormatted = "|cff" .. (warmode and "44ff44On" or "ff4444Off") .. "|r"
     local controlledFormatted = warmode and (TBW_data.statusWM == "alliance" and "|cff0078ffAlliance|r" or "|cffb30000Horde|r") or (TBW_data.status == "alliance" and "|cff0078ffAlliance|r" or "|cffb30000Horde|r")
-    DEFAULT_CHAT_FRAME:AddMessage("|cff" .. ns.color .. "Tol Barad (WM " .. warmodeFormatted .. "|cff888888,|r " .. controlledFormatted .. ") |r" .. message)
+    DEFAULT_CHAT_FRAME:AddMessage("|cff" .. ns.color .. "Tol Barad (WM: " .. warmodeFormatted .. "|cff888888,|r Control: " .. controlledFormatted .. ") |r" .. message)
     if raidWarning and TBW_options.raidwarning then
         local controlled = warmode and (TBW_data.statusWM == "alliance" and "Alliance" or "Horde") or (TBW_data.status == "alliance" and "Alliance" or "Horde")
         RaidNotice_AddMessage(RaidWarningFrame, "The Battle for " .. "Tol Barad (WM " .. (warmode and "On" or "Off") .. ", " .. controlled .. ") " .. message, ChatTypeInfo["RAID_WARNING"])
@@ -173,15 +173,13 @@ function ns:SetBattleAlerts(warmode, now, startTimestamp, forced)
         PlaySound(567436) -- alarmclockwarning1.ogg
 
         -- Set Custom Alerts
-        for i = 15, 55, 5 do
-            if secondsLeft >= (i * 60) then
-                C_Timer.After(secondsLeft - (i * 60), function()
-                    if i == TBW_options.alertCustomMinutes then
-                        ns:BattlePrint(warmode, L.AlertLong:format(i, startTime), true)
+        for minutes = 15, 55, 5 do
+            if secondsLeft >= (minutes * 60) then
+                C_Timer.After(secondsLeft - (minutes * 60), function()
+                    if minutes == TBW_options.alertCustomMinutes then
+                        ns:BattlePrint(warmode, L.AlertLong:format(minutes, startTime), true)
                         PlaySound(567458) -- alarmclockwarning3.ogg
-                        if TBW_options.stopwatch then
-                            StartStopwatch(i, 0)
-                        end
+                        StartStopwatch(minutes, 0)
                     end
                 end)
             end
@@ -194,9 +192,7 @@ function ns:SetBattleAlerts(warmode, now, startTimestamp, forced)
                     if TBW_options[default] then
                         ns:BattlePrint(warmode, L.AlertLong:format(minutes, startTime), true)
                         PlaySound(567458) -- alarmclockwarning3.ogg
-                        if TBW_options.stopwatch then
-                            StartStopwatch(minutes, 0)
-                        end
+                        StartStopwatch(minutes, 0)
                     end
                 end)
             end
@@ -382,7 +378,7 @@ function TolBaradWhen_OnAddonCompartmentClick(addonName, buttonName)
 end
 
 function TolBaradWhen_OnAddonCompartmentEnter()
-    GameTooltip:SetOwner(AddonCompartmentFrame, "ANCHOR_TOPRIGHT")
+    GameTooltip:SetOwner(DropDownList1)
     GameTooltip:SetText(ns.name .. "        v" .. ns.version)
     GameTooltip:AddLine(" ", 1, 1, 1, true)
     GameTooltip:AddLine(L.AddonCompartmentTooltip1, 1, 1, 1, true)
