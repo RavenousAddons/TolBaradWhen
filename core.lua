@@ -230,7 +230,7 @@ function ns:SetBattleAlerts(warmode, now, startTimestamp, forced)
         -- Battle has started, print elapsed
         elseif secondsLeft < 0 then
             -- Convert to absolute values to present elapsed time
-            minutesLeft = minutesLeft * -1
+            minutesLeft = math.floor(secondsLeft * -1 / 60)
             secondsLeft = secondsLeft * -1
             ns:BattlePrint(warmode, L.AlertStartElapsed:format(minutesLeft, math.fmod(secondsLeft, 60), startTime), true)
             PlaySound(567399) -- alarmclockwarning2.ogg
