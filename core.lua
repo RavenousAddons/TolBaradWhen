@@ -259,7 +259,11 @@ function ns:SendStart(channel, target)
         if channel then
             if TBW_data.startTimestampWM + 900 > now or TBW_data.startTimestamp + 900 > now then
                 toggle("recentlySentStart", 20)
-                C_ChatInfo.SendAddonMessage(ADDON_NAME, "S:" .. (TBW_data.statusWM == "alliance" and "A" or "H") .. TBW_data.startTimestampWM .. ":" .. (TBW_data.status == "alliance" and "A" or "H") .. TBW_data.startTimestamp, string.upper(channel), target)
+                local message = "S:" .. (TBW_data.statusWM == "alliance" and "A" or "H") .. TBW_data.startTimestampWM .. ":" .. (TBW_data.status == "alliance" and "A" or "H") .. TBW_data.startTimestamp
+                local response = C_ChatInfo.SendAddonMessage(ADDON_NAME, message, string.upper(channel), target)
+                if TBW_options.debug then
+                    ns:PrettyPrint("\nShared successfully in " .. string.upper(channel) .. "\n" .. message)
+                end
             else
                 ns:PrettyPrint(L.WarningNoData)
             end
@@ -300,6 +304,7 @@ function TolBaradWhen_OnEvent(self, event, arg, ...)
             TBW_version = ns.version
         end
         ns:BattleCheck()
+        C_ChatInfo.RegisterAddonMessagePrefix(ADDON_NAME)
     elseif event == "GROUP_ROSTER_UPDATE" and not ns.version:match("-") and TBW_options.share then
         local partyMembers = GetNumSubgroupMembers()
         local raidMembers = IsInRaid() and GetNumGroupMembers() or 0

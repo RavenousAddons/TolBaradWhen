@@ -1,5 +1,5 @@
 ## Interface: 100100
-## Version: 1.1.17
+## Version: 1.1.18
 
 ## Name: Tol Barad When?
 ## Title: Tol Barad When?
