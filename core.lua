@@ -252,7 +252,7 @@ function ns:SendStart(channel, target)
             ns.data.raidMembers = IsInRaid() and GetNumGroupMembers() or 0
             if ns.data.raidMembers > 1 then
                 channel = "RAID"
-            elseif ns.data.partyMembers > 1 then
+            elseif ns.data.partyMembers > 0 then
                 channel = "PARTY"
             end
         end
