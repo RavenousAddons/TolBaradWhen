@@ -31,6 +31,7 @@ ns.data = {
         recentlyOutput = false,
         recentlyReceivedStartWM = false,
         recentlyReceivedStart = false,
+        recentlyRequestedStart = false,
         recentlySentStart = false,
         recentlyEnded = false,
         updateFound = false,
