@@ -73,7 +73,7 @@ function ns:SetDefaultOptions()
     end
 end
 
-function ns:SendUpdate(type)
+function ns:SendVersionUpdate(type)
     local now = GetServerTime()
     if not ns.version:match("-") and (TBW_data.updateSentTimestamp and TBW_data.updateSentTimestamp > now) then
         return
@@ -338,14 +338,14 @@ function TolBaradWhen_OnEvent(self, event, arg, ...)
         end
         ns:BattleCheck()
         C_ChatInfo.RegisterAddonMessagePrefix(ADDON_NAME)
-    elseif event == "GROUP_ROSTER_UPDATE" and not ns.version:match("-") and TBW_options.share then
+    elseif event == "GROUP_ROSTER_UPDATE" then
         local partyMembers = GetNumSubgroupMembers()
         local raidMembers = IsInRaid() and GetNumGroupMembers() or 0
-        if not IsInGroup(LE_PARTY_CATEGORY_INSTANCE) then
+        if not ns.version:match("-") and TBW_options.share and not IsInGroup(LE_PARTY_CATEGORY_INSTANCE) then
             if raidMembers == 0 and partyMembers > ns.data.partyMembers then
-                ns:SendUpdate("PARTY")
+                ns:SendVersionUpdate("PARTY")
             elseif raidMembers > ns.data.raidMembers then
-                ns:SendUpdate("RAID")
+                ns:SendVersionUpdate("RAID")
             end
         end
         ns.data.partyMembers = partyMembers
@@ -456,7 +456,7 @@ SlashCmdList["TOLBARADWHEN"] = function(message)
         ns:BattleCheck(true)
     end
 end
-SLASH_TOLBARADWHEN1 = "/tb"
-SLASH_TOLBARADWHEN2 = "/tbw"
+SLASH_TOLBARADWHEN1 = "/" .. ns.command
+SLASH_TOLBARADWHEN2 = "/tb"
 SLASH_TOLBARADWHEN3 = "/tolbarad"
 SLASH_TOLBARADWHEN4 = "/tolbaradwhen"
