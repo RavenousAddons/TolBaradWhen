@@ -1,6 +1,7 @@
 local ADDON_NAME, ns = ...
 local L = ns.L
 
+local factionName, _ = UnitFactionGroup("player")
 local tolbarad = select(2, GetWorldPVPAreaInfo(2))
 
 -- Utility Functions
@@ -51,26 +52,20 @@ end
 -- General Functions
 
 function ns:SetDefaultOptions()
-    if TBW_data == nil then
-        TBW_data = {}
-    end
-    if TBW_options == nil then
-        TBW_options = {}
-    end
+    TBW_data = TBW_data == nil and {} or TBW_data
+    TBW_options = TBW_options == nil and {} or TBW_options
     for option, default in pairs(ns.data.defaults) do
         if TBW_options[option] == nil then
             TBW_options[option] = default
         end
     end
-    if TBW_data.startTimestampWM == nil then
-        TBW_data.startTimestampWM = 0
-    end
-    if TBW_data.startTimestamp == nil then
-        TBW_data.startTimestamp = 0
-    end
-    if TBW_data.toggles == nil then
-        TBW_data.toggles = {}
-    end
+    TBW_data.toggles = TBW_data.toggles == nil and {} or TBW_data.toggles
+    TBW_data.startTimestampWM = TBW_data.startTimestampWM == nil and 0 or TBW_data.startTimestampWM
+    TBW_data.startTimestamp = TBW_data.startTimestamp == nil and 0 or TBW_data.startTimestamp
+    TBW_data.gamesWM = TBW_data.gamesWM == nil and 0 or TBW_data.gamesWM
+    TBW_data.games = TBW_data.games == nil and 0 or TBW_data.games
+    TBW_data.winsWM = TBW_data.winsWM == nil and 0 or TBW_data.winsWM
+    TBW_data.wins = TBW_data.wins == nil and 0 or TBW_data.wins
 end
 
 function ns:SendVersionUpdate(type)
@@ -238,12 +233,9 @@ function ns:SetBattleAlerts(warmode, now, startTimestamp, forced)
             secondsLeft = secondsLeft * -1
             ns:BattlePrint(warmode, L.AlertStartElapsed:format(minutesLeft, math.fmod(secondsLeft, 60), startTime), true)
             PlaySound(567399) -- alarmclockwarning2.ogg
-        -- 15 minutes or less to next battle
-        elseif secondsLeft <= 300 then
-            ns:BattlePrint(warmode, L.AlertShort:format(minutesLeft, math.fmod(secondsLeft, 60), startTime))
         -- Print time to next battle
         else
-            ns:BattlePrint(warmode, L.AlertLong:format(minutesLeft, startTime))
+            ns:BattlePrint(warmode, L.AlertShort:format(minutesLeft, math.fmod(secondsLeft, 60), startTime))
         end
     end
 end
@@ -306,6 +298,42 @@ function ns:SendStart(channel, target)
     else
         ns:PrettyPrint(L.WarningFastShare:format(20 - (GetServerTime() - TBW_data.toggles.recentlySentStart)))
     end
+end
+
+-- Send the start time to a channel or player
+function ns:IncrementCounts()
+    local warmode = C_PvP.IsWarModeDesired()
+
+    if warmode then
+        TBW_data.gamesWM = TBW_data.gamesWM + 1
+        if TBW_data.statusWM:upper() == factionName:upper() then
+            TBW_data.winsWM = TBW_data.winsWM + 1
+        end
+    else
+        TBW_data.games = TBW_data.games + 1
+        if TBW_data.status:upper() == factionName:upper() then
+            TBW_data.wins = TBW_data.wins + 1
+        end
+    end
+end
+
+-- Print wins / games based on WM status
+function ns:PrintCounts(all)
+    local warmode = C_PvP.IsWarModeDesired()
+    local warmodeFormatted = "|cff" .. (warmode and "44ff44On" or "ff4444Off") .. "|r"
+
+    local gamesTotal = TBW_data.gamesWM + TBW_data.games
+    local winsTotal = TBW_data.winsWM + TBW_data.wins
+
+    local string = "\nWin Ratio: " .. winsTotal .. "/" .. gamesTotal
+    if warmode or all then
+        string = string .. "\nWM |cff44ff44On|r Win Ratio: " .. TBW_data.winsWM .. "/" .. TBW_data.gamesWM
+    end
+    if not warmode or all then
+        string = string .. "\nWM |cffff4444Off|r Win Ratio: " .. TBW_data.wins .. "/" .. TBW_data.games
+    end
+
+    ns:PrettyPrint(string)
 end
 
 function ns:OpenSettings()
@@ -404,8 +432,10 @@ function TolBaradWhen_OnEvent(self, event, arg, ...)
         ns.data.location = C_Map.GetBestMapForUnit("player")
     elseif event == "RAID_BOSS_EMOTE" and contains(ns.data.mapIDs, ns.data.location) and arg:match(tolbarad) and not arg:match("1") then
         if not ns.data.toggles.recentlyEnded then
-            toggle("recentlyEnded", 3)
-            C_Timer.After(2, function()
+            toggle("recentlyEnded", 1)
+            C_Timer.After(1, function()
+                ns:IncrementCounts()
+                ns:PrintCounts()
                 ns:BattleCheck()
             end)
         end
@@ -432,9 +462,11 @@ end
 SlashCmdList["TOLBARADWHEN"] = function(message)
     if message == "v" or message:match("ver") then
         ns:PrettyPrint(L.Version:format(ns.version))
-    elseif message == "c" or message:match("con") or message == "h" or message:match("help") or message == "o" or message:match("opt") or message == "s" or message:match("sett") or message:match("togg") then
+    elseif message == "h" or message:match("help") then
+        ns:PrettyPrint(L.Help)
+    elseif message == "c" or message:match("con") or message == "o" or message:match("opt") or message == "s" or message:match("sett") or message:match("togg") then
         ns:OpenSettings()
-    elseif message == "r" then
+    elseif message == "r" or message:match("req") then
         if TBW_options.share then
             local message, channel, target = strsplit(" ", message)
             ns:RequestStart(channel, target)
@@ -448,6 +480,8 @@ SlashCmdList["TOLBARADWHEN"] = function(message)
         else
             ns:PrettyPrint(L.WarningDisabledShare)
         end
+    elseif message == "w" or message:match("win") or message == "g" or message:match("game") or message == "b" or message:match("battle") then
+        ns:PrintCounts(true)
     elseif message == "d" or message:match("bug") then
         local now = GetServerTime()
         print("|cff44ff44WM On|r " .. (TBW_data.statusWM == "alliance" and "|cff0078ffAlliance|r" or "|cffb30000Horde|r") .. " " .. (TBW_data.startTimestampWM - now))
