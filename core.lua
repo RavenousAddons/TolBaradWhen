@@ -301,17 +301,19 @@ function ns:SendStart(channel, target)
 end
 
 -- Send the start time to a channel or player
-function ns:IncrementCounts()
+function ns:IncrementCounts(arg)
+    print(arg)
+
     local warmode = C_PvP.IsWarModeDesired()
 
     if warmode then
         TBW_data.gamesWM = TBW_data.gamesWM + 1
-        if TBW_data.statusWM:upper() == factionName:upper() then
+        if arg:match(factionName) then
             TBW_data.winsWM = TBW_data.winsWM + 1
         end
     else
         TBW_data.games = TBW_data.games + 1
-        if TBW_data.status:upper() == factionName:upper() then
+        if arg:match(factionName) then
             TBW_data.wins = TBW_data.wins + 1
         end
     end
@@ -325,12 +327,12 @@ function ns:PrintCounts(all)
     local gamesTotal = TBW_data.gamesWM + TBW_data.games
     local winsTotal = TBW_data.winsWM + TBW_data.wins
 
-    local string = "\nWin Ratio: " .. winsTotal .. "/" .. gamesTotal
+    local string = "\nWin Record: " .. winsTotal .. "/" .. gamesTotal
     if warmode or all then
-        string = string .. "\nWM |cff44ff44On|r Win Ratio: " .. TBW_data.winsWM .. "/" .. TBW_data.gamesWM
+        string = string .. "\nWM |cff44ff44On|r Win Record: " .. TBW_data.winsWM .. "/" .. TBW_data.gamesWM
     end
     if not warmode or all then
-        string = string .. "\nWM |cffff4444Off|r Win Ratio: " .. TBW_data.wins .. "/" .. TBW_data.games
+        string = string .. "\nWM |cffff4444Off|r Win Record: " .. TBW_data.wins .. "/" .. TBW_data.games
     end
 
     ns:PrettyPrint(string)
@@ -434,7 +436,7 @@ function TolBaradWhen_OnEvent(self, event, arg, ...)
         if not ns.data.toggles.recentlyEnded then
             toggle("recentlyEnded", 1)
             C_Timer.After(1, function()
-                ns:IncrementCounts()
+                ns:IncrementCounts(arg)
                 ns:PrintCounts()
                 ns:BattleCheck()
             end)
