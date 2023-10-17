@@ -89,7 +89,7 @@ function ns:BattlePrint(warmode, message, raidWarning)
     DEFAULT_CHAT_FRAME:AddMessage("|cff" .. ns.color .. "Tol Barad (WM: " .. warmodeFormatted .. "|cff888888,|r Control: " .. controlledFormatted .. ") |r" .. message)
     if raidWarning and TBW_options.raidwarning then
         local controlled = warmode and (TBW_data.statusWM == "alliance" and "Alliance" or "Horde") or (TBW_data.status == "alliance" and "Alliance" or "Horde")
-        RaidNotice_AddMessage(RaidWarningFrame, "The Battle for " .. "Tol Barad (WM " .. (warmode and "On" or "Off") .. ", " .. controlled .. ") " .. message, ChatTypeInfo["RAID_WARNING"])
+        RaidNotice_AddMessage(RaidWarningFrame, "The Battle for Tol Barad (WM " .. (warmode and "On" or "Off") .. ", " .. controlled .. ") " .. message, ChatTypeInfo["RAID_WARNING"])
     end
 end
 
@@ -258,7 +258,7 @@ function ns:RequestStart(channel, target)
             local message = "R!" .. now
             local response = C_ChatInfo.SendAddonMessage(ADDON_NAME, message, string.upper(channel), target)
             if TBW_options.debug then
-                ns:PrettyPrint("\nRequested start time(s) in " .. string.upper(channel) .. "\n" .. message)
+                ns:PrettyPrint("\nRequested start times in " .. string.upper(channel) .. "\n" .. message)
             end
         else
             ns:PrettyPrint(L.WarningNoRequest)
@@ -268,10 +268,11 @@ function ns:RequestStart(channel, target)
     end
 end
 
--- Send the start time to a channel or player
-function ns:SendStart(channel, target)
+-- Send or Announce the start time to a channel or player
+function ns:SendStart(channel, target, announce)
+    announce = announce == nil and false or announce
     local now = GetServerTime()
-    if not ns.data.toggles.recentlySentStart then
+    if TBW_data.startTimestampWM + 900 > now or TBW_data.startTimestamp + 900 > now then
         if not channel and not IsInGroup(LE_PARTY_CATEGORY_INSTANCE) then
             ns.data.partyMembers = GetNumSubgroupMembers()
             ns.data.raidMembers = IsInRaid() and GetNumGroupMembers() or 0
@@ -282,31 +283,67 @@ function ns:SendStart(channel, target)
             end
         end
         if channel then
-            if TBW_data.startTimestampWM + 900 > now or TBW_data.startTimestamp + 900 > now then
-                toggle("recentlySentStart", 20)
-                local message = "S:" .. (TBW_data.statusWM == "alliance" and "A" or "H") .. TBW_data.startTimestampWM .. ":" .. (TBW_data.status == "alliance" and "A" or "H") .. TBW_data.startTimestamp
-                local response = C_ChatInfo.SendAddonMessage(ADDON_NAME, message, string.upper(channel), target)
-                if TBW_options.debug then
-                    ns:PrettyPrint("\nShared start time(s) in " .. string.upper(channel) .. "\n" .. message)
+            if announce then
+                if not ns.data.toggles.recentlyAnnouncedStart then
+                    -- Announce
+                    local secondsLeft, minutesLeft, message
+                    toggle("recentlyAnnouncedStart", 20)
+                    -- WM On
+                    secondsLeft = TBW_data.startTimestampWM - now
+                    if secondsLeft > 0 then
+                        minutesLeft = math.floor(secondsLeft / 60)
+                        message = L.AlertAnnounce:format(minutesLeft, math.fmod(secondsLeft, 60))
+                        SendChatMessage("Tol Barad (WM: On, Control: " .. (TBW_data.statusWM == "alliance" and "Alliance" or "Horde") .. ") " .. message, string.upper(channel), nil, target)
+                    else
+                        -- Convert to absolute values to present elapsed time
+                        minutesLeft = math.floor(secondsLeft * -1 / 60)
+                        secondsLeft = secondsLeft * -1
+                        message = L.AlertStartElapsedAnnounce:format(minutesLeft, math.fmod(secondsLeft, 60), startTime)
+                        SendChatMessage("Tol Barad (WM: On, Control: " .. (TBW_data.statusWM == "alliance" and "Alliance" or "Horde") .. ") " .. message, string.upper(channel), nil, target)
+                    end
+                    -- WM Off
+                    secondsLeft = TBW_data.startTimestamp - now
+                    if secondsLeft > 0 then
+                        minutesLeft = math.floor(secondsLeft / 60)
+                        message = L.AlertAnnounce:format(minutesLeft, math.fmod(secondsLeft, 60), startTime)
+                        SendChatMessage("Tol Barad (WM: Off, Control: " .. (TBW_data.status == "alliance" and "Alliance" or "Horde") .. ") " .. message, string.upper(channel), nil, target)
+                    else
+                        -- Convert to absolute values to present elapsed time
+                        minutesLeft = math.floor(secondsLeft * -1 / 60)
+                        secondsLeft = secondsLeft * -1
+                        message = L.AlertStartElapsedAnnounce:format(minutesLeft, math.fmod(secondsLeft, 60), startTime)
+                        SendChatMessage("Tol Barad (WM: Off, Control: " .. (TBW_data.status == "alliance" and "Alliance" or "Horde") .. ") " .. message, string.upper(channel), nil, target)
+                    end
+                    if TBW_options.debug then
+                        ns:PrettyPrint("\nAnnounced start times in " .. string.upper(channel) .. "\n" .. message)
+                    end
+                else
+                    ns:PrettyPrint(L.WarningFastShare:format(20 - (GetServerTime() - TBW_data.toggles.recentlyAnnouncedStart)))
                 end
             else
-                ns:PrettyPrint(L.WarningNoData)
+                if not ns.data.toggles.recentlySentStart then
+                    -- Send
+                    toggle("recentlySentStart", 20)
+                    local message = "S:" .. (TBW_data.statusWM == "alliance" and "A" or "H") .. TBW_data.startTimestampWM .. ":" .. (TBW_data.status == "alliance" and "A" or "H") .. TBW_data.startTimestamp
+                    local response = C_ChatInfo.SendAddonMessage(ADDON_NAME, message, string.upper(channel), target)
+                    if TBW_options.debug then
+                        ns:PrettyPrint("\nShared start times in " .. string.upper(channel) .. "\n" .. message)
+                    end
+                else
+                    ns:PrettyPrint(L.WarningFastShare:format(20 - (GetServerTime() - TBW_data.toggles.recentlySentStart)))
+                end
             end
         else
             ns:PrettyPrint(L.WarningNoShare)
         end
     else
-        ns:PrettyPrint(L.WarningFastShare:format(20 - (GetServerTime() - TBW_data.toggles.recentlySentStart)))
+        ns:PrettyPrint(L.WarningNoData)
     end
 end
 
--- Send the start time to a channel or player
+-- Increment win + battle counts
 function ns:IncrementCounts(arg)
-    print(arg)
-
-    local warmode = C_PvP.IsWarModeDesired()
-
-    if warmode then
+    if C_PvP.IsWarModeDesired() then
         TBW_data.gamesWM = TBW_data.gamesWM + 1
         if arg:match(factionName) then
             TBW_data.winsWM = TBW_data.winsWM + 1
@@ -329,10 +366,10 @@ function ns:PrintCounts(all)
 
     local string = "\nWin Record: " .. winsTotal .. "/" .. gamesTotal
     if warmode or all then
-        string = string .. "\nWM |cff44ff44On|r Win Record: " .. TBW_data.winsWM .. "/" .. TBW_data.gamesWM
+        string = string .. "\nWM |cff44ff44On|r: " .. TBW_data.winsWM .. "/" .. TBW_data.gamesWM
     end
     if not warmode or all then
-        string = string .. "\nWM |cffff4444Off|r Win Record: " .. TBW_data.wins .. "/" .. TBW_data.games
+        string = string .. "\nWM |cffff4444Off|r: " .. TBW_data.wins .. "/" .. TBW_data.games
     end
 
     ns:PrettyPrint(string)
@@ -383,7 +420,7 @@ function TolBaradWhen_OnEvent(self, event, arg, ...)
     elseif event == "CHAT_MSG_ADDON" and arg == ADDON_NAME and TBW_options.share then
         local message, channel, sender, _ = ...
         if TBW_options.debug then
-            ns:PrettyPrint("\n" .. sender .. " in " .. channel .. "\n" .. message)
+            ns:PrettyPrint("\nReceived start times in " .. channel .. " from " .. channel .. "\n" .. message)
         end
         if message:match("V:") and not ns.data.toggles.updateFound then
             local version = message:gsub("V:", "")
@@ -470,14 +507,17 @@ SlashCmdList["TOLBARADWHEN"] = function(message)
         ns:OpenSettings()
     elseif message == "r" or message:match("req") then
         if TBW_options.share then
-            local message, channel, target = strsplit(" ", message)
+            local _, channel, target = strsplit(" ", message)
             ns:RequestStart(channel, target)
         else
             ns:PrettyPrint(L.WarningDisabledShare)
         end
+    elseif message == "a" or message:match("ann") then
+        local _, channel, target = strsplit(" ", message)
+        ns:SendStart(channel, target, true)
     elseif message == "s" or message:match("send") or message:match("share") then
         if TBW_options.share then
-            local message, channel, target = strsplit(" ", message)
+            local _, channel, target = strsplit(" ", message)
             ns:SendStart(channel, target)
         else
             ns:PrettyPrint(L.WarningDisabledShare)

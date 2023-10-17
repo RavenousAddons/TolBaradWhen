@@ -33,6 +33,7 @@ ns.data = {
         recentlyReceivedStart = false,
         recentlyRequestedStart = false,
         recentlySentStart = false,
+        recentlyAnnouncedStart = false,
         recentlyEnded = false,
         updateFound = false,
         stopwatch = false,
