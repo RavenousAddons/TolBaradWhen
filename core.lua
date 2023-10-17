@@ -294,7 +294,7 @@ function ns:SendStart(channel, target, announce)
                         minutesLeft = math.floor(secondsLeft / 60)
                         message = L.AlertAnnounce:format(minutesLeft, math.fmod(secondsLeft, 60))
                         SendChatMessage("Tol Barad (WM: On, Control: " .. (TBW_data.statusWM == "alliance" and "Alliance" or "Horde") .. ") " .. message, string.upper(channel), nil, target)
-                    else
+                    elseif secondsLeft > -900 then
                         -- Convert to absolute values to present elapsed time
                         minutesLeft = math.floor(secondsLeft * -1 / 60)
                         secondsLeft = secondsLeft * -1
@@ -307,7 +307,7 @@ function ns:SendStart(channel, target, announce)
                         minutesLeft = math.floor(secondsLeft / 60)
                         message = L.AlertAnnounce:format(minutesLeft, math.fmod(secondsLeft, 60), startTime)
                         SendChatMessage("Tol Barad (WM: Off, Control: " .. (TBW_data.status == "alliance" and "Alliance" or "Horde") .. ") " .. message, string.upper(channel), nil, target)
-                    else
+                    elseif secondsLeft > -900 then
                         -- Convert to absolute values to present elapsed time
                         minutesLeft = math.floor(secondsLeft * -1 / 60)
                         secondsLeft = secondsLeft * -1
