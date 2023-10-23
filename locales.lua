@@ -8,30 +8,61 @@ setmetatable(L, { __index = function(t, k)
     return v
 end })
 
--- Default (English)
+-- Set some strings to Titlecase
+local function TitleCase(phrase)
+    local result = string.gsub( phrase, "(%a)([%w_']*)",
+        function(first, rest)
+            return first:upper() .. rest:lower()
+        end
+    )
+    return result
+end
+
+-- Global
+L.On = TitleCase(_G.SLASH_TEXTTOSPEECH_ON)
+L.Off = TitleCase(_G.SLASH_TEXTTOSPEECH_OFF)
+L.Enabled = _G.VIDEO_OPTIONS_ENABLED
+L.Disabled = _G.VIDEO_OPTIONS_DISABLED
+L.WarMode = _G.PVP_LABEL_WAR_MODE
+L.TB = _G.DUNGEON_FLOOR_TOLBARADWARLOCKSCENARIO0
+L.MinutesSeconds = "%02dm%02ds"
+
+-- L.AlertAnnounce
+-- L.AlertShort
+-- L.AlertStartElapsedAnnounce
+-- L.AlertStartElapsed
+
+-- English
 L.Version = "%s is the current version." -- ns.version
 L.Install = "Thanks for installing version |cff%1$s%2$s|r!" -- ns.color, ns.version
 L.Update = "Thanks for updating to version |cff%1$s%2$s|r!" -- ns.color, ns.version
 L.UpdateFound = "Version %s is now available for download. Please update!" -- sentVersion
-L.Help = "This AddOn is able to set alerts when you're in Tol Barad, so simply enter the zone and alerts will be set.\nThere are some slash commands available:\n/tbw options - Open options window\n/tbw share - Share your timers with group members\n/tbw request - Request timers from group members\n/tbw wins - See your win record across all tracked battles"
+L.Help = "This AddOn is able to set alerts when you're in " .. L.TB .. ", so simply enter the zone and alerts will be set.\nThere are some slash commands available:\n/tbw options - Open options window\n/tbw share - Share your timers with group members\n/tbw request - Request timers from group members\n/tbw wins - See your win record across all tracked battles"
 L.AlertSet = "Timer has been set!"
-L.AlertAnnounce = "starts in %sm%ss."
-L.AlertShort = "starts in %sm%ss at %s."
+L.AlertAnnounce = "starts in %s."
+L.AlertShort = "starts in %s at %s."
 L.AlertLong = "starts in %s minutes at %s."
 L.AlertStart = "has started! 15 minutes remaining from %s."
-L.AlertStartElapsedAnnounce = "started %sm%ss ago."
-L.AlertStartElapsed = "started %sm%ss ago at %s."
+L.AlertStartElapsedAnnounce = "started %s ago."
+L.AlertStartElapsed = "started %s ago at %s."
 L.AlertStartUnsure = "started and may still be ongoing!"
-L.WarningNoInfo = "Unfortunately, Tol Barad information is unavailable here! You'll have to go to Tol Barad or ask for a group member to share their data with you."
-L.WarningNoData = "Your Tol Barad data doesn't contain any upcoming alerts that you can share."
-L.WarningDisabledShare = "You must enable sharing in Options in order to share your Tol Barad data with group members."
-L.WarningNoShare = "You must either be in a group or specify a channel (e.g. party, raid, guild) in order to share your Tol Barad data."
-L.WarningNoRequest = "You must either be in a group or specify a channel (e.g. party, raid, guild) in order to request Tol Barad data."
-L.WarningFastAnnounce = "You must wait %s seconds before announcing your Tol Barad data again." -- integer
-L.WarningFastShare = "You must wait %s seconds before sharing your Tol Barad data again." -- integer
-L.WarningFastRequest = "You must wait %s seconds before requesting Tol Barad data again." -- integer
+L.WarningNoInfo = "Unfortunately, " .. L.TB .. " information is unavailable here! You'll have to go to " .. L.TB .. " or ask for a group member to share their data with you."
+L.WarningNoData = "Your " .. L.TB .. " data doesn't contain any upcoming alerts that you can share."
+L.WarningDisabledShare = "You must enable sharing in Options in order to share your " .. L.TB .. " data with group members."
+L.WarningNoShare = "You must either be in a group or specify a channel (e.g. party, raid, guild) in order to share your " .. L.TB .. " data."
+L.WarningNoRequest = "You must either be in a group or specify a channel (e.g. party, raid, guild) in order to request " .. L.TB .. " data."
+L.WarningFastAnnounce = "You must wait %s seconds before announcing your " .. L.TB .. " data again." -- integer
+L.WarningFastShare = "You must wait %s seconds before sharing your " .. L.TB .. " data again." -- integer
+L.WarningFastRequest = "You must wait %s seconds before requesting " .. L.TB .. " data again." -- integer
+L.BattlePrint = _G.DUNGEON_FLOOR_TOLBARADWARLOCKSCENARIO0 .. " (" .. L.WarMode .. ": %s, Control: %s)"
+L.BattleRaidWarning = "The Battle for " .. L.TB .. " (" .. L.WarMode .. " %s, Control: %s)"
+L.ReceivedRequest = "Received request from %s in %s"
+L.WinRecord = "Win Record"
 L.AddonCompartmentTooltip1 = "|cff" .. ns.color .. "Left-Click:|r Open Settings"
 L.AddonCompartmentTooltip2 = "|cff" .. ns.color .. "Right-Click:|r Share Timers"
+L.OptionsTitle1 = "When do you want to be alerted?"
+L.OptionsTitle2 = "How do you want to be alerted?"
+L.OptionsTitle3 = "Extra Options:"
 L.OptionsWhenTooltip = "Sets up an alert %s the next battle." -- string
 L.OptionsWhen = {
     [1] = {
@@ -96,8 +127,14 @@ L.OptionsExtra = {
         tooltip = "Enables messages for debugging.",
     },
 }
+L.DebugAnnouncedStart = "Announced start times in %s"
+L.DebugReceivedStart = "Received start times from %s in %s"
+L.DebugRequestedStart = "Requested start times in %s"
+L.DebugToggleOn = "%s = true (%ss timeout)"
+L.DebugToggleOff = "%s = false"
+L.DebugSharedStart = "Shared start times in %s"
 
--- Check locale and assign appropriate
+-- Check locale and apply appropriate changes below
 local CURRENT_LOCALE = GetLocale()
 
 -- German

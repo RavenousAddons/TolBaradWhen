@@ -22,7 +22,7 @@ end
 function ns:CreateSettingsPanel()
     local category, layout = Settings.RegisterVerticalLayoutCategory(ns.name)
 
-    layout:AddInitializer(CreateSettingsListSectionHeaderInitializer("When do you want to be alerted?"))
+    layout:AddInitializer(CreateSettingsListSectionHeaderInitializer(L.OptionsTitle1))
 
     for index = 1, #L.OptionsWhen do
         local option = L.OptionsWhen[index]
@@ -39,14 +39,14 @@ function ns:CreateSettingsPanel()
     end
     CreateDropDown(category, L.OptionsWhenCustom.key, L.OptionsWhenCustom.name, GetCustomAlertOptions, L.OptionsWhenCustom.tooltip)
 
-    layout:AddInitializer(CreateSettingsListSectionHeaderInitializer("How do you want to be alerted?"))
+    layout:AddInitializer(CreateSettingsListSectionHeaderInitializer(L.OptionsTitle2))
 
     for index = 1, #L.OptionsHow do
         local option = L.OptionsHow[index]
         CreateCheckBox(category, option.key, option.name, option.tooltip)
     end
 
-    layout:AddInitializer(CreateSettingsListSectionHeaderInitializer("Extra Options:"))
+    layout:AddInitializer(CreateSettingsListSectionHeaderInitializer(L.OptionsTitle3))
 
     for index = 1, #L.OptionsExtra do
         local option = L.OptionsExtra[index]
