@@ -7,12 +7,15 @@ local hordeString = "|cffb30000" .. _G.FACTION_HORDE .. "|r"
 
 -- Utility Functions
 
+-- Plays a sound if "sound" option in enabled
 local function PlaySound(id)
     if TBW_options.sound then
         PlaySoundFile(id)
     end
 end
 
+-- Starts the Stopwatch if the "stopwatch" option is enabled and it hasn't
+-- recently been started.
 local function StartStopwatch(minutes, seconds)
     if TBW_options.stopwatch and not ns.data.toggles.stopwatch then
         minutes = minutes or 0
@@ -24,6 +27,7 @@ local function StartStopwatch(minutes, seconds)
     end
 end
 
+-- Formats a duration in seconds to a "XmXXs" string
 local function Duration(duration)
     local minutes = math.floor(duration / 60)
     local seconds = math.fmod(duration, 60)
@@ -32,23 +36,23 @@ end
 
 -- General Functions
 
+-- Sets default options if they are not already set
 function ns:SetDefaultOptions()
-    TBW_data = TBW_data == nil and {} or TBW_data
-    TBW_options = TBW_options == nil and {} or TBW_options
+    TBW_data = TBW_data or {}
+    TBW_options = TBW_options or {}
     for option, default in pairs(ns.data.defaults) do
-        if TBW_options[option] == nil then
-            TBW_options[option] = default
-        end
+        TBW_options[option] = TBW_options[option] or default
     end
-    TBW_data.toggles = TBW_data.toggles == nil and {} or TBW_data.toggles
-    TBW_data.startTimestampWM = TBW_data.startTimestampWM == nil and 0 or TBW_data.startTimestampWM
-    TBW_data.startTimestamp = TBW_data.startTimestamp == nil and 0 or TBW_data.startTimestamp
-    TBW_data.gamesWM = TBW_data.gamesWM == nil and 0 or TBW_data.gamesWM
-    TBW_data.games = TBW_data.games == nil and 0 or TBW_data.games
-    TBW_data.winsWM = TBW_data.winsWM == nil and 0 or TBW_data.winsWM
-    TBW_data.wins = TBW_data.wins == nil and 0 or TBW_data.wins
+    TBW_data.toggles = TBW_data.toggles or {}
+    TBW_data.startTimestampWM = TBW_data.startTimestampWM or 0
+    TBW_data.startTimestamp = TBW_data.startTimestamp or 0
+    TBW_data.gamesWM = TBW_data.gamesWM or 0
+    TBW_data.games = TBW_data.games or 0
+    TBW_data.winsWM = TBW_data.winsWM or 0
+    TBW_data.wins = TBW_data.wins or 0
 end
 
+-- Sends a version update message
 function ns:SendVersionUpdate(type)
     local now = GetServerTime()
     if not ns.version:match("-") and (TBW_data.updateSentTimestamp and TBW_data.updateSentTimestamp > now) then
@@ -58,10 +62,12 @@ function ns:SendVersionUpdate(type)
     C_ChatInfo.SendAddonMessage(ADDON_NAME, "V:" .. ns.version, type)
 end
 
+-- Prints a Tol Barad When? formatted message to the chat
 function ns:PrettyPrint(message)
     DEFAULT_CHAT_FRAME:AddMessage("|cff" .. ns.color .. ns.name .. "|r " .. message)
 end
 
+-- Checks if an element is in a table
 function ns:Contains(table, input)
     for index, value in ipairs(table) do
         if value == input then
@@ -71,6 +77,7 @@ function ns:Contains(table, input)
     return false
 end
 
+-- Toggles a feature with a specified timeout
 function ns:Toggle(toggle, timeout)
     timeout = timeout and timeout or ns.data.timeouts.long
     if not ns.data.toggles[toggle] then
@@ -90,6 +97,7 @@ end
 
 -- Battle Functions
 
+-- Prints a message about the current battle state
 function ns:BattlePrint(warmode, message, raidWarning)
     local warmodeFormatted = "|cff" .. (warmode and ("44ff44" .. L.On) or ("ff4444" .. L.Off)) .. "|r"
     local controlledFormatted = warmode and (TBW_data.statusWM == "alliance" and allianceString or hordeString) or (TBW_data.status == "alliance" and allianceString or hordeString)
@@ -100,6 +108,7 @@ function ns:BattlePrint(warmode, message, raidWarning)
     end
 end
 
+-- Checks the current battle(s) state
 function ns:BattleCheck(forced)
     local now = GetServerTime()
     local warmode = C_PvP.IsWarModeDesired()
@@ -111,14 +120,18 @@ function ns:BattleCheck(forced)
         -- If Tol Barad is active
         if secondsLeft == 0 then
             if warmode then
-                TBW_data.startTimestampWM = now > TBW_data.startTimestampWM + 900 and now or TBW_data.startTimestampWM
+                if ns.data.location == 244 then
+                    TBW_data.startTimestampWM = now > TBW_data.startTimestampWM + 900 and now or TBW_data.startTimestampWM
+                end
                 if textureIndex == 46 then
                     TBW_data.statusWM = "alliance"
                 else
                     TBW_data.statusWM = "horde"
                 end
             else
-                TBW_data.startTimestamp = now > TBW_data.startTimestamp + 900 and now or TBW_data.startTimestamp
+                if ns.data.location == 244 then
+                    TBW_data.startTimestamp = now > TBW_data.startTimestamp + 900 and now or TBW_data.startTimestamp
+                end
                 if textureIndex == 46 then
                     TBW_data.status = "alliance"
                 else
@@ -146,7 +159,16 @@ function ns:BattleCheck(forced)
 
     -- If the cached battles are in the past, exit BattleCheck()
     if (TBW_data.startTimestampWM + 900) < now and (TBW_data.startTimestamp + 900) < now then
-        if forced then
+        local secondsLeft = select(5, GetWorldPVPAreaInfo(2))
+
+        -- Final check for Tol Barad Peninsula during battle
+        if ns.data.location == 245 then
+            -- Start time is unknown
+            if secondsLeft == 0 then
+                ns:BattlePrint(warmode, L.AlertStartUnsure, true)
+                PlaySound(567399) -- alarmclockwarning2.ogg
+            end
+        elseif forced then
             ns:PrettyPrint(L.WarningNoInfo)
         end
         return
@@ -160,6 +182,7 @@ function ns:BattleCheck(forced)
     end
 end
 
+-- Sets alerts for future battles
 function ns:SetBattleAlerts(warmode, now, startTimestamp, forced)
     local secondsLeft = startTimestamp - now
     local minutesLeft = math.floor(secondsLeft / 60)
@@ -223,13 +246,9 @@ function ns:SetBattleAlerts(warmode, now, startTimestamp, forced)
 
     -- Inform the player about starting time
     if secondsLeft + 900 > 0 and (forced or (warmode and not ns.data.toggles.recentlyOutputWM) or (not warmode and not ns.data.toggles.recentlyOutput)) then
-        if warmode then
-            ns:Toggle("recentlyOutputWM")
-        else
-            ns:Toggle("recentlyOutput")
-        end
+        ns:Toggle(warmode and "recentlyOutputWM" or "recentlyOutput")
 
-        -- Start time is unknown
+        -- Start time is unknown (don't think this will ever happen anymore)
         if secondsLeft == 0 then
             ns:BattlePrint(warmode, L.AlertStartUnsure, true)
             PlaySound(567399) -- alarmclockwarning2.ogg
@@ -355,7 +374,7 @@ function ns:IncrementCounts(arg)
     end
 end
 
--- Print wins / games based on WM status
+-- Print wins / games, optionally based on WM status
 function ns:PrintCounts(all)
     local warmode = C_PvP.IsWarModeDesired()
 
@@ -373,6 +392,7 @@ function ns:PrintCounts(all)
     ns:PrettyPrint(string)
 end
 
+-- Opens the AddOn settings menu and plays a sound
 function ns:OpenSettings()
     PlaySound(SOUNDKIT.IG_MAINMENU_OPEN)
     Settings.OpenToCategory(ns.Settings:GetID())

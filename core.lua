@@ -62,7 +62,7 @@ function TolBaradWhen_OnEvent(self, event, arg, ...)
         elseif message:match("R!") then
             ns:PrettyPrint(L.ReceivedRequest:format(sender, channel))
             local now = GetServerTime()
-            if not ns.data.toggles.recentlyRequestedStart and (TBW_data.startTimestamp > now or TBW_data.startTimestampWM > now) then
+            if not ns.data.toggles.recentlyRequestedStart and (TBW_data.startTimestamp + 900 > now or TBW_data.startTimestampWM + 900 > now) then
                 ns:SendStart(channel, sender)
             end
         elseif message:match("S:") and (message:match("A") or message:match("H")) then
