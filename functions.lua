@@ -392,6 +392,16 @@ function ns:PrintCounts(all)
     ns:PrettyPrint(string)
 end
 
+-- Get the index of a buff based on a given spell ID
+function ns:GetBuffIndex(spellID)
+    for i = 1, 40 do
+        if select(10, UnitBuff("player", i)) == spellID then
+            return i
+        end
+    end
+    return 0
+end
+
 -- Opens the AddOn settings menu and plays a sound
 function ns:OpenSettings()
     PlaySound(SOUNDKIT.IG_MAINMENU_OPEN)

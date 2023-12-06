@@ -27,11 +27,6 @@ L.WarMode = _G.PVP_LABEL_WAR_MODE
 L.TB = _G.DUNGEON_FLOOR_TOLBARADWARLOCKSCENARIO0
 L.MinutesSeconds = "%02dm%02ds"
 
--- L.AlertAnnounce
--- L.AlertShort
--- L.AlertStartElapsedAnnounce
--- L.AlertStartElapsed
-
 -- English
 L.Version = "%s is the current version." -- ns.version
 L.Install = "Thanks for installing version |cff%1$s%2$s|r!" -- ns.color, ns.version
