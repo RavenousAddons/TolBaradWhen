@@ -13,7 +13,6 @@ function TolBaradWhen_OnLoad(self)
     self:RegisterEvent("GROUP_ROSTER_UPDATE")
     self:RegisterEvent("ZONE_CHANGED_NEW_AREA")
     self:RegisterEvent("RAID_BOSS_EMOTE")
-    self:RegisterEvent("UNIT_AURA")
 end
 
 -- Event Triggers
@@ -106,10 +105,6 @@ function TolBaradWhen_OnEvent(self, event, arg, ...)
                 ns:PrintCounts()
                 ns:BattleCheck()
             end)
-        end
-    elseif event == "UNIT_AURA" then
-        if not InCombatLockdown() then
-            CancelUnitBuff("player", ns:GetBuffIndex(61781)) -- Turkey Feathers
         end
     end
 end
