@@ -108,11 +108,20 @@ function ns:BattlePrint(warmode, message, raidWarning)
     end
 end
 
+local function GetTime()
+    local widgetText = _G["UIWidgetTopCenterContainerFrame"]["widgetFrames"][688].Text:GetText()
+
+    local minutes, seconds = widgetText:match("(%d+):(%d+)")
+
+    return (tonumber(minutes) * 60) + tonumber(seconds)
+end
+
 -- Checks the current battle(s) state
 function ns:BattleCheck(forced)
     local now = GetServerTime()
     local warmode = C_PvP.IsWarModeDesired()
-    local secondsLeft = select(5, GetWorldPVPAreaInfo(2))
+    local secondsLeft = GetTime()
+    -- local secondsLeft = select(5, GetWorldPVPAreaInfo(2))
 
     -- If we're in Tol Barad, secondsLeft is reliable
     if ns:Contains(ns.data.mapIDs, ns.data.location) then
@@ -159,7 +168,8 @@ function ns:BattleCheck(forced)
 
     -- If the cached battles are in the past, exit BattleCheck()
     if (TBW_data.startTimestampWM + 900) < now and (TBW_data.startTimestamp + 900) < now then
-        local secondsLeft = select(5, GetWorldPVPAreaInfo(2))
+        local secondsLeft = GetTime()
+        -- local secondsLeft = select(5, GetWorldPVPAreaInfo(2))
 
         -- Final check for Tol Barad Peninsula during battle
         if ns.data.location == 245 then

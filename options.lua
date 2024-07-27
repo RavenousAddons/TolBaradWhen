@@ -8,7 +8,7 @@ local function CreateCheckBox(category, variable, name, tooltip)
     Settings.SetOnValueChangedCallback(variable, function(event)
         TBW_options[variable] = setting:GetValue()
     end)
-    Settings.CreateCheckBox(category, setting, tooltip)
+    Settings.CreateCheckbox(category, setting, tooltip)
 end
 
 local function CreateDropDown(category, variable, name, options, tooltip)
@@ -16,11 +16,12 @@ local function CreateDropDown(category, variable, name, options, tooltip)
     Settings.SetOnValueChangedCallback(variable, function(event)
         TBW_options[variable] = setting:GetValue()
     end)
-    Settings.CreateDropDown(category, setting, options, tooltip)
+    Settings.CreateDropdown(category, setting, options, tooltip)
 end
 
 function ns:CreateSettingsPanel()
     local category, layout = Settings.RegisterVerticalLayoutCategory(ns.name)
+    Settings.RegisterAddOnCategory(category)
 
     layout:AddInitializer(CreateSettingsListSectionHeaderInitializer(L.OptionsTitle1))
 
@@ -52,8 +53,6 @@ function ns:CreateSettingsPanel()
         local option = L.OptionsExtra[index]
         CreateCheckBox(category, option.key, option.name, option.tooltip)
     end
-
-    Settings.RegisterAddOnCategory(category)
 
     ns.Settings = category
 end

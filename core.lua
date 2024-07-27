@@ -3,7 +3,8 @@ local L = ns.L
 
 local allianceString = "|cff0078ff" .. _G.FACTION_ALLIANCE .. "|r"
 local hordeString = "|cffb30000" .. _G.FACTION_HORDE .. "|r"
-local tolBaradString = select(2, GetWorldPVPAreaInfo(2))
+-- local tolBaradString = select(2, GetWorldPVPAreaInfo(2))
+local tolBaradString = "Tol Barad"
 
 -- Load the Addon
 
