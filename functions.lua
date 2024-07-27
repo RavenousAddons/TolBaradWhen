@@ -123,19 +123,24 @@ function ns:GetSeconds()
     local widget
     local widgetText
 
+    -- Time remaining in active battle
     widget = _G["UIWidgetTopCenterContainerFrame"]["widgetFrames"][682]
     if widget then
         widgetText = widget.Text:GetText()
+        local minutes, seconds = widgetText:match("(%d+):(%d+)")
+        if minutes and seconds then
+            return (900 - (tonumber(minutes) * 60) - tonumber(seconds)) * -1
+        end
     end
 
+    -- Time until next battle
     widget = _G["UIWidgetTopCenterContainerFrame"]["widgetFrames"][688]
     if widget then
         widgetText = widget.Text:GetText()
-    end
-
-    local minutes, seconds = widgetText:match("(%d+):(%d+)")
-    if minutes and seconds then
-        return (tonumber(minutes) * 60) + tonumber(seconds)
+        local minutes, seconds = widgetText:match("(%d+):(%d+)")
+        if minutes and seconds then
+            return (tonumber(minutes) * 60) + tonumber(seconds)
+        end
     end
 
     return 0
@@ -219,7 +224,7 @@ end
 function ns:SetBattleAlerts(warmode, now, startTimestamp, forced)
     local secondsLeft = startTimestamp - now
     local minutesLeft = math.floor(secondsLeft / 60)
-    local startTime = date(GetCVar("timeMgrUseMilitaryTime") and "%H:%M" or "%I:%M %p", startTimestamp)
+    local startTime = date(GetCVar("timeMgrUseMilitaryTime") == "1" and "%H:%M" or "%I:%M %p", startTimestamp)
 
     -- If the Battle has not started yet, set Alerts
     if secondsLeft > 0 and (TBW_options.alertStart or TBW_options.alert1Minute or TBW_options.alert2Minutes or TBW_options.alert10Minutes or TBW_options.alertCustomMinutes > 1) and ((warmode and not ns.data.toggles.timingWM) or (not warmode and not ns.data.toggles.timing)) then

@@ -129,12 +129,16 @@ end
 
 SlashCmdList["TOLBARADWHEN"] = function(message)
     if message == "v" or message:match("ver") then
+        -- Print the current addon version
         ns:PrettyPrint(L.Version:format(ns.version))
     elseif message == "h" or message:match("help") then
+        -- Print ways to interact with addon
         ns:PrettyPrint(L.Help)
     elseif message == "c" or message:match("con") or message == "o" or message:match("opt") or message == "s" or message:match("sett") or message:match("togg") then
+        -- Open settings window
         ns:OpenSettings()
     elseif message == "r" or message:match("req") then
+        -- Request TB times from an appropriate chat channel
         if TBW_options.share then
             local _, channel, target = strsplit(" ", message)
             ns:RequestStart(channel, target)
@@ -142,9 +146,11 @@ SlashCmdList["TOLBARADWHEN"] = function(message)
             ns:PrettyPrint(L.WarningDisabledShare)
         end
     elseif message == "a" or message:match("ann") then
+        -- Announce your timers in an appropriate chat channel
         local _, channel, target = strsplit(" ", message)
         ns:SendStart(channel, target, true)
     elseif message == "s" or message:match("send") or message:match("share") then
+        -- Share your timers in an appropriate chat channel
         if TBW_options.share then
             local _, channel, target = strsplit(" ", message)
             ns:SendStart(channel, target)
@@ -152,12 +158,15 @@ SlashCmdList["TOLBARADWHEN"] = function(message)
             ns:PrettyPrint(L.WarningDisabledShare)
         end
     elseif message == "w" or message:match("win") or message == "g" or message:match("game") or message == "b" or message:match("battle") then
+        -- Print win:loss counts
         ns:PrintCounts(true)
     elseif message == "d" or message:match("bug") then
+        -- Debug
         local now = GetServerTime()
         print("|cff44ff44" .. L.WarMode .. " " .. L.On .. "|r " .. (TBW_data.statusWM == "alliance" and allianceString or hordeString) .. " " .. (TBW_data.startTimestampWM - now))
         print("|cffff4444" .. L.WarMode .. " " .. L.Off .. "|r " .. (TBW_data.status == "alliance" and allianceString or hordeString) .. " " .. (TBW_data.startTimestamp - now))
     else
+        -- Print your timers
         ns:BattleCheck(true)
     end
 end
