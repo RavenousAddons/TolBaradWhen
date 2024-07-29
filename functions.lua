@@ -123,6 +123,9 @@ function ns:GetSeconds()
     local widget
     local widgetText
 
+    -- _G.TIME_REMAINING
+    -- _G.NEXT_BATTLE_LABEL
+
     -- Time remaining in active battle
     widget = _G["UIWidgetTopCenterContainerFrame"]["widgetFrames"][682]
     if widget then

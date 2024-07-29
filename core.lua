@@ -101,7 +101,7 @@ function TolBaradWhen_OnEvent(self, event, arg, ...)
     elseif event == "RAID_BOSS_EMOTE" and ns:Contains(ns.data.mapIDs, ns.data.location) and arg:match(tolBaradString) and not arg:match("1") then
         if not ns.data.toggles.recentlyEnded then
             ns:Toggle("recentlyEnded", 1)
-            C_Timer.After(1, function()
+            C_Timer.After(3, function()
                 ns:IncrementCounts(arg)
                 ns:PrintCounts()
                 ns:BattleCheck()
@@ -110,22 +110,31 @@ function TolBaradWhen_OnEvent(self, event, arg, ...)
     end
 end
 
-function TolBaradWhen_OnAddonCompartmentClick(addonName, buttonName)
-    if buttonName == "RightButton" then
-        ns:SendStart()
-        return
-    end
-    ns:OpenSettings()
-end
-
-function TolBaradWhen_OnAddonCompartmentEnter()
-    GameTooltip:SetOwner(DropDownList1)
-    GameTooltip:SetText(ns.name .. "        v" .. ns.version)
-    GameTooltip:AddLine(" ", 1, 1, 1, true)
-    GameTooltip:AddLine(L.AddonCompartmentTooltip1, 1, 1, 1, true)
-    GameTooltip:AddLine(L.AddonCompartmentTooltip2, 1, 1, 1, true)
-    GameTooltip:Show()
-end
+AddonCompartmentFrame:RegisterAddon({
+    text = ns.title,
+    icon = ns.icon,
+    registerForAnyClick = true,
+    notCheckable = true,
+    func = function(button, menuInputData, menu)
+        local mouseButton = menuInputData.buttonName
+        if mouseButton == "RightButton" then
+            ns:SendStart()
+            return
+        end
+        ns:OpenSettings()
+    end,
+    funcOnEnter = function(menuItem)
+        GameTooltip:SetOwner(menuItem)
+        GameTooltip:SetText(ns.name .. "        v" .. ns.version)
+        GameTooltip:AddLine(" ", 1, 1, 1, true)
+        GameTooltip:AddLine(L.AddonCompartmentTooltip1, 1, 1, 1, true)
+        GameTooltip:AddLine(L.AddonCompartmentTooltip2, 1, 1, 1, true)
+        GameTooltip:Show()
+    end,
+    funcOnLeave = function()
+        GameTooltip:Hide()
+    end,
+})
 
 SlashCmdList["TOLBARADWHEN"] = function(message)
     if message == "v" or message:match("ver") then
