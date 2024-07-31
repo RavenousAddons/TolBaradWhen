@@ -5,17 +5,22 @@ local _, localizedFactionName = UnitFactionGroup("player")
 local allianceString = "|cff0078ff" .. _G.FACTION_ALLIANCE .. "|r"
 local hordeString = "|cffb30000" .. _G.FACTION_HORDE .. "|r"
 
+---
 -- Utility Functions
+---
 
--- Plays a sound if "sound" option in enabled
+--- Plays a sound if "sound" option in enabled
+-- @param {number} id
 local function PlaySound(id)
     if TBW_options.sound then
         PlaySoundFile(id)
     end
 end
 
--- Starts the Stopwatch if the "stopwatch" option is enabled and it hasn't
--- recently been started.
+--- Starts the Stopwatch if the "stopwatch" option is enabled and it hasn't
+--- recently been started.
+-- @param {number} minutes
+-- @param {number} seconds
 local function StartStopwatch(minutes, seconds)
     if TBW_options.stopwatch and not ns.data.toggles.stopwatch then
         minutes = minutes or 0
@@ -27,16 +32,20 @@ local function StartStopwatch(minutes, seconds)
     end
 end
 
--- Formats a duration in seconds to a "XmXXs" string
+--- Formats a duration in seconds to a "XmXXs" string
+-- @param {number} duration
+-- @return {string}
 local function Duration(duration)
     local minutes = math.floor(duration / 60)
     local seconds = math.fmod(duration, 60)
     return string.format("%dm%02ds", minutes, seconds)
 end
 
+---
 -- General Functions
+---
 
--- Sets default options if they are not already set
+--- Sets default options if they are not already set
 function ns:SetDefaultOptions()
     TBW_data = TBW_data or {}
     TBW_options = TBW_options or {}
@@ -52,7 +61,8 @@ function ns:SetDefaultOptions()
     TBW_data.wins = TBW_data.wins or 0
 end
 
--- Sends a version update message
+--- Sends a version update message
+-- @param {string} type
 function ns:SendVersionUpdate(type)
     local now = GetServerTime()
     if not ns.version:match("-") and (TBW_data.updateSentTimestamp and TBW_data.updateSentTimestamp > now) then
@@ -62,12 +72,16 @@ function ns:SendVersionUpdate(type)
     C_ChatInfo.SendAddonMessage(ADDON_NAME, "V:" .. ns.version, type)
 end
 
--- Prints a Tol Barad When? formatted message to the chat
+--- Prints a Tol Barad When? formatted message to the chat
+-- @param {string} message
 function ns:PrettyPrint(message)
     DEFAULT_CHAT_FRAME:AddMessage("|cff" .. ns.color .. ns.name .. "|r " .. message)
 end
 
--- Checks if an element is in a table
+--- Checks if an element is in a table
+-- @param {table} table
+-- @param {string} input
+-- @return {number|boolean}
 function ns:Contains(table, input)
     for index, value in ipairs(table) do
         if value == input then
@@ -77,7 +91,9 @@ function ns:Contains(table, input)
     return false
 end
 
--- Toggles a feature with a specified timeout
+--- Toggles a feature with a specified timeout
+-- @param {string} toggle
+-- @param {number} timeout
 function ns:Toggle(toggle, timeout)
     timeout = timeout and timeout or ns.data.timeouts.long
     if not ns.data.toggles[toggle] then
@@ -95,9 +111,32 @@ function ns:Toggle(toggle, timeout)
     end
 end
 
--- Battle Functions
+--- Get the index of a buff based on a given spell ID
+-- @param {number} spellID
+-- @return {number}
+function ns:GetBuffIndex(spellID)
+    for i = 1, 40 do
+        if select(10, UnitBuff("player", i)) == spellID then
+            return i
+        end
+    end
+    return 0
+end
 
--- Prints a message about the current battle state
+--- Opens the AddOn settings menu and plays a sound
+function ns:OpenSettings()
+    PlaySound(SOUNDKIT.IG_MAINMENU_OPEN)
+    Settings.OpenToCategory(ns.Settings:GetID())
+end
+
+---
+-- Battle Functions
+---
+
+--- Prints a message about the current battle state
+-- @param {boolean} warmode
+-- @param {string} message
+-- @param {boolean} raidWarning
 function ns:BattlePrint(warmode, message, raidWarning)
     local warmodeFormatted = "|cff" .. (warmode and ("44ff44" .. L.On) or ("ff4444" .. L.Off)) .. "|r"
     local controlledFormatted = warmode and (TBW_data.statusWM == "alliance" and allianceString or hordeString) or (TBW_data.status == "alliance" and allianceString or hordeString)
@@ -108,23 +147,27 @@ function ns:BattlePrint(warmode, message, raidWarning)
     end
 end
 
+--- Get seconds in current battle or until next battle.
+-- @return {number}
 function ns:GetSeconds()
     if ns.data.location ~= 244 and ns.data.location ~= 245 then
         return 0
     end
 
-    -- Zone
-    --   244 TB Main
-    --   245 TB Peninsula
-    -- Widget Frame
-    --   682 TB Main
-    --   688 TB Peninsula
+    -- Tol Barad (Main)
+    --   Zone: 244
+    --   Widget: 682
+    -- Tol Barad Peninsula
+    --   Zone: 245
+    --   Widget: 688
+
+    -- Battle Active
+    --   _G.TIME_REMAINING
+    -- Battle Countdown
+    --   _G.NEXT_BATTLE_LABEL
 
     local widget
     local widgetText
-
-    -- _G.TIME_REMAINING
-    -- _G.NEXT_BATTLE_LABEL
 
     -- Time remaining in active battle
     widget = _G["UIWidgetTopCenterContainerFrame"]["widgetFrames"][682]
@@ -149,7 +192,8 @@ function ns:GetSeconds()
     return 0
 end
 
--- Checks the current battle(s) state
+--- Checks the current battle(s) state
+-- @param {boolean} forced
 function ns:BattleCheck(forced)
     local now = GetServerTime()
     local warmode = C_PvP.IsWarModeDesired()
@@ -223,7 +267,11 @@ function ns:BattleCheck(forced)
     end
 end
 
--- Sets alerts for future battles
+--- Sets alerts for future battles
+-- @param {boolean} warmode
+-- @param {number} now
+-- @param {number} startTimestamp
+-- @param {boolean} forced
 function ns:SetBattleAlerts(warmode, now, startTimestamp, forced)
     local secondsLeft = startTimestamp - now
     local minutesLeft = math.floor(secondsLeft / 60)
@@ -305,7 +353,9 @@ function ns:SetBattleAlerts(warmode, now, startTimestamp, forced)
     end
 end
 
--- Request the start time from a channel or player
+--- Request the start time from a channel or player
+-- @param {string} channel
+-- @param {string} target
 function ns:RequestStart(channel, target)
     local now = GetServerTime()
     if not ns.data.toggles.recentlyRequestedStart then
@@ -333,7 +383,10 @@ function ns:RequestStart(channel, target)
     end
 end
 
--- Send or Announce the start time to a channel or player
+--- Send or Announce the start time to a channel or player
+-- @param {string} channel
+-- @param {string} target
+-- @param {boolean} announce
 function ns:SendStart(channel, target, announce)
     announce = announce == nil and false or announce
     local now = GetServerTime()
@@ -400,22 +453,24 @@ function ns:SendStart(channel, target, announce)
     end
 end
 
--- Increment win + battle counts
-function ns:IncrementCounts(arg)
+--- Increment win + battle counts
+-- @param {string} message
+function ns:IncrementCounts(message)
     if C_PvP.IsWarModeDesired() then
         TBW_data.gamesWM = TBW_data.gamesWM + 1
-        if arg:match(localizedFactionName) then
+        if message:match(localizedFactionName) then
             TBW_data.winsWM = TBW_data.winsWM + 1
         end
     else
         TBW_data.games = TBW_data.games + 1
-        if arg:match(localizedFactionName) then
+        if message:match(localizedFactionName) then
             TBW_data.wins = TBW_data.wins + 1
         end
     end
 end
 
--- Print wins / games, optionally based on WM status
+--- Print wins / games, optionally based on WM status
+-- @param {boolean} all
 function ns:PrintCounts(all)
     local warmode = C_PvP.IsWarModeDesired()
 
@@ -431,20 +486,4 @@ function ns:PrintCounts(all)
     end
 
     ns:PrettyPrint(string)
-end
-
--- Get the index of a buff based on a given spell ID
-function ns:GetBuffIndex(spellID)
-    for i = 1, 40 do
-        if select(10, UnitBuff("player", i)) == spellID then
-            return i
-        end
-    end
-    return 0
-end
-
--- Opens the AddOn settings menu and plays a sound
-function ns:OpenSettings()
-    PlaySound(SOUNDKIT.IG_MAINMENU_OPEN)
-    Settings.OpenToCategory(ns.Settings:GetID())
 end

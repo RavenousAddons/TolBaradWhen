@@ -3,8 +3,6 @@ local L = ns.L
 
 local allianceString = "|cff0078ff" .. _G.FACTION_ALLIANCE .. "|r"
 local hordeString = "|cffb30000" .. _G.FACTION_HORDE .. "|r"
--- local tolBaradString = select(2, GetWorldPVPAreaInfo(2))
-local tolBaradString = "Tol Barad"
 
 -- Load the Addon
 
@@ -98,9 +96,9 @@ function TolBaradWhen_OnEvent(self, event, arg, ...)
             end)
         end
         ns.data.location = C_Map.GetBestMapForUnit("player")
-    elseif event == "RAID_BOSS_EMOTE" and ns:Contains(ns.data.mapIDs, ns.data.location) and arg:match(tolBaradString) and not arg:match("1") then
+    elseif event == "RAID_BOSS_EMOTE" and ns:Contains(ns.data.mapIDs, ns.data.location) and arg:match(L.TolBarad) and not arg:match("1") then
         if not ns.data.toggles.recentlyEnded then
-            ns:Toggle("recentlyEnded", 1)
+            ns:Toggle("recentlyEnded", 3)
             C_Timer.After(3, function()
                 ns:IncrementCounts(arg)
                 ns:PrintCounts()
