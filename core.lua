@@ -1,6 +1,8 @@
 local ADDON_NAME, ns = ...
 local L = ns.L
 
+local CT = C_Timer
+
 local allianceString = "|cff0078ff" .. _G.FACTION_ALLIANCE .. "|r"
 local hordeString = "|cffb30000" .. _G.FACTION_HORDE .. "|r"
 
@@ -91,7 +93,7 @@ function TolBaradWhen_OnEvent(self, event, arg, ...)
     elseif event == "ZONE_CHANGED_NEW_AREA" then
         local newLocation = C_Map.GetBestMapForUnit("player")
         if not ns:Contains(ns.data.mapIDs, ns.data.location) or not ns:Contains(ns.data.mapIDs, newLocation) then
-            C_Timer.After(1, function()
+            CT.After(1, function()
                 ns:BattleCheck()
             end)
         end
@@ -99,7 +101,7 @@ function TolBaradWhen_OnEvent(self, event, arg, ...)
     elseif event == "RAID_BOSS_EMOTE" and ns:Contains(ns.data.mapIDs, ns.data.location) and arg:match(L.TolBarad) and not arg:match("1") then
         if not ns.data.toggles.recentlyEnded then
             ns:Toggle("recentlyEnded", 3)
-            C_Timer.After(3, function()
+            CT.After(3, function()
                 ns:IncrementCounts(arg)
                 ns:PrintCounts()
                 ns:BattleCheck()

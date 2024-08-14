@@ -1,6 +1,8 @@
 local ADDON_NAME, ns = ...
 local L = ns.L
 
+local CT = C_Timer
+
 local _, localizedFactionName = UnitFactionGroup("player")
 local allianceString = "|cff0078ff" .. _G.FACTION_ALLIANCE .. "|r"
 local hordeString = "|cffb30000" .. _G.FACTION_HORDE .. "|r"
@@ -102,7 +104,7 @@ function ns:Toggle(toggle, timeout)
         if TBW_options.debug then
             ns:PrettyPrint("\n" .. L.DebugToggleOn:format(toggle, timeout))
         end
-        C_Timer.After(timeout, function()
+        CT.After(timeout, function()
             ns.data.toggles[toggle] = false
             if TBW_options.debug then
                 ns:PrettyPrint("\n" .. L.DebugToggleOff:format(toggle))
@@ -293,7 +295,7 @@ function ns:SetBattleAlerts(warmode, now, startTimestamp, forced)
         -- Set Custom Alerts
         for minutes = 15, 55, 5 do
             if secondsLeft >= (minutes * 60) then
-                C_Timer.After(secondsLeft - (minutes * 60), function()
+                CT.After(secondsLeft - (minutes * 60), function()
                     if minutes == TBW_options.alertCustomMinutes then
                         ns:BattlePrint(warmode, L.AlertLong:format(minutes, startTime), true)
                         PlaySound(567458) -- alarmclockwarning3.ogg
@@ -306,7 +308,7 @@ function ns:SetBattleAlerts(warmode, now, startTimestamp, forced)
         -- Set Pre-Defined Alerts
         for default, minutes in pairs(ns.data.timers) do
             if secondsLeft >= (minutes * 60) then
-                C_Timer.After(secondsLeft - (minutes * 60), function()
+                CT.After(secondsLeft - (minutes * 60), function()
                     if TBW_options[default] then
                         ns:BattlePrint(warmode, L.AlertLong:format(minutes, startTime), true)
                         PlaySound(567458) -- alarmclockwarning3.ogg
@@ -317,7 +319,7 @@ function ns:SetBattleAlerts(warmode, now, startTimestamp, forced)
         end
 
         -- Set Start Alert
-        C_Timer.After(secondsLeft, function()
+        CT.After(secondsLeft, function()
             if TBW_options.alertStart then
                 if warmode then
                     ns:Toggle("recentlyOutputWM")
