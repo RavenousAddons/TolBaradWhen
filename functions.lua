@@ -14,7 +14,7 @@ local hordeString = "|cffb30000" .. _G.FACTION_HORDE .. "|r"
 --- Plays a sound if "sound" option in enabled
 -- @param {number} id
 local function PlaySound(id)
-    if TBW_options.sound then
+    if ns:GetOptionValue("sound") then
         PlaySoundFile(id)
     end
 end
@@ -24,7 +24,7 @@ end
 -- @param {number} minutes
 -- @param {number} seconds
 local function StartStopwatch(minutes, seconds)
-    if TBW_options.stopwatch and not ns.data.toggles.stopwatch then
+    if ns:GetOptionValue("stopwatch") and not ns.data.toggles.stopwatch then
         minutes = minutes or 0
         seconds = seconds or 0
         ns:Toggle("stopwatch", (minutes * 60) + seconds)
@@ -43,24 +43,34 @@ local function Duration(duration)
     return string.format("%dm%02ds", minutes, seconds)
 end
 
+-- Set default values for options which are not yet set.
+local function RegisterDefaultOption(option, default)
+    if TBW_options[ns.prefix .. option] == nil then
+        if TBW_options[option] ~= nil then
+            TBW_options[ns.prefix .. option] = TBW_options[option]
+            TBW_options[option] = nil
+        else
+            TBW_options[ns.prefix .. option] = default
+        end
+    end
+end
+
 ---
 -- General Functions
 ---
+
+--- Returns an option from the options table
+function ns:GetOptionValue(option)
+    return TBW_options[ns.prefix .. option]
+end
 
 --- Sets default options if they are not already set
 function ns:SetDefaultOptions()
     TBW_data = TBW_data or {}
     TBW_options = TBW_options or {}
     for option, default in pairs(ns.data.defaults) do
-        TBW_options[option] = TBW_options[option] or default
+        RegisterDefaultOption(option, default)
     end
-    TBW_data.toggles = TBW_data.toggles or {}
-    TBW_data.startTimestampWM = TBW_data.startTimestampWM or 0
-    TBW_data.startTimestamp = TBW_data.startTimestamp or 0
-    TBW_data.gamesWM = TBW_data.gamesWM or 0
-    TBW_data.games = TBW_data.games or 0
-    TBW_data.winsWM = TBW_data.winsWM or 0
-    TBW_data.wins = TBW_data.wins or 0
 end
 
 --- Sends a version update message
@@ -101,12 +111,12 @@ function ns:Toggle(toggle, timeout)
     if not ns.data.toggles[toggle] then
         ns.data.toggles[toggle] = true
         TBW_data.toggles[toggle] = GetServerTime()
-        if TBW_options.debug then
+        if ns:GetOptionValue("debug") then
             ns:PrettyPrint("\n" .. L.DebugToggleOn:format(toggle, timeout))
         end
         CT.After(timeout, function()
             ns.data.toggles[toggle] = false
-            if TBW_options.debug then
+            if ns:GetOptionValue("debug") then
                 ns:PrettyPrint("\n" .. L.DebugToggleOff:format(toggle))
             end
         end)
@@ -131,7 +141,7 @@ function ns:BattlePrint(warmode, message, raidWarning)
     local warmodeFormatted = "|cff" .. (warmode and ("44ff44" .. L.On) or ("ff4444" .. L.Off)) .. "|r"
     local controlledFormatted = warmode and (TBW_data.statusWM == "alliance" and allianceString or hordeString) or (TBW_data.status == "alliance" and allianceString or hordeString)
     DEFAULT_CHAT_FRAME:AddMessage("|cff" .. ns.color .. L.BattlePrint:format(warmodeFormatted, controlledFormatted) .. " |r" .. message)
-    if raidWarning and TBW_options.raidwarning then
+    if raidWarning and ns:GetOptionValue("raidwarning") then
         local controlled = warmode and (TBW_data.statusWM == "alliance" and _G.FACTION_ALLIANCE or _G.FACTION_HORDE) or (TBW_data.status == "alliance" and _G.FACTION_ALLIANCE or _G.FACTION_HORDE)
         RaidNotice_AddMessage(RaidWarningFrame, L.BattleRaidWarning:format(warmode and L.On or L.Off, controlled) .. " " .. message, ChatTypeInfo["RAID_WARNING"])
     end
@@ -268,7 +278,7 @@ function ns:SetBattleAlerts(warmode, now, startTimestamp, forced)
     local startTime = date(GetCVar("timeMgrUseMilitaryTime") == "1" and "%H:%M" or "%I:%M %p", startTimestamp)
 
     -- If the Battle has not started yet, set Alerts
-    if secondsLeft > 0 and (TBW_options.alertStart or TBW_options.alert1Minute or TBW_options.alert2Minutes or TBW_options.alert10Minutes or TBW_options.alertCustomMinutes > 1) and ((warmode and not ns.data.toggles.timingWM) or (not warmode and not ns.data.toggles.timing)) then
+    if secondsLeft > 0 and (ns:GetOptionValue("alertStart") or ns:GetOptionValue("alert1Minute") or ns:GetOptionValue("alert2Minutes") or ns:GetOptionValue("alert10Minutes") or ns:GetOptionValue("alertCustomMinutes") > 1) and ((warmode and not ns.data.toggles.timingWM) or (not warmode and not ns.data.toggles.timing)) then
         -- Timing has begun
         if warmode then
             ns:Toggle("timingWM", secondsLeft)
@@ -284,7 +294,7 @@ function ns:SetBattleAlerts(warmode, now, startTimestamp, forced)
         for minutes = 15, 55, 5 do
             if secondsLeft >= (minutes * 60) then
                 CT.After(secondsLeft - (minutes * 60), function()
-                    if minutes == TBW_options.alertCustomMinutes then
+                    if minutes == ns:GetOptionValue("alertCustomMinutes") then
                         ns:BattlePrint(warmode, L.AlertLong:format(minutes, startTime), true)
                         PlaySound(567458) -- alarmclockwarning3.ogg
                         StartStopwatch(minutes, 0)
@@ -308,7 +318,7 @@ function ns:SetBattleAlerts(warmode, now, startTimestamp, forced)
 
         -- Set Start Alert
         CT.After(secondsLeft, function()
-            if TBW_options.alertStart then
+            if ns:GetOptionValue("alertStart") then
                 if warmode then
                     ns:Toggle("recentlyOutputWM")
                 else
@@ -316,7 +326,7 @@ function ns:SetBattleAlerts(warmode, now, startTimestamp, forced)
                 end
                 ns:BattlePrint(warmode, L.AlertStart:format(startTime), true)
                 PlaySound(567399) -- alarmclockwarning2.ogg
-                if TBW_options.stopwatch then
+                if ns:GetOptionValue("stopwatch") then
                     StopwatchFrame:Hide()
                 end
             end
@@ -362,7 +372,7 @@ function ns:RequestStart(channel, target)
             ns:Toggle("recentlyRequestedStart", 20)
             local message = "R!" .. now
             local response = C_ChatInfo.SendAddonMessage(ADDON_NAME, message, string.upper(channel), target)
-            if TBW_options.debug then
+            if ns:GetOptionValue("debug") then
                 ns:PrettyPrint("\n" .. L.DebugRequestedStart:format(string.upper(channel)) .. "\n" .. message)
             end
         else
@@ -416,7 +426,7 @@ function ns:SendStart(channel, target, announce)
                         message = L.AlertStartElapsedAnnounce:format(Duration(secondsLeft * -1))
                         SendChatMessage(L.BattlePrint:format(L.Off, TBW_data.status == "alliance" and _G.FACTION_ALLIANCE or _G.FACTION_HORDE) .. " " .. message, string.upper(channel), nil, target)
                     end
-                    if TBW_options.debug then
+                    if ns:GetOptionValue("debug") then
                         ns:PrettyPrint("\n" .. L.DebugAnnouncedStart:format(string.upper(channel)) .. "\n" .. message)
                     end
                 else
@@ -428,7 +438,7 @@ function ns:SendStart(channel, target, announce)
                     ns:Toggle("recentlySentStart", 20)
                     local message = "S:" .. (TBW_data.statusWM == "alliance" and "A" or "H") .. TBW_data.startTimestampWM .. ":" .. (TBW_data.status == "alliance" and "A" or "H") .. TBW_data.startTimestamp
                     local response = C_ChatInfo.SendAddonMessage(ADDON_NAME, message, string.upper(channel), target)
-                    if TBW_options.debug then
+                    if ns:GetOptionValue("debug") then
                         ns:PrettyPrint("\n" .. L.DebugSharedStart:format(string.upper(channel)) .. "\n" .. message)
                     end
                 else

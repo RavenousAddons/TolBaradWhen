@@ -40,7 +40,7 @@ L.AlertLong = "starts in %s minutes at %s."
 L.AlertStart = "has started! Up to 15 minutes remaining from %s."
 L.AlertStartElapsedAnnounce = "started %s ago."
 L.AlertStartElapsed = "started %s ago at %s."
-L.AlertStartUnsure = "started and may still be ongoing!"
+L.AlertStartUnsure = "started and is still be ongoing!"
 L.WarningNoInfo = "Unfortunately, " .. L.TolBarad .. " information is unavailable here! You'll have to go to " .. L.TolBarad .. " or ask for a group member to share their data with you."
 L.WarningNoData = "Your " .. L.TolBarad .. " data doesn't contain any upcoming alerts that you can share."
 L.WarningDisabledShare = "You must enable sharing in Options in order to share your " .. L.TolBarad .. " data with group members."
@@ -84,7 +84,7 @@ L.OptionsWhen = {
         key = "alert10Minutes",
         name = "10 minutes before",
         tooltip = L.OptionsWhenTooltip:format("10 minutes before"),
-    }
+    },
 }
 L.OptionsWhenCustom = {
     key = "alertCustomMinutes",
