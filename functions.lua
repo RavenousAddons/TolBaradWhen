@@ -304,10 +304,10 @@ function ns:SetBattleAlerts(warmode, now, startTimestamp, forced)
         end
 
         -- Set Pre-Defined Alerts
-        for default, minutes in pairs(ns.data.timers) do
+        for option, minutes in pairs(ns.data.timers) do
             if secondsLeft >= (minutes * 60) then
                 CT.After(secondsLeft - (minutes * 60), function()
-                    if ns:GetOptionValue("default") then
+                    if ns:GetOptionValue(option) then
                         ns:BattlePrint(warmode, L.AlertLong:format(minutes, startTime), true)
                         PlaySound(567458) -- alarmclockwarning3.ogg
                         StartStopwatch(minutes, 0)
