@@ -47,14 +47,13 @@ function TolBaradWhen_OnEvent(self, event, arg, ...)
         ns.data.raidMembers = raidMembers
     elseif event == "CHAT_MSG_ADDON" and arg == ADDON_NAME and ns:GetOptionValue("share") then
         local message, channel, sender, _ = ...
-        if ns:GetOptionValue("debug") then
-            ns:PrettyPrint("\n" .. L.DebugReceivedStart:format(sender, channel) .. "\n" .. message)
-        end
         if message:match("V:") and not ns.data.toggles.updateFound then
             local version = message:gsub("V:", "")
             if not message:match("-") then
                 local v1, v2, v3 = strsplit(".", version)
                 local c1, c2, c3 = strsplit(".", ns.version)
+                v1, v2, v3 = tonumber(v1), tonumber(v2), tonumber(v3)
+                c1, c2, c3 = tonumber(c1), tonumber(c2), tonumber(c3)
                 if v1 > c1 or (v1 == c1 and v2 > c2) or (v1 == c1 and v2 == c2 and v3 > c3) then
                     ns:PrettyPrint(L.UpdateFound:format(version))
                     ns.data.toggles.updateFound = true
@@ -67,6 +66,9 @@ function TolBaradWhen_OnEvent(self, event, arg, ...)
                 ns:SendStart(channel, sender)
             end
         elseif message:match("S:") and (message:match("A") or message:match("H")) then
+            if ns:GetOptionValue("debug") then
+                ns:PrettyPrint("\n" .. L.DebugReceivedStart:format(sender, channel) .. "\n" .. message)
+            end
             local timestamps = message:gsub("S:", "")
             local dataWM, data = strsplit(":", timestamps)
             local statusWM = dataWM:match("A") and "alliance" or "horde"
