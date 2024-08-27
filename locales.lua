@@ -32,7 +32,7 @@ L.Version = "%s is the current version." -- ns.version
 L.Install = "Thanks for installing version |cff%1$s%2$s|r!" -- ns.color, ns.version
 L.Update = "Thanks for updating to version |cff%1$s%2$s|r!" -- ns.color, ns.version
 L.UpdateFound = "Version %s is now available for download. Please update!" -- sentVersion
-L.Help = "This AddOn is able to set alerts when you're in " .. L.TolBarad .. ", so simply enter the zone and alerts will be set.\nThere are some slash commands available:\n/tbw options - Open options window\n/tbw share - Share your timers with group members\n/tbw request - Request timers from group members\n/tbw wins - See your win record across all tracked battles"
+L.Help = "This Addon sets alerts for future battles when you're in " .. L.TolBarad .. " and tracks some statistics.\nThere are also some slash commands available:\n/tbw options - Open options window\n/tbw share - Share your timers with group members\n/tbw request - Request timers from group members\n/tbw wins - See your win record across all tracked battles"
 L.AlertSet = "Timer has been set!"
 L.AlertAnnounce = "starts in %s."
 L.AlertShort = "starts in %s at %s."
@@ -40,7 +40,7 @@ L.AlertLong = "starts in %s minutes at %s."
 L.AlertStart = "has started! Up to 15 minutes remaining from %s."
 L.AlertStartElapsedAnnounce = "started %s ago."
 L.AlertStartElapsed = "started %s ago at %s."
-L.AlertStartUnsure = "started and is still be ongoing!"
+L.AlertStartUnsure = "started and may still be ongoing!"
 L.WarningNoInfo = "Unfortunately, " .. L.TolBarad .. " information is unavailable here! You'll have to go to " .. L.TolBarad .. " or ask for a group member to share their data with you."
 L.WarningNoData = "Your " .. L.TolBarad .. " data doesn't contain any upcoming alerts that you can share."
 L.WarningDisabledShare = "You must enable sharing in Options in order to share your " .. L.TolBarad .. " data with group members."
@@ -123,8 +123,11 @@ L.OptionsExtra = {
     },
 }
 L.DebugAnnouncedStart = "Announced start times in %s"
+L.DebugReceivedRequest = "Received request from %s in %s"
 L.DebugReceivedStart = "Received start times from %s in %s"
+L.DebugReceivedVersion = "Received version from %s in %s"
 L.DebugRequestedStart = "Requested start times in %s"
+L.DebugSentVersion = "Sent version in %s"
 L.DebugToggleOn = "%s = true (%ss timeout)"
 L.DebugToggleOff = "%s = false"
 L.DebugSharedStart = "Shared start times in %s"

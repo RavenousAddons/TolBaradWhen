@@ -3,6 +3,7 @@ local L = ns.L
 
 local CT = C_Timer
 
+local character = UnitName("player") .. "-" .. GetRealmName("player")
 local allianceString = "|cff0078ff" .. _G.FACTION_ALLIANCE .. "|r"
 local hordeString = "|cffb30000" .. _G.FACTION_HORDE .. "|r"
 
@@ -14,6 +15,8 @@ function TolBaradWhen_OnLoad(self)
     self:RegisterEvent("GROUP_ROSTER_UPDATE")
     self:RegisterEvent("ZONE_CHANGED_NEW_AREA")
     self:RegisterEvent("RAID_BOSS_EMOTE")
+    self:RegisterEvent("COMBAT_LOG_EVENT_UNFILTERED")
+    self:RegisterEvent("PLAYER_DEAD")
 end
 
 -- Event Triggers
@@ -48,18 +51,24 @@ function TolBaradWhen_OnEvent(self, event, arg, ...)
     elseif event == "CHAT_MSG_ADDON" and arg == ADDON_NAME and ns:GetOptionValue("share") then
         local message, channel, sender, _ = ...
         if message:match("V:") and not ns.data.toggles.updateFound then
+            if ns:GetOptionValue("debug") then
+                ns:PrettyPrint("\n" .. L.DebugReceivedVersion:format(sender, channel) .. "\n" .. message)
+            end
             local version = message:gsub("V:", "")
             if not message:match("-") then
                 local v1, v2, v3 = strsplit(".", version)
                 local c1, c2, c3 = strsplit(".", ns.version)
-                v1, v2, v3 = tonumber(v1), tonumber(v2), tonumber(v3)
-                c1, c2, c3 = tonumber(c1), tonumber(c2), tonumber(c3)
+                v1, v2, v3 = tonumber(v1), tonumber(v2), tonumber(string.match(v3, "([^%-]+)"))
+                c1, c2, c3 = tonumber(c1), tonumber(c2), tonumber(string.match(c3, "([^%-]+)"))
                 if v1 > c1 or (v1 == c1 and v2 > c2) or (v1 == c1 and v2 == c2 and v3 > c3) then
                     ns:PrettyPrint(L.UpdateFound:format(version))
                     ns.data.toggles.updateFound = true
                 end
             end
         elseif message:match("R!") then
+            if ns:GetOptionValue("debug") then
+                ns:PrettyPrint("\n" .. L.DebugReceivedRequest:format(sender, channel) .. "\n" .. message)
+            end
             ns:PrettyPrint(L.ReceivedRequest:format(sender, channel))
             local now = GetServerTime()
             if not ns.data.toggles.recentlyRequestedStart and (TBW_data.startTimestamp + 900 > now or TBW_data.startTimestampWM + 900 > now) then
@@ -109,6 +118,27 @@ function TolBaradWhen_OnEvent(self, event, arg, ...)
                 ns:BattleCheck()
             end)
         end
+    elseif event == "COMBAT_LOG_EVENT_UNFILTERED" then
+        if ns.data.location ~= 244 then
+            return
+        end
+        local widget = ns:GetActiveBattleWidget()
+        if widget then
+            local timestamp, subevent, _, sourceGUID, sourceName, _, _, destGUID, destName, _, _, spellID = CombatLogGetCurrentEventInfo()
+            if subevent == "UNIT_DIED" and sourceGUID == UnitGUID("player") then
+                TBW_data.characters[character].killingBlows = TBW_data.characters[character].killingBlows + 1
+            elseif subevent == "PARTY_KILL" and sourceGUID == UnitGUID("player") then
+                TBW_data.characters[character].honorableKills = TBW_data.characters[character].honorableKills + 1
+            end
+        end
+    elseif event == "PLAYER_DEAD" then
+        if ns.data.location ~= 244 then
+            return
+        end
+        local widget = ns:GetActiveBattleWidget()
+        if widget then
+            TBW_data.characters[character].deaths = TBW_data.characters[character].deaths + 1
+        end
     end
 end
 
@@ -144,7 +174,7 @@ SlashCmdList["TOLBARADWHEN"] = function(message)
         ns:PrettyPrint(L.Version:format(ns.version))
     elseif message == "h" or message:match("help") then
         -- Print ways to interact with addon
-        ns:PrettyPrint(L.Help)
+        ns:PrettyPrint("\n" .. L.Help)
     elseif message == "c" or message:match("con") or message == "o" or message:match("opt") or message == "s" or message:match("sett") or message:match("togg") then
         -- Open settings window
         ns:OpenSettings()
@@ -168,8 +198,11 @@ SlashCmdList["TOLBARADWHEN"] = function(message)
         else
             ns:PrettyPrint(L.WarningDisabledShare)
         end
+    elseif message:match("stat") then
+        -- Print stats
+        ns:PrintStats(true)
     elseif message == "w" or message:match("win") or message == "g" or message:match("game") or message == "b" or message:match("battle") then
-        -- Print win:loss counts
+        -- Print wins / battles counts
         ns:PrintCounts(true)
     elseif message == "d" or message:match("bug") then
         -- Debug

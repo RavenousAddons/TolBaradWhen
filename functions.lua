@@ -3,6 +3,8 @@ local L = ns.L
 
 local CT = C_Timer
 
+local character = UnitName("player") .. "-" .. GetRealmName("player")
+local _, className, _ = UnitClass("player")
 local _, localizedFactionName = UnitFactionGroup("player")
 local allianceString = "|cff0078ff" .. _G.FACTION_ALLIANCE .. "|r"
 local hordeString = "|cffb30000" .. _G.FACTION_HORDE .. "|r"
@@ -44,6 +46,8 @@ local function Duration(duration)
 end
 
 -- Set default values for options which are not yet set.
+-- @param {string} option
+-- @param {any} default
 local function RegisterDefaultOption(option, default)
     if TBW_options[ns.prefix .. option] == nil then
         if TBW_options[option] ~= nil then
@@ -53,6 +57,19 @@ local function RegisterDefaultOption(option, default)
             TBW_options[ns.prefix .. option] = default
         end
     end
+end
+
+-- Set default values for character data which are not yet set.
+-- @param {string} option
+-- @param {any} default
+local function RegisterDefaultCharacterData(option, default)
+    if TBW_data.characters[character][option] == nil then
+        TBW_data.characters[character][option] = 0
+    end
+end
+
+local function GetActiveBattleWidget()
+
 end
 
 ---
@@ -67,6 +84,11 @@ end
 --- Sets default options if they are not already set
 function ns:SetDefaultOptions()
     TBW_data = TBW_data or {}
+    TBW_data.characters = TBW_data.characters or {}
+    TBW_data.characters[character] = TBW_data.characters[character] or {}
+    for option, default in pairs(ns.data.characterDefaults) do
+        RegisterDefaultCharacterData(option, default)
+    end
     TBW_options = TBW_options or {}
     for option, default in pairs(ns.data.defaults) do
         RegisterDefaultOption(option, default)
@@ -74,14 +96,17 @@ function ns:SetDefaultOptions()
 end
 
 --- Sends a version update message
--- @param {string} type
-function ns:SendVersionUpdate(type)
+-- @param {string} channel
+function ns:SendVersionUpdate(channel)
     local now = GetServerTime()
     if not ns.version:match("-") and (TBW_data.updateSentTimestamp and TBW_data.updateSentTimestamp > now) then
         return
     end
     TBW_data.updateSentTimestamp = now + ns.data.timeouts.short
-    C_ChatInfo.SendAddonMessage(ADDON_NAME, "V:" .. ns.version, type)
+    C_ChatInfo.SendAddonMessage(ADDON_NAME, "V:" .. ns.version, channel)
+    if ns:GetOptionValue("debug") then
+        ns:PrettyPrint("\n" .. L.DebugSentVersion:format(channel) .. "\n" .. "V:" .. ns.version)
+    end
 end
 
 --- Prints a Tol Barad When? formatted message to the chat
@@ -123,7 +148,7 @@ function ns:Toggle(toggle, timeout)
     end
 end
 
---- Opens the AddOn settings menu and plays a sound
+--- Opens the Addon settings menu and plays a sound
 function ns:OpenSettings()
     PlaySound(SOUNDKIT.IG_MAINMENU_OPEN)
     Settings.OpenToCategory(ns.Settings:GetID())
@@ -147,10 +172,18 @@ function ns:BattlePrint(warmode, message, raidWarning)
     end
 end
 
+function ns:GetActiveBattleWidget()
+    return _G["UIWidgetTopCenterContainerFrame"]["widgetFrames"][682]
+end
+
+function ns:GetInactiveBattleWidget()
+    return _G["UIWidgetTopCenterContainerFrame"]["widgetFrames"][688]
+end
+
 --- Get seconds in current battle or until next battle.
 -- @return {number}
 function ns:GetSeconds()
-    if ns.data.location ~= 244 and ns.data.location ~= 245 then
+    if not ns:Contains(ns.data.mapIDs, ns.data.location) then
         return 0
     end
 
@@ -170,7 +203,7 @@ function ns:GetSeconds()
     local widgetText
 
     -- Time remaining in active battle
-    widget = _G["UIWidgetTopCenterContainerFrame"]["widgetFrames"][682]
+    widget = ns:GetActiveBattleWidget()
     if widget then
         widgetText = widget.Text:GetText()
         local minutes, seconds = widgetText:match("(%d+):(%d+)")
@@ -180,7 +213,7 @@ function ns:GetSeconds()
     end
 
     -- Time until next battle
-    widget = _G["UIWidgetTopCenterContainerFrame"]["widgetFrames"][688]
+    widget = ns:GetInactiveBattleWidget()
     if widget then
         widgetText = widget.Text:GetText()
         local minutes, seconds = widgetText:match("(%d+):(%d+)")
@@ -453,37 +486,71 @@ function ns:SendStart(channel, target, announce)
     end
 end
 
---- Increment win + battle counts
+--- Increment wins & games based on WM status
 -- @param {string} message
 function ns:IncrementCounts(message)
-    if C_PvP.IsWarModeDesired() then
-        TBW_data.gamesWM = TBW_data.gamesWM + 1
-        if message:match(localizedFactionName) then
-            TBW_data.winsWM = TBW_data.winsWM + 1
-        end
-    else
-        TBW_data.games = TBW_data.games + 1
-        if message:match(localizedFactionName) then
-            TBW_data.wins = TBW_data.wins + 1
-        end
-    end
+    local gamesKey = C_PvP.IsWarModeDesired() and "gamesWM" or "games"
+    local winsKey = message:match(localizedFactionName) and "winsWM" or "wins"
+
+    TBW_data.characters[character][gamesKey] = TBW_data.characters[character][gamesKey] + 1
+    TBW_data.characters[character][winsKey] = TBW_data.characters[character][winsKey] + 1
 end
 
 --- Print wins / games, optionally based on WM status
 -- @param {boolean} all
 function ns:PrintCounts(all)
     local warmode = C_PvP.IsWarModeDesired()
+    local string
 
-    local gamesTotal = TBW_data.gamesWM + TBW_data.games
-    local winsTotal = TBW_data.winsWM + TBW_data.wins
+    local warbandGamesWM = TBW_data.gamesWM
+    local warbandGames = TBW_data.games
+    local warbandWinsWM = TBW_data.winsWM
+    local warbandWins = TBW_data.wins
+    for _, data in pairs(TBW_data.characters) do
+        warbandGamesWM = warbandGamesWM + data.gamesWM
+        warbandGames = warbandGames + data.games
+        warbandWinsWM = warbandWinsWM + data.winsWM
+        warbandWins = warbandWins + data.wins
+    end
+    local warbandGamesTotal = warbandGamesWM + warbandGames
+    local warbandWinsTotal = warbandWinsWM + warbandWins
 
-    local string = "\n" .. L.WinRecord .. ": " .. winsTotal .. "/" .. gamesTotal
+    ns:PrettyPrint("")
+
+    -- Warband-Wide
+    if all then
+        string = "|cff01e2ff" .. _G.ITEM_UPGRADE_DISCOUNT_TOOLTIP_ACCOUNT_WIDE .. ":|r\n" .. " " .. L.WinRecord .. ": " .. warbandWinsTotal .. "/" .. warbandGamesTotal
+        string = string .. "\n" .. " " .. L.WarMode .. " |cff44ff44" .. L.On .. "|r: " .. warbandWinsWM .. "/" .. warbandGamesWM
+        string = string .. "\n" .. " " .. L.WarMode .. " |cffff4444" .. L.Off .. "|r: " .. warbandWins .. "/" .. warbandGames
+        print(string)
+    end
+
+    local characterGamesWM = TBW_data.characters[character].gamesWM
+    local characterGames = TBW_data.characters[character].games
+    local characterWinsWM = TBW_data.characters[character].winsWM
+    local characterWins = TBW_data.characters[character].wins
+    local characterGamesTotal = characterGamesWM + characterGames
+    local characterWinsTotal = characterWinsWM + characterWins
+
+    -- Character-Specific
+    string = "|cff" .. ns.data.classColors[className:lower()] .. character .. ":|r\n" .. L.WinRecord .. ": " .. characterWinsTotal .. "/" .. characterGamesTotal
     if warmode or all then
-        string = string .. "\n" .. L.WarMode .. " |cff44ff44" .. L.On .. "|r: " .. TBW_data.winsWM .. "/" .. TBW_data.gamesWM
+        string = string .. "\n" .. L.WarMode .. " |cff44ff44" .. L.On .. "|r: " .. characterWinsWM .. "/" .. characterGamesWM
     end
     if not warmode or all then
-        string = string .. "\n" .. L.WarMode .. " |cffff4444" .. L.Off .. "|r: " .. TBW_data.wins .. "/" .. TBW_data.games
+        string = string .. "\n" .. L.WarMode .. " |cffff4444" .. L.Off .. "|r: " .. characterWins .. "/" .. characterGames
     end
+    print(string)
+end
+
+--- Print character stats
+-- @param {boolean} all
+function ns:PrintStats()
+    local string = ""
+
+    string = string .. "\n" .. _G.KILLING_BLOWS .. ": " .. TBW_data.characters[character].killingBlows
+    string = string .. "\n" .. _G.HONORABLE_KILLS .. ": " .. TBW_data.characters[character].honorableKills
+    string = string .. "\n" .. _G.DEATHS .. ": " .. TBW_data.characters[character].deaths
 
     ns:PrettyPrint(string)
 end
