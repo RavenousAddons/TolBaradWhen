@@ -490,10 +490,12 @@ end
 -- @param {string} message
 function ns:IncrementCounts(message)
     local gamesKey = C_PvP.IsWarModeDesired() and "gamesWM" or "games"
-    local winsKey = message:match(localizedFactionName) and "winsWM" or "wins"
+    local winsKey = C_PvP.IsWarModeDesired() and "winsWM" or "wins"
 
     TBW_data.characters[character][gamesKey] = TBW_data.characters[character][gamesKey] + 1
-    TBW_data.characters[character][winsKey] = TBW_data.characters[character][winsKey] + 1
+    if message:match(localizedFactionName) then
+        TBW_data.characters[character][winsKey] = TBW_data.characters[character][winsKey] + 1
+    end
 end
 
 --- Print wins / games, optionally based on WM status
@@ -534,12 +536,8 @@ function ns:PrintCounts(all)
 
     -- Character-Specific
     string = "|cff" .. ns.data.classColors[className:lower()] .. character .. ":|r\n" .. L.WinRecord .. ": " .. characterWinsTotal .. "/" .. characterGamesTotal
-    if warmode or all then
-        string = string .. "\n" .. L.WarMode .. " |cff44ff44" .. L.On .. "|r: " .. characterWinsWM .. "/" .. characterGamesWM
-    end
-    if not warmode or all then
-        string = string .. "\n" .. L.WarMode .. " |cffff4444" .. L.Off .. "|r: " .. characterWins .. "/" .. characterGames
-    end
+    string = string .. "\n" .. L.WarMode .. " |cff44ff44" .. L.On .. "|r: " .. characterWinsWM .. "/" .. characterGamesWM
+    string = string .. "\n" .. L.WarMode .. " |cffff4444" .. L.Off .. "|r: " .. characterWins .. "/" .. characterGames
     print(string)
 end
 
