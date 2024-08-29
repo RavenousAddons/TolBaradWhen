@@ -4,8 +4,8 @@ local L = ns.L
 local CT = C_Timer
 
 local character = UnitName("player") .. "-" .. GetRealmName("player")
-local allianceString = "|cff0078ff" .. _G.FACTION_ALLIANCE .. "|r"
-local hordeString = "|cffb30000" .. _G.FACTION_HORDE .. "|r"
+local allianceString = "|cff0078ff" .. L.Alliance .. "|r"
+local hordeString = "|cffb30000" .. L.Horde .. "|r"
 
 -- Load the Addon
 
@@ -15,8 +15,6 @@ function TolBaradWhen_OnLoad(self)
     self:RegisterEvent("GROUP_ROSTER_UPDATE")
     self:RegisterEvent("ZONE_CHANGED_NEW_AREA")
     self:RegisterEvent("RAID_BOSS_EMOTE")
-    self:RegisterEvent("COMBAT_LOG_EVENT_UNFILTERED")
-    self:RegisterEvent("PLAYER_DEAD")
 end
 
 -- Event Triggers
@@ -25,15 +23,13 @@ function TolBaradWhen_OnEvent(self, event, arg, ...)
     if event == "PLAYER_LOGIN" then
         ns:SetDefaultOptions()
         ns:CreateSettingsPanel()
-        if not ns.version:match("-") then
-            if not TBW_version then
-                ns:PrettyPrint(L.Install:format(ns.color, ns.version))
-            elseif TBW_version ~= ns.version then
-                ns:PrettyPrint(L.Update:format(ns.color, ns.version))
-                -- Version-specific messages
-            end
-            TBW_version = ns.version
+        if not TBW_version then
+            ns:PrettyPrint(L.Install:format(ns.color, ns.version))
+        elseif TBW_version ~= ns.version then
+            ns:PrettyPrint(L.Update:format(ns.color, ns.version))
+            -- Version-specific messages
         end
+        TBW_version = ns.version
         ns:BattleCheck()
         C_ChatInfo.RegisterAddonMessagePrefix(ADDON_NAME)
     elseif event == "GROUP_ROSTER_UPDATE" then
@@ -42,8 +38,14 @@ function TolBaradWhen_OnEvent(self, event, arg, ...)
         if not ns.version:match("-") and ns:GetOptionValue("share") and not IsInGroup(LE_PARTY_CATEGORY_INSTANCE) then
             if raidMembers == 0 and partyMembers > ns.data.partyMembers then
                 ns:SendVersionUpdate("PARTY")
+                if not ns.data.toggles.recentlySentStart then
+                    ns:SendStart("PARTY")
+                end
             elseif raidMembers > ns.data.raidMembers then
                 ns:SendVersionUpdate("RAID")
+                if not ns.data.toggles.recentlySentStart then
+                    ns:SendStart("RAID")
+                end
             end
         end
         ns.data.partyMembers = partyMembers
@@ -86,7 +88,7 @@ function TolBaradWhen_OnEvent(self, event, arg, ...)
             local startTimestamp = data:gsub("A", ""):gsub("H", "")
             if not ns.data.toggles.recentlyReceivedStartWM then
                 if tonumber(startTimestampWM) > TBW_data.startTimestampWM then
-                    ns:Toggle("recentlyReceivedStartWM", 30)
+                    ns:Toggle("recentlyReceivedStartWM")
                     TBW_data.statusWM = statusWM
                     TBW_data.startTimestampWM = tonumber(startTimestampWM)
                     ns:BattleCheck(true)
@@ -94,7 +96,7 @@ function TolBaradWhen_OnEvent(self, event, arg, ...)
             end
             if not ns.data.toggles.recentlyReceivedStart then
                 if tonumber(startTimestamp) > TBW_data.startTimestamp then
-                    ns:Toggle("recentlyReceivedStart", 30)
+                    ns:Toggle("recentlyReceivedStart")
                     TBW_data.status = status
                     TBW_data.startTimestamp = tonumber(startTimestamp)
                     ns:BattleCheck(true)
@@ -112,32 +114,11 @@ function TolBaradWhen_OnEvent(self, event, arg, ...)
     elseif event == "RAID_BOSS_EMOTE" and ns:Contains(ns.data.mapIDs, ns.data.location) and arg:match(L.TolBarad) and not arg:match("1") then
         if not ns.data.toggles.recentlyEnded then
             ns:Toggle("recentlyEnded", 3)
-            CT.After(3, function()
+            CT.After(1, function()
                 ns:IncrementCounts(arg)
                 ns:PrintCounts()
                 ns:BattleCheck()
             end)
-        end
-    elseif event == "COMBAT_LOG_EVENT_UNFILTERED" then
-        if ns.data.location ~= 244 then
-            return
-        end
-        local widget = ns:GetActiveBattleWidget()
-        if widget then
-            local timestamp, subevent, _, sourceGUID, sourceName, _, _, destGUID, destName, _, _, spellID = CombatLogGetCurrentEventInfo()
-            if subevent == "UNIT_DIED" and sourceGUID == UnitGUID("player") then
-                TBW_data.characters[character].killingBlows = TBW_data.characters[character].killingBlows + 1
-            elseif subevent == "PARTY_KILL" and sourceGUID == UnitGUID("player") then
-                TBW_data.characters[character].honorableKills = TBW_data.characters[character].honorableKills + 1
-            end
-        end
-    elseif event == "PLAYER_DEAD" then
-        if ns.data.location ~= 244 then
-            return
-        end
-        local widget = ns:GetActiveBattleWidget()
-        if widget then
-            TBW_data.characters[character].deaths = TBW_data.characters[character].deaths + 1
         end
     end
 end
@@ -198,12 +179,9 @@ SlashCmdList["TOLBARADWHEN"] = function(message)
         else
             ns:PrettyPrint(L.WarningDisabledShare)
         end
-    elseif message:match("stat") then
-        -- Print stats
-        ns:PrintStats(true)
     elseif message == "w" or message:match("win") or message == "g" or message:match("game") or message == "b" or message:match("battle") then
         -- Print wins / battles counts
-        ns:PrintCounts(true)
+        ns:PrintCounts()
     elseif message == "d" or message:match("bug") then
         -- Debug
         local now = GetServerTime()

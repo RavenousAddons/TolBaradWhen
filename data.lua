@@ -26,9 +26,6 @@ ns.data = {
         games = 0,
         winsWM = 0,
         wins = 0,
-        honorableKills = 0,
-        killingBlows = 0,
-        deaths = 0,
     },
     timers = {
         alert1Minute = 1,
@@ -38,6 +35,7 @@ ns.data = {
     },
     timeouts = {
         short = 10,
+        medium = 20,
         long = 60,
     },
     toggles = {
@@ -50,6 +48,7 @@ ns.data = {
         recentlyRequestedStart = false,
         recentlySentStart = false,
         recentlyAnnouncedStart = false,
+        recentlySentVersion = false,
         recentlyEnded = false,
         updateFound = false,
         stopwatch = false,

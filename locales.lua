@@ -25,6 +25,9 @@ L.Enabled = _G.VIDEO_OPTIONS_ENABLED
 L.Disabled = _G.VIDEO_OPTIONS_DISABLED
 L.WarMode = _G.PVP_LABEL_WAR_MODE
 L.TolBarad = _G.DUNGEON_FLOOR_TOLBARADWARLOCKSCENARIO0
+L.Alliance = _G.FACTION_ALLIANCE
+L.Horde = _G.FACTION_HORDE
+L.WarbandWide = _G.ITEM_UPGRADE_DISCOUNT_TOOLTIP_ACCOUNT_WIDE
 L.MinutesSeconds = "%02dm%02ds"
 
 -- English
@@ -50,7 +53,7 @@ L.WarningFastAnnounce = "You must wait %s seconds before announcing your " .. L.
 L.WarningFastShare = "You must wait %s seconds before sharing your " .. L.TolBarad .. " data again." -- integer
 L.WarningFastRequest = "You must wait %s seconds before requesting " .. L.TolBarad .. " data again." -- integer
 L.BattlePrint = L.TolBarad .. " (" .. L.WarMode .. ": %s, Control: %s)"
-L.BattleRaidWarning = "The Battle for " .. L.TolBarad .. " (" .. L.WarMode .. " %s, Control: %s)"
+L.BattleRaidWarning = "The Battle for " .. L.TolBarad .. " (" .. L.WarMode .. ": %s, Control: %s)"
 L.ReceivedRequest = "Received request from %s in %s"
 L.WinRecord = "Win Record"
 L.AddonCompartmentTooltip1 = "|cff" .. ns.color .. "Left-Click:|r Open Settings"

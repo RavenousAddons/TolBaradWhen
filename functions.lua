@@ -6,8 +6,8 @@ local CT = C_Timer
 local character = UnitName("player") .. "-" .. GetRealmName("player")
 local _, className, _ = UnitClass("player")
 local _, localizedFactionName = UnitFactionGroup("player")
-local allianceString = "|cff0078ff" .. _G.FACTION_ALLIANCE .. "|r"
-local hordeString = "|cffb30000" .. _G.FACTION_HORDE .. "|r"
+local allianceString = "|cff0078ff" .. L.Alliance .. "|r"
+local hordeString = "|cffb30000" .. L.Horde .. "|r"
 
 ---
 -- Utility Functions
@@ -68,10 +68,6 @@ local function RegisterDefaultCharacterData(option, default)
     end
 end
 
-local function GetActiveBattleWidget()
-
-end
-
 ---
 -- General Functions
 ---
@@ -99,10 +95,10 @@ end
 -- @param {string} channel
 function ns:SendVersionUpdate(channel)
     local now = GetServerTime()
-    if not ns.version:match("-") and (TBW_data.updateSentTimestamp and TBW_data.updateSentTimestamp > now) then
+    if not ns.version:match("-") and not ns.data.toggles.recentlySentVersion then
         return
     end
-    TBW_data.updateSentTimestamp = now + ns.data.timeouts.short
+    ns:Toggle("recentlySentVersion")
     C_ChatInfo.SendAddonMessage(ADDON_NAME, "V:" .. ns.version, channel)
     if ns:GetOptionValue("debug") then
         ns:PrettyPrint("\n" .. L.DebugSentVersion:format(channel) .. "\n" .. "V:" .. ns.version)
@@ -132,7 +128,7 @@ end
 -- @param {string} toggle
 -- @param {number} timeout
 function ns:Toggle(toggle, timeout)
-    timeout = timeout and timeout or ns.data.timeouts.long
+    timeout = timeout and timeout or ns.data.timeouts.medium
     if not ns.data.toggles[toggle] then
         ns.data.toggles[toggle] = true
         TBW_data.toggles[toggle] = GetServerTime()
@@ -167,17 +163,19 @@ function ns:BattlePrint(warmode, message, raidWarning)
     local controlledFormatted = warmode and (TBW_data.statusWM == "alliance" and allianceString or hordeString) or (TBW_data.status == "alliance" and allianceString or hordeString)
     DEFAULT_CHAT_FRAME:AddMessage("|cff" .. ns.color .. L.BattlePrint:format(warmodeFormatted, controlledFormatted) .. " |r" .. message)
     if raidWarning and ns:GetOptionValue("raidwarning") then
-        local controlled = warmode and (TBW_data.statusWM == "alliance" and _G.FACTION_ALLIANCE or _G.FACTION_HORDE) or (TBW_data.status == "alliance" and _G.FACTION_ALLIANCE or _G.FACTION_HORDE)
+        local controlled = warmode and (TBW_data.statusWM == "alliance" and L.Alliance or L.Horde) or (TBW_data.status == "alliance" and L.Alliance or L.Horde)
         RaidNotice_AddMessage(RaidWarningFrame, L.BattleRaidWarning:format(warmode and L.On or L.Off, controlled) .. " " .. message, ChatTypeInfo["RAID_WARNING"])
     end
 end
 
 function ns:GetActiveBattleWidget()
-    return _G["UIWidgetTopCenterContainerFrame"]["widgetFrames"][682]
+    local widget = _G["UIWidgetTopCenterContainerFrame"]["widgetFrames"][682]
+    return widget and widget.Text:GetText() or nil
 end
 
 function ns:GetInactiveBattleWidget()
-    return _G["UIWidgetTopCenterContainerFrame"]["widgetFrames"][688]
+    local widget = _G["UIWidgetTopCenterContainerFrame"]["widgetFrames"][688]
+    return widget and widget.Text:GetText() or nil
 end
 
 --- Get seconds in current battle or until next battle.
@@ -199,13 +197,11 @@ function ns:GetSeconds()
     -- Battle Countdown
     --   _G.NEXT_BATTLE_LABEL
 
-    local widget
     local widgetText
 
     -- Time remaining in active battle
-    widget = ns:GetActiveBattleWidget()
-    if widget then
-        widgetText = widget.Text:GetText()
+    widgetText = ns:GetActiveBattleWidget()
+    if widgetText then
         local minutes, seconds = widgetText:match("(%d+):(%d+)")
         if minutes and seconds then
             return (900 - (tonumber(minutes) * 60) - tonumber(seconds)) * -1
@@ -213,9 +209,8 @@ function ns:GetSeconds()
     end
 
     -- Time until next battle
-    widget = ns:GetInactiveBattleWidget()
-    if widget then
-        widgetText = widget.Text:GetText()
+    widgetText = ns:GetInactiveBattleWidget()
+    if widgetText then
         local minutes, seconds = widgetText:match("(%d+):(%d+)")
         if minutes and seconds then
             return (tonumber(minutes) * 60) + tonumber(seconds)
@@ -353,9 +348,9 @@ function ns:SetBattleAlerts(warmode, now, startTimestamp, forced)
         CT.After(secondsLeft, function()
             if ns:GetOptionValue("alertStart") then
                 if warmode then
-                    ns:Toggle("recentlyOutputWM")
+                    ns:Toggle("recentlyOutputWM", ns.data.timeouts.long)
                 else
-                    ns:Toggle("recentlyOutput")
+                    ns:Toggle("recentlyOutput", ns.data.timeouts.long)
                 end
                 ns:BattlePrint(warmode, L.AlertStart:format(startTime), true)
                 PlaySound(567399) -- alarmclockwarning2.ogg
@@ -402,7 +397,7 @@ function ns:RequestStart(channel, target)
             end
         end
         if channel then
-            ns:Toggle("recentlyRequestedStart", 20)
+            ns:Toggle("recentlyRequestedStart")
             local message = "R!" .. now
             local response = C_ChatInfo.SendAddonMessage(ADDON_NAME, message, string.upper(channel), target)
             if ns:GetOptionValue("debug") then
@@ -438,26 +433,26 @@ function ns:SendStart(channel, target, announce)
                 if not ns.data.toggles.recentlyAnnouncedStart then
                     -- Announce
                     local secondsLeft, minutesLeft, message
-                    ns:Toggle("recentlyAnnouncedStart", 20)
+                    ns:Toggle("recentlyAnnouncedStart")
                     -- WM On
                     secondsLeft = TBW_data.startTimestampWM - now
                     if secondsLeft > 0 then
                         message = L.AlertAnnounce:format(Duration(secondsLeft))
-                        SendChatMessage(L.BattlePrint:format(L.On, TBW_data.statusWM == "alliance" and _G.FACTION_ALLIANCE or _G.FACTION_HORDE) .. " " .. message, string.upper(channel), nil, target)
+                        SendChatMessage(L.BattlePrint:format(L.On, TBW_data.statusWM == "alliance" and L.Alliance or L.Horde) .. " " .. message, string.upper(channel), nil, target)
                     elseif secondsLeft > -900 then
                         -- Convert to absolute values to present elapsed time
                         message = L.AlertStartElapsedAnnounce:format(Duration(secondsLeft * -1))
-                        SendChatMessage(L.BattlePrint:format(L.On, TBW_data.statusWM == "alliance" and _G.FACTION_ALLIANCE or _G.FACTION_HORDE) .. " " .. message, string.upper(channel), nil, target)
+                        SendChatMessage(L.BattlePrint:format(L.On, TBW_data.statusWM == "alliance" and L.Alliance or L.Horde) .. " " .. message, string.upper(channel), nil, target)
                     end
                     -- WM Off
                     secondsLeft = TBW_data.startTimestamp - now
                     if secondsLeft > 0 then
                         message = L.AlertAnnounce:format(Duration(secondsLeft))
-                        SendChatMessage(L.BattlePrint:format(L.Off, TBW_data.status == "alliance" and _G.FACTION_ALLIANCE or _G.FACTION_HORDE) .. " " .. message, string.upper(channel), nil, target)
+                        SendChatMessage(L.BattlePrint:format(L.Off, TBW_data.status == "alliance" and L.Alliance or L.Horde) .. " " .. message, string.upper(channel), nil, target)
                     elseif secondsLeft > -900 then
                         -- Convert to absolute values to present elapsed time
                         message = L.AlertStartElapsedAnnounce:format(Duration(secondsLeft * -1))
-                        SendChatMessage(L.BattlePrint:format(L.Off, TBW_data.status == "alliance" and _G.FACTION_ALLIANCE or _G.FACTION_HORDE) .. " " .. message, string.upper(channel), nil, target)
+                        SendChatMessage(L.BattlePrint:format(L.Off, TBW_data.status == "alliance" and L.Alliance or L.Horde) .. " " .. message, string.upper(channel), nil, target)
                     end
                     if ns:GetOptionValue("debug") then
                         ns:PrettyPrint("\n" .. L.DebugAnnouncedStart:format(string.upper(channel)) .. "\n" .. message)
@@ -468,7 +463,7 @@ function ns:SendStart(channel, target, announce)
             else
                 if not ns.data.toggles.recentlySentStart then
                     -- Send
-                    ns:Toggle("recentlySentStart", 20)
+                    ns:Toggle("recentlySentStart")
                     local message = "S:" .. (TBW_data.statusWM == "alliance" and "A" or "H") .. TBW_data.startTimestampWM .. ":" .. (TBW_data.status == "alliance" and "A" or "H") .. TBW_data.startTimestamp
                     local response = C_ChatInfo.SendAddonMessage(ADDON_NAME, message, string.upper(channel), target)
                     if ns:GetOptionValue("debug") then
@@ -498,11 +493,12 @@ function ns:IncrementCounts(message)
     end
 end
 
---- Print wins / games, optionally based on WM status
--- @param {boolean} all
-function ns:PrintCounts(all)
+--- Print wins / games
+function ns:PrintCounts()
     local warmode = C_PvP.IsWarModeDesired()
     local string
+
+    ns:PrettyPrint("")
 
     local warbandGamesWM = TBW_data.gamesWM
     local warbandGames = TBW_data.games
@@ -517,15 +513,11 @@ function ns:PrintCounts(all)
     local warbandGamesTotal = warbandGamesWM + warbandGames
     local warbandWinsTotal = warbandWinsWM + warbandWins
 
-    ns:PrettyPrint("")
-
     -- Warband-Wide
-    if all then
-        string = "|cff01e2ff" .. _G.ITEM_UPGRADE_DISCOUNT_TOOLTIP_ACCOUNT_WIDE .. ":|r\n" .. " " .. L.WinRecord .. ": " .. warbandWinsTotal .. "/" .. warbandGamesTotal
-        string = string .. "\n" .. " " .. L.WarMode .. " |cff44ff44" .. L.On .. "|r: " .. warbandWinsWM .. "/" .. warbandGamesWM
-        string = string .. "\n" .. " " .. L.WarMode .. " |cffff4444" .. L.Off .. "|r: " .. warbandWins .. "/" .. warbandGames
-        print(string)
-    end
+    string = "|cff01e2ff" .. L.WarbandWide .. ":|r\n" .. L.WinRecord .. ": " .. warbandWinsTotal .. "/" .. warbandGamesTotal
+    string = string .. "\n" .. L.WarMode .. " |cff44ff44" .. L.On .. "|r: " .. warbandWinsWM .. "/" .. warbandGamesWM
+    string = string .. "\n" .. L.WarMode .. " |cffff4444" .. L.Off .. "|r: " .. warbandWins .. "/" .. warbandGames
+    print(string)
 
     local characterGamesWM = TBW_data.characters[character].gamesWM
     local characterGames = TBW_data.characters[character].games
@@ -539,16 +531,4 @@ function ns:PrintCounts(all)
     string = string .. "\n" .. L.WarMode .. " |cff44ff44" .. L.On .. "|r: " .. characterWinsWM .. "/" .. characterGamesWM
     string = string .. "\n" .. L.WarMode .. " |cffff4444" .. L.Off .. "|r: " .. characterWins .. "/" .. characterGames
     print(string)
-end
-
---- Print character stats
--- @param {boolean} all
-function ns:PrintStats()
-    local string = ""
-
-    string = string .. "\n" .. _G.KILLING_BLOWS .. ": " .. TBW_data.characters[character].killingBlows
-    string = string .. "\n" .. _G.HONORABLE_KILLS .. ": " .. TBW_data.characters[character].honorableKills
-    string = string .. "\n" .. _G.DEATHS .. ": " .. TBW_data.characters[character].deaths
-
-    ns:PrettyPrint(string)
 end
