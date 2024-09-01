@@ -30,7 +30,7 @@ function TolBaradWhen_OnEvent(self, event, arg, ...)
             -- Version-specific messages go here...
         end
         TBW_version = ns.version
-        ns:BattleCheck()
+        ns:TimerCheck()
         C_ChatInfo.RegisterAddonMessagePrefix(ADDON_NAME)
     elseif event == "GROUP_ROSTER_UPDATE" then
         local partyMembers = GetNumSubgroupMembers()
@@ -91,7 +91,7 @@ function TolBaradWhen_OnEvent(self, event, arg, ...)
                     ns:Toggle("recentlyReceivedStartWM")
                     TBW_data.statusWM = statusWM
                     TBW_data.startTimestampWM = tonumber(startTimestampWM)
-                    ns:BattleCheck(true)
+                    ns:TimerCheck(true)
                 end
             end
             if not ns.data.toggles.recentlyReceivedStart then
@@ -99,7 +99,7 @@ function TolBaradWhen_OnEvent(self, event, arg, ...)
                     ns:Toggle("recentlyReceivedStart")
                     TBW_data.status = status
                     TBW_data.startTimestamp = tonumber(startTimestamp)
-                    ns:BattleCheck(true)
+                    ns:TimerCheck(true)
                 end
             end
         end
@@ -107,7 +107,7 @@ function TolBaradWhen_OnEvent(self, event, arg, ...)
         local newLocation = C_Map.GetBestMapForUnit("player")
         if not ns:Contains(ns.data.mapIDs, ns.data.location) or not ns:Contains(ns.data.mapIDs, newLocation) then
             CT.After(1, function()
-                ns:BattleCheck()
+                ns:TimerCheck()
             end)
         end
         ns.data.location = C_Map.GetBestMapForUnit("player")
@@ -117,7 +117,7 @@ function TolBaradWhen_OnEvent(self, event, arg, ...)
             CT.After(1, function()
                 ns:IncrementCounts(arg)
                 ns:PrintCounts()
-                ns:BattleCheck()
+                ns:TimerCheck()
             end)
         end
     end
@@ -189,7 +189,7 @@ SlashCmdList["TOLBARADWHEN"] = function(message)
         print("|cffff4444" .. L.WarMode .. " " .. L.Disabled .. "|r " .. (TBW_data.status == "alliance" and allianceString or hordeString) .. " " .. (TBW_data.startTimestamp - now))
     else
         -- Print your timers
-        ns:BattleCheck(true)
+        ns:TimerCheck(true)
     end
 end
 SLASH_TOLBARADWHEN1 = "/" .. ns.command

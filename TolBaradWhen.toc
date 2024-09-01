@@ -1,9 +1,9 @@
 ## Interface: 110002
-## Version: 1.3.13
+## Version: 1.3.14-alpha.1
 
 ## Name: Tol Barad When?
 ## Title: Tol Barad When?
-## Notes: Keep track of the next Tol Barad battles (War Mode on/off)|n|n|cffbbbbbbSlash command: /tb or /tbw|r
+## Notes: Keep track of the next Tol Barad battles (War Mode enabled & disabled)|n|n|cffbbbbbbSlash command: /tb or /tbw|r
 ## Author: RavenousAddons
 ## IconAtlas: CrossedFlagsWithTimer
 

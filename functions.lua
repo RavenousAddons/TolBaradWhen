@@ -70,14 +70,14 @@ end
 
 --- Get active widget text.
 -- @return {string}
-local function GetActiveBattleWidget()
+local function GetActiveTimerWidget()
     local widget = _G["UIWidgetTopCenterContainerFrame"]["widgetFrames"][682]
     return widget and widget.Text:GetText() or nil
 end
 
 --- Get inactive widget text.
 -- @return {string}
-local function GetInactiveBattleWidget()
+local function GetInactiveTimerWidget()
     local widget = _G["UIWidgetTopCenterContainerFrame"]["widgetFrames"][688]
     return widget and widget.Text:GetText() or nil
 end
@@ -99,7 +99,7 @@ local function GetSeconds()
     local widgetText
 
     -- Time remaining in active battle
-    widgetText = GetActiveBattleWidget()
+    widgetText = GetActiveTimerWidget()
     if widgetText then
         local minutes, seconds = widgetText:match("(%d+):(%d+)")
         if minutes and seconds then
@@ -108,7 +108,7 @@ local function GetSeconds()
     end
 
     -- Time until next battle
-    widgetText = GetInactiveBattleWidget()
+    widgetText = GetInactiveTimerWidget()
     if widgetText then
         local minutes, seconds = widgetText:match("(%d+):(%d+)")
         if minutes and seconds then
@@ -124,7 +124,7 @@ end
 -- @param {number} now
 -- @param {number} startTimestamp
 -- @param {boolean} forced
-local function SetBattleAlerts(warmode, now, startTimestamp, forced)
+local function SetTimers(warmode, now, startTimestamp, forced)
     local secondsLeft = startTimestamp - now
     local minutesLeft = math.floor(secondsLeft / 60)
     local dateFormat = GetCVar("timeMgrUseMilitaryTime") == "1" and "%H:%M" or "%I:%M%p"
@@ -152,7 +152,7 @@ local function SetBattleAlerts(warmode, now, startTimestamp, forced)
             if secondsLeft >= (minutes * 60) then
                 CT.After(secondsLeft - (minutes * 60), function()
                     if minutes == ns:GetOptionValue("alertCustomMinutes") then
-                        ns:BattlePrint(warmode, L.AlertLong:format(minutes, startTime), true)
+                        TimerPrint(warmode, L.AlertLong:format(minutes, startTime), true)
                         PlaySound(567458) -- alarmclockwarning3.ogg
                         StartStopwatch(minutes, 0)
                     end
@@ -165,7 +165,7 @@ local function SetBattleAlerts(warmode, now, startTimestamp, forced)
             if secondsLeft >= (minutes * 60) then
                 CT.After(secondsLeft - (minutes * 60), function()
                     if ns:GetOptionValue(option) then
-                        ns:BattlePrint(warmode, L.AlertLong:format(minutes, startTime), true)
+                        TimerPrint(warmode, L.AlertLong:format(minutes, startTime), true)
                         PlaySound(567458) -- alarmclockwarning3.ogg
                         StartStopwatch(minutes, 0)
                     end
@@ -181,7 +181,7 @@ local function SetBattleAlerts(warmode, now, startTimestamp, forced)
                 else
                     ns:Toggle("recentlyOutput", ns.data.timeouts.long)
                 end
-                ns:BattlePrint(warmode, L.AlertStart:format(startTime), true)
+                TimerPrint(warmode, L.AlertStart:format(startTime), true)
                 PlaySound(567399) -- alarmclockwarning2.ogg
                 if ns:GetOptionValue("stopwatch") then
                     StopwatchFrame:Hide()
@@ -196,22 +196,36 @@ local function SetBattleAlerts(warmode, now, startTimestamp, forced)
 
         -- Start time is unknown (don't think this will ever happen anymore)
         if secondsLeft == 0 then
-            ns:BattlePrint(warmode, L.AlertStartUnsure, true)
+            TimerPrint(warmode, L.AlertStartUnsure, true)
             PlaySound(567399) -- alarmclockwarning2.ogg
         -- Battle has started, print elapsed
         elseif secondsLeft < 0 then
             -- Convert to absolute values to present elapsed time
-            ns:BattlePrint(warmode, L.AlertStartElapsed:format(Duration(secondsLeft * -1), startTime), true)
+            TimerPrint(warmode, L.AlertStartElapsed:format(Duration(secondsLeft * -1), startTime), true)
             PlaySound(567399) -- alarmclockwarning2.ogg
         -- Print time to next battle
         else
-            ns:BattlePrint(warmode, L.AlertShort:format(Duration(secondsLeft), startTime))
+            TimerPrint(warmode, L.AlertShort:format(Duration(secondsLeft), startTime))
         end
     end
 end
 
+--- Prints a message about the current battle state
+-- @param {boolean} warmode
+-- @param {string} message
+-- @param {boolean} raidWarning
+local function TimerPrint(warmode, message, raidWarning)
+    local warmodeFormatted = "|cff" .. (warmode and ("44ff44" .. L.Enabled) or ("ff4444" .. L.Disabled)) .. "|r"
+    local controlledFormatted = warmode and (TBW_data.statusWM == "alliance" and allianceString or hordeString) or (TBW_data.status == "alliance" and allianceString or hordeString)
+    DEFAULT_CHAT_FRAME:AddMessage("|cff" .. ns.color .. L.TimerPrint:format(warmodeFormatted, controlledFormatted) .. " |r" .. message .. (warmode ~= C_PvP.IsWarModeDesired() and " " .. L.AlertToggleWarmode:format(warmodeFormatted) or ""))
+    if raidWarning and ns:GetOptionValue("raidwarning") then
+        local controlled = warmode and (TBW_data.statusWM == "alliance" and L.Alliance or L.Horde) or (TBW_data.status == "alliance" and L.Alliance or L.Horde)
+        RaidNotice_AddMessage(RaidWarningFrame, L.TimerRaidWarning:format(warmode and L.Enabled or L.Disabled, controlled) .. " " .. message .. (warmode ~= C_PvP.IsWarModeDesired() and "|n" .. L.AlertToggleWarmode:format(warmode and L.Enabled or L.Disabled) or ""), ChatTypeInfo["RAID_WARNING"])
+    end
+end
+
 ---
--- General Functions
+-- Namespaced Functions
 ---
 
 --- Returns an option from the options table
@@ -292,27 +306,9 @@ function ns:OpenSettings()
     Settings.OpenToCategory(ns.Settings:GetID())
 end
 
----
--- Timer Functions
----
-
---- Prints a message about the current battle state
--- @param {boolean} warmode
--- @param {string} message
--- @param {boolean} raidWarning
-function ns:BattlePrint(warmode, message, raidWarning)
-    local warmodeFormatted = "|cff" .. (warmode and ("44ff44" .. L.Enabled) or ("ff4444" .. L.Disabled)) .. "|r"
-    local controlledFormatted = warmode and (TBW_data.statusWM == "alliance" and allianceString or hordeString) or (TBW_data.status == "alliance" and allianceString or hordeString)
-    DEFAULT_CHAT_FRAME:AddMessage("|cff" .. ns.color .. L.BattlePrint:format(warmodeFormatted, controlledFormatted) .. " |r" .. message .. (warmode ~= C_PvP.IsWarModeDesired() and " " .. L.AlertToggleWarmode:format(warmodeFormatted) or ""))
-    if raidWarning and ns:GetOptionValue("raidwarning") then
-        local controlled = warmode and (TBW_data.statusWM == "alliance" and L.Alliance or L.Horde) or (TBW_data.status == "alliance" and L.Alliance or L.Horde)
-        RaidNotice_AddMessage(RaidWarningFrame, L.BattleRaidWarning:format(warmode and L.Enabled or L.Disabled, controlled) .. " " .. message .. (warmode ~= C_PvP.IsWarModeDesired() and "|n" .. L.AlertToggleWarmode:format(warmode and L.Enabled or L.Disabled) or ""), ChatTypeInfo["RAID_WARNING"])
-    end
-end
-
 --- Checks the current battle(s) state
 -- @param {boolean} forced
-function ns:BattleCheck(forced)
+function ns:TimerCheck(forced)
     local now = GetServerTime()
     local warmode = C_PvP.IsWarModeDesired()
     local secondsLeft = GetSeconds()
@@ -368,7 +364,7 @@ function ns:BattleCheck(forced)
         if ns.data.location == 245 then
             -- Start time is unknown
             if secondsLeft == 0 then
-                ns:BattlePrint(warmode, L.AlertStartUnsure, true)
+                TimerPrint(warmode, L.AlertStartUnsure, true)
                 PlaySound(567399) -- alarmclockwarning2.ogg
             end
         elseif forced then
@@ -378,10 +374,10 @@ function ns:BattleCheck(forced)
     end
 
     -- If we are in Tol Barad OR Forced
-    -- THEN send data over to SetBattleAlerts()
+    -- THEN send data over to SetTimers()
     if (not ns.data.toggles.timingWM and TBW_data.startTimestampWM > now) or (not ns.data.toggles.timing and TBW_data.startTimestamp > now) or ns:Contains(ns.data.mapIDs, ns.data.location) or forced then
-        SetBattleAlerts(true, now, TBW_data.startTimestampWM, forced)
-        SetBattleAlerts(false, now, TBW_data.startTimestamp, forced)
+        SetTimers(true, now, TBW_data.startTimestampWM, forced)
+        SetTimers(false, now, TBW_data.startTimestamp, forced)
     end
 end
 
@@ -438,25 +434,25 @@ function ns:SendStart(channel, target, announce)
                     -- Announce
                     local secondsLeft, minutesLeft, message
                     ns:Toggle("recentlyAnnouncedStart")
-                    -- WM On
+                    -- WM Enabled
                     secondsLeft = TBW_data.startTimestampWM - now
                     if secondsLeft > 0 then
                         message = L.AlertAnnounce:format(Duration(secondsLeft))
-                        SendChatMessage(L.BattlePrint:format(L.Enabled, TBW_data.statusWM == "alliance" and L.Alliance or L.Horde) .. " " .. message, string.upper(channel), nil, target)
+                        SendChatMessage(L.TimerPrint:format(L.Enabled, TBW_data.statusWM == "alliance" and L.Alliance or L.Horde) .. " " .. message, string.upper(channel), nil, target)
                     elseif secondsLeft > -900 then
                         -- Convert to absolute values to present elapsed time
                         message = L.AlertStartElapsedAnnounce:format(Duration(secondsLeft * -1))
-                        SendChatMessage(L.BattlePrint:format(L.Enabled, TBW_data.statusWM == "alliance" and L.Alliance or L.Horde) .. " " .. message, string.upper(channel), nil, target)
+                        SendChatMessage(L.TimerPrint:format(L.Enabled, TBW_data.statusWM == "alliance" and L.Alliance or L.Horde) .. " " .. message, string.upper(channel), nil, target)
                     end
-                    -- WM Off
+                    -- WM Disabled
                     secondsLeft = TBW_data.startTimestamp - now
                     if secondsLeft > 0 then
                         message = L.AlertAnnounce:format(Duration(secondsLeft))
-                        SendChatMessage(L.BattlePrint:format(L.Disabled, TBW_data.status == "alliance" and L.Alliance or L.Horde) .. " " .. message, string.upper(channel), nil, target)
+                        SendChatMessage(L.TimerPrint:format(L.Disabled, TBW_data.status == "alliance" and L.Alliance or L.Horde) .. " " .. message, string.upper(channel), nil, target)
                     elseif secondsLeft > -900 then
                         -- Convert to absolute values to present elapsed time
                         message = L.AlertStartElapsedAnnounce:format(Duration(secondsLeft * -1))
-                        SendChatMessage(L.BattlePrint:format(L.Disabled, TBW_data.status == "alliance" and L.Alliance or L.Horde) .. " " .. message, string.upper(channel), nil, target)
+                        SendChatMessage(L.TimerPrint:format(L.Disabled, TBW_data.status == "alliance" and L.Alliance or L.Horde) .. " " .. message, string.upper(channel), nil, target)
                     end
                     if ns:GetOptionValue("debug") then
                         ns:PrettyPrint("\n" .. L.DebugAnnouncedStart:format(string.upper(channel)) .. "\n" .. message)
