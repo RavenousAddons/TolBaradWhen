@@ -27,7 +27,7 @@ function TolBaradWhen_OnEvent(self, event, arg, ...)
             ns:PrettyPrint(L.Install:format(ns.color, ns.version))
         elseif TBW_version ~= ns.version then
             ns:PrettyPrint(L.Update:format(ns.color, ns.version))
-            -- Version-specific messages
+            -- Version-specific messages go here...
         end
         TBW_version = ns.version
         ns:BattleCheck()
@@ -185,8 +185,8 @@ SlashCmdList["TOLBARADWHEN"] = function(message)
     elseif message == "d" or message:match("bug") then
         -- Debug
         local now = GetServerTime()
-        print("|cff44ff44" .. L.WarMode .. " " .. L.On .. "|r " .. (TBW_data.statusWM == "alliance" and allianceString or hordeString) .. " " .. (TBW_data.startTimestampWM - now))
-        print("|cffff4444" .. L.WarMode .. " " .. L.Off .. "|r " .. (TBW_data.status == "alliance" and allianceString or hordeString) .. " " .. (TBW_data.startTimestamp - now))
+        print("|cff44ff44" .. L.WarMode .. " " .. L.Enabled .. "|r " .. (TBW_data.statusWM == "alliance" and allianceString or hordeString) .. " " .. (TBW_data.startTimestampWM - now))
+        print("|cffff4444" .. L.WarMode .. " " .. L.Disabled .. "|r " .. (TBW_data.status == "alliance" and allianceString or hordeString) .. " " .. (TBW_data.startTimestamp - now))
     else
         -- Print your timers
         ns:BattleCheck(true)

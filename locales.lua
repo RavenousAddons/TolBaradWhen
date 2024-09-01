@@ -8,27 +8,13 @@ setmetatable(L, { __index = function(t, k)
     return v
 end })
 
--- Set some strings to Titlecase
-local function TitleCase(phrase)
-    local result = string.gsub( phrase, "(%a)([%w_']*)",
-        function(first, rest)
-            return first:upper() .. rest:lower()
-        end
-    )
-    return result
-end
-
 -- Global
-L.On = TitleCase(_G.SLASH_TEXTTOSPEECH_ON)
-L.Off = TitleCase(_G.SLASH_TEXTTOSPEECH_OFF)
 L.Enabled = _G.VIDEO_OPTIONS_ENABLED
-L.Disabled = _G.VIDEO_OPTIONS_DISABLED
 L.WarMode = _G.PVP_LABEL_WAR_MODE
 L.TolBarad = _G.DUNGEON_FLOOR_TOLBARADWARLOCKSCENARIO0
 L.Alliance = _G.FACTION_ALLIANCE
 L.Horde = _G.FACTION_HORDE
 L.WarbandWide = _G.ITEM_UPGRADE_DISCOUNT_TOOLTIP_ACCOUNT_WIDE
-L.MinutesSeconds = "%02dm%02ds"
 
 -- English
 L.Version = "%s is the current version." -- ns.version
@@ -44,6 +30,7 @@ L.AlertStart = "has started! Up to 15 minutes remaining from %s."
 L.AlertStartElapsedAnnounce = "started %s ago."
 L.AlertStartElapsed = "started %s ago at %s."
 L.AlertStartUnsure = "started and may still be ongoing!"
+L.AlertToggleWarmode = "You will have to set " .. L.WarMode .. " to %s to participate!"
 L.WarningNoInfo = "Unfortunately, " .. L.TolBarad .. " information is unavailable here! You'll have to go to " .. L.TolBarad .. " or ask for a group member to share their data with you."
 L.WarningNoData = "Your " .. L.TolBarad .. " data doesn't contain any upcoming alerts that you can share."
 L.WarningDisabledShare = "You must enable sharing in Options in order to share your " .. L.TolBarad .. " data with group members."
