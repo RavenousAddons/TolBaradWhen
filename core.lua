@@ -94,7 +94,7 @@ end
 local function ZoneChangedNewAreaEvent()
     local newLocation = C_Map.GetBestMapForUnit("player")
     local warmode = C_PvP.IsWarModeDesired()
-    if (not ns:InTolBarad(ns.data.location) or not ns:IsFuture(warmode and TBW_data.startTimestampWM or TBW_data.startTimestamp)) and ns:InTolBarad(newLocation) then
+    if (not ns:InTolBarad(ns.data.location) or ns:IsPast(warmode and TBW_data.startTimestampWM or TBW_data.startTimestamp)) and ns:InTolBarad(newLocation) then
         CT.After(1, function()
             ns:TimerCheck()
         end)
