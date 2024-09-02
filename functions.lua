@@ -86,10 +86,6 @@ local function GetInactiveTimerWidget()
 end
 
 --- Get remaining seconds in current battle (negative) or until next battle (positive).
---- Time remaining:
----   Accurate when in Main OR Peninsula
---- Time until:
----   Accurate when in Main
 -- @return {number|boolean}
 local function GetSeconds()
     -- Unknown when not in either zone
@@ -226,6 +222,8 @@ local function GetControl()
     return textureIndex == 46 and "alliance" or "horde"
 end
 
+--- Returns a date-formatted string based on a timestamp
+-- @return {string}
 local function DateFormat(timestamp)
     local dateFormat = GetCVar("timeMgrUseMilitaryTime") == "1" and "%H:%M" or "%I:%M%p"
     local string = date(dateFormat, timestamp)

@@ -113,9 +113,7 @@ L.OptionsExtra = {
     },
 }
 L.DebugAnnouncedStart = "Announced start times in %s"
-L.DebugReceivedRequest = "Received request from %s in %s"
-L.DebugReceivedStart = "Received start times from %s in %s"
-L.DebugReceivedVersion = "Received version from %s in %s"
+L.DebugReceivedAddonMessage = "Received message from %s in %s"
 L.DebugRequestedStart = "Requested start times in %s"
 L.DebugSentVersion = "Sent version in %s"
 L.DebugToggleOn = "%s = true (%ss timeout)"

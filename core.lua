@@ -44,10 +44,10 @@ local function GroupRosterUpdateEvent()
 end
 
 local function ChatMsgAddonEvent(message, channel, sender)
+    if ns:GetOptionValue("debug") then
+        ns:PrettyPrint("\n" .. L.DebugReceivedAddonMessage:format(sender, channel) .. "\n" .. message)
+    end
     if message:match("V:") and not ns.data.toggles.updateFound then
-        if ns:GetOptionValue("debug") then
-            ns:PrettyPrint("\n" .. L.DebugReceivedVersion:format(sender, channel) .. "\n" .. message)
-        end
         local version = message:gsub("V:", "")
         if not message:match("-") then
             local v1, v2, v3 = strsplit(".", version)
@@ -60,18 +60,12 @@ local function ChatMsgAddonEvent(message, channel, sender)
             end
         end
     elseif message:match("R!") then
-        if ns:GetOptionValue("debug") then
-            ns:PrettyPrint("\n" .. L.DebugReceivedRequest:format(sender, channel) .. "\n" .. message)
-        end
         ns:PrettyPrint(L.ReceivedRequest:format(sender, channel))
         local now = GetServerTime()
         if not ns.data.toggles.recentlyRequestedStart and (TBW_data.startTimestamp + 900 > now or TBW_data.startTimestampWM + 900 > now) then
             ns:SendStart(channel, sender)
         end
     elseif message:match("S:") and (message:match("A") or message:match("H")) then
-        if ns:GetOptionValue("debug") then
-            ns:PrettyPrint("\n" .. L.DebugReceivedStart:format(sender, channel) .. "\n" .. message)
-        end
         local timestamps = message:gsub("S:", "")
         local dataWM, data = strsplit(":", timestamps)
         local controlWM = dataWM:match("A") and "alliance" or "horde"
@@ -83,7 +77,7 @@ local function ChatMsgAddonEvent(message, channel, sender)
                 ns:Toggle("recentlyReceivedStartWM")
                 TBW_data.controlWM = controlWM
                 TBW_data.startTimestampWM = tonumber(startTimestampWM)
-                ns:TimerCheck(true)
+                ns:TimerCheck()
             end
         end
         if not ns.data.toggles.recentlyReceivedStart then
@@ -91,7 +85,7 @@ local function ChatMsgAddonEvent(message, channel, sender)
                 ns:Toggle("recentlyReceivedStart")
                 TBW_data.control = control
                 TBW_data.startTimestamp = tonumber(startTimestamp)
-                ns:TimerCheck(true)
+                ns:TimerCheck()
             end
         end
     end
@@ -107,11 +101,11 @@ local function ZoneChangedNewAreaEvent()
     ns.data.location = C_Map.GetBestMapForUnit("player")
 end
 
-local function RaidBossEmoteEvent()
+local function RaidBossEmoteEvent(string)
     if not ns.data.toggles.recentlyEnded then
         ns:Toggle("recentlyEnded", 3)
         CT.After(1, function()
-            ns:IncrementCounts(arg)
+            ns:IncrementCounts(string)
             ns:PrintCounts()
             ns:TimerCheck()
         end)
@@ -141,7 +135,7 @@ function TolBaradWhen_OnEvent(self, event, arg, ...)
     elseif event == "ZONE_CHANGED_NEW_AREA" then
         ZoneChangedNewAreaEvent()
     elseif event == "RAID_BOSS_EMOTE" and ns:InTolBarad(ns.data.location) and arg:match(L.TolBarad) and not arg:match("1") then
-        RaidBossEmoteEvent()
+        RaidBossEmoteEvent(arg)
     end
 end
 
@@ -207,8 +201,8 @@ SlashCmdList["TOLBARADWHEN"] = function(message)
     elseif message == "d" or message:match("bug") then
         -- Debug
         local now = GetServerTime()
-        print("|cff44ff44" .. L.WarMode .. " " .. L.Enabled .. "|r " .. (TBW_data.controlWM == "alliance" and allianceString or hordeString) .. " " .. (TBW_data.startTimestampWM - now))
-        print("|cffff4444" .. L.WarMode .. " " .. L.Disabled .. "|r " .. (TBW_data.control == "alliance" and allianceString or hordeString) .. " " .. (TBW_data.startTimestamp - now))
+        print(L.WarMode .. " |cff44ff44" .. L.Enabled .. "|r, Control: " .. (TBW_data.controlWM == "alliance" and allianceString or hordeString) .. " " .. (TBW_data.startTimestampWM - now))
+        print(L.WarMode .. " |cffff4444" .. L.Disabled .. "|r, Control: " .. (TBW_data.control == "alliance" and allianceString or hordeString) .. " " .. (TBW_data.startTimestamp - now))
     else
         -- Print your timers
         ns:TimerCheck(true)
