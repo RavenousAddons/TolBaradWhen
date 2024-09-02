@@ -53,6 +53,11 @@ ns.data = {
         updateFound = false,
         stopwatch = false,
     },
+    sounds = {
+        timerSet = 567436, -- alarmclockwarning1.ogg
+        start = 567399, -- alarmclockwarning2.ogg
+        future = 567458, -- alarmclockwarning3.ogg
+    },
     mapIDs = {
         244,
         245,
