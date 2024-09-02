@@ -62,7 +62,7 @@ local function ChatMsgAddonEvent(message, channel, sender)
     elseif message:match("R!") then
         ns:PrettyPrint(L.ReceivedRequest:format(sender, channel))
         local now = GetServerTime()
-        if not ns.data.toggles.recentlyRequestedStart and (TBW_data.startTimestamp + 900 > now or TBW_data.startTimestampWM + 900 > now) then
+        if not ns.data.toggles.recentlyRequestedStart and (ns:IsPresent(TBW_data.startTimestampWM) or ns:IsFuture(TBW_data.startTimestampWM) or ns:IsPresent(TBW_data.startTimestamp) or ns:IsFuture(TBW_data.startTimestamp)) then
             ns:SendStart(channel, sender)
         end
     elseif message:match("S:") and (message:match("A") or message:match("H")) then
@@ -73,7 +73,7 @@ local function ChatMsgAddonEvent(message, channel, sender)
         local startTimestampWM = dataWM:gsub("A", ""):gsub("H", "")
         local startTimestamp = data:gsub("A", ""):gsub("H", "")
         if not ns.data.toggles.recentlyReceivedStartWM then
-            if tonumber(startTimestampWM) > TBW_data.startTimestampWM then
+            if tonumber(startTimestampWM) > tonumber(TBW_data.startTimestampWM) + 1 then
                 ns:Toggle("recentlyReceivedStartWM")
                 TBW_data.controlWM = controlWM
                 TBW_data.startTimestampWM = tonumber(startTimestampWM)
@@ -81,7 +81,7 @@ local function ChatMsgAddonEvent(message, channel, sender)
             end
         end
         if not ns.data.toggles.recentlyReceivedStart then
-            if tonumber(startTimestamp) > TBW_data.startTimestamp then
+            if tonumber(startTimestamp) > tonumber(TBW_data.startTimestamp) + 1 then
                 ns:Toggle("recentlyReceivedStart")
                 TBW_data.control = control
                 TBW_data.startTimestamp = tonumber(startTimestamp)
@@ -93,12 +93,13 @@ end
 
 local function ZoneChangedNewAreaEvent()
     local newLocation = C_Map.GetBestMapForUnit("player")
-    if not ns:InTolBarad(ns.data.location) or not ns:InTolBarad(newLocation) then
+    local warmode = C_PvP.IsWarModeDesired()
+    if (not ns:InTolBarad(ns.data.location) or not ns:IsFuture(warmode and TBW_data.startTimestampWM or TBW_data.startTimestamp)) and ns:InTolBarad(newLocation) then
         CT.After(1, function()
             ns:TimerCheck()
         end)
     end
-    ns.data.location = C_Map.GetBestMapForUnit("player")
+    ns.data.location = newLocation
 end
 
 local function RaidBossEmoteEvent(string)

@@ -313,6 +313,30 @@ function ns:OpenSettings()
     Settings.OpenToCategory(ns.Settings:GetID())
 end
 
+--- Returns true if timestamp is past the active battle time (by 15 min est.)
+-- @param {number}
+-- @return {boolean}
+function ns:IsPast(timestamp)
+    local now = GetServerTime()
+    return timestamp + 900 < now
+end
+
+--- Returns true if timestamp is inside the active battle time
+-- @param {number}
+-- @return {boolean}
+function ns:IsPresent(timestamp)
+    local now = GetServerTime()
+    return timestamp < now and now < timestamp + 900
+end
+
+--- Returns true if timestamp is before the active battle time
+-- @param {number}
+-- @return {boolean}
+function ns:IsFuture(timestamp)
+    local now = GetServerTime()
+    return now < timestamp
+end
+
 --- Checks the current battle(s) state
 -- @param {boolean} forced
 function ns:TimerCheck(forced)
@@ -333,7 +357,7 @@ function ns:TimerCheck(forced)
 
     -- If within 15 minute window after start, battle may be active, display alert
     -- For WM Enabled
-    if TBW_data.startTimestampWM < now and now < TBW_data.startTimestampWM + 900 then
+    if ns:IsPresent(TBW_data.startTimestampWM) then
         if forced or not ns.data.toggles.recentlyOutputWM then
             ns:Toggle("recentlyOutputWM")
             TimerPrint(true, L.AlertStartElapsed:format(Duration((TBW_data.startTimestampWM - now) * -1), DateFormat(TBW_data.startTimestampWM)), true)
@@ -341,7 +365,7 @@ function ns:TimerCheck(forced)
         end
     end
     -- For WM Disabled
-    if TBW_data.startTimestamp < now and now < TBW_data.startTimestamp + 900 then
+    if ns:IsPresent(TBW_data.startTimestamp) then
         if forced or not ns.data.toggles.recentlyOutputWM then
             ns:Toggle("recentlyOutput")
             TimerPrint(false, L.AlertStartElapsed:format(Duration((TBW_data.startTimestamp - now) * -1), DateFormat(TBW_data.startTimestamp)), true)
@@ -350,7 +374,7 @@ function ns:TimerCheck(forced)
     end
 
     -- If past 15 minute window after start and FORCED, battle likely over, display alert
-    if TBW_data.startTimestampWM + 900 < now and TBW_data.startTimestamp + 900 < now and forced then
+    if ns:IsPast(TBW_data.startTimestampWM) and ns:IsPast(TBW_data.startTimestamp) and forced then
         ns:PrettyPrint(L.WarningNoInfo)
     end
 
@@ -418,7 +442,7 @@ end
 function ns:SendStart(channel, target, announce)
     announce = announce == nil and false or announce
     local now = GetServerTime()
-    if TBW_data.startTimestampWM + 900 > now or TBW_data.startTimestamp + 900 > now then
+    if ns:IsPresent(TBW_data.startTimestampWM) or ns:IsFuture(TBW_data.startTimestampWM) or ns:IsPresent(TBW_data.startTimestamp) or ns:IsFuture(TBW_data.startTimestamp) then
         if not channel and not IsInGroup(LE_PARTY_CATEGORY_INSTANCE) then
             ns.data.partyMembers = GetNumSubgroupMembers()
             ns.data.raidMembers = IsInRaid() and GetNumGroupMembers() or 0
@@ -430,8 +454,8 @@ function ns:SendStart(channel, target, announce)
         end
         if channel then
             if announce then
+                -- Announce
                 if not ns.data.toggles.recentlyAnnouncedStart then
-                    -- Announce
                     local secondsUntil, message
                     ns:Toggle("recentlyAnnouncedStart")
                     -- WM Enabled
@@ -440,7 +464,7 @@ function ns:SendStart(channel, target, announce)
                         message = L.AlertAnnounce:format(Duration(secondsUntil))
                         SendChatMessage(L.TimerPrint:format(L.Enabled, ControlToString(TBW_data.controlWM)) .. " " .. message, string.upper(channel), nil, target)
                     elseif secondsUntil > -900 then
-                        -- Convert to absolute values to present elapsed time
+                        -- Convert absolute values to present elapsed time
                         message = L.AlertStartElapsedAnnounce:format(Duration(secondsUntil * -1))
                         SendChatMessage(L.TimerPrint:format(L.Enabled, ControlToString(TBW_data.controlWM)) .. " " .. message, string.upper(channel), nil, target)
                     end
@@ -450,19 +474,19 @@ function ns:SendStart(channel, target, announce)
                         message = L.AlertAnnounce:format(Duration(secondsUntil))
                         SendChatMessage(L.TimerPrint:format(L.Disabled, ControlToString(TBW_data.control)) .. " " .. message, string.upper(channel), nil, target)
                     elseif secondsUntil > -900 then
-                        -- Convert to absolute values to present elapsed time
+                        -- Convert absolute values to present elapsed time
                         message = L.AlertStartElapsedAnnounce:format(Duration(secondsUntil * -1))
                         SendChatMessage(L.TimerPrint:format(L.Disabled, ControlToString(TBW_data.control)) .. " " .. message, string.upper(channel), nil, target)
                     end
                     if ns:GetOptionValue("debug") then
-                        ns:PrettyPrint("\n" .. L.DebugAnnouncedStart:format(string.upper(channel)) .. "\n" .. message)
+                        ns:PrettyPrint("\n" .. L.DebugAnnouncedStart:format(string.upper(channel)))
                     end
                 else
                     ns:PrettyPrint(L.WarningFastShare:format(20 - (GetServerTime() - TBW_data.toggles.recentlyAnnouncedStart)))
                 end
             else
+                -- Send
                 if not ns.data.toggles.recentlySentStart then
-                    -- Send
                     ns:Toggle("recentlySentStart")
                     local message = "S:" .. ControlToStringID(TBW_data.controlWM) .. TBW_data.startTimestampWM .. ":" .. ControlToStringID(TBW_data.control) .. TBW_data.startTimestamp
                     local response = C_ChatInfo.SendAddonMessage(ADDON_NAME, message, string.upper(channel), target)
