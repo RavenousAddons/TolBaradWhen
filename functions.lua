@@ -85,16 +85,22 @@ local function GetInactiveTimerWidget()
     return widget and widget.Text:GetText() or nil
 end
 
---- Get seconds in current battle or until next battle.
--- @return {number}
+--- Get remaining seconds in current battle (negative) or until next battle (positive).
+--- Time remaining:
+---   Accurate when in Main OR Peninsula
+--- Time until:
+---   Accurate when in Main
+-- @return {number|boolean}
 local function GetSeconds()
-    if not ns:Contains(ns.data.mapIDs, ns.data.location) then
-        return 0
+    -- Unknown when not in either zone
+    if not ns:InTolBarad(ns.data.location) then
+        return false
     end
 
     local widgetText
 
     -- Time remaining in active battle
+    -- Returns time REMAINING (negative number)
     widgetText = GetActiveTimerWidget()
     if widgetText then
         local minutes, seconds = widgetText:match("(%d+):(%d+)")
@@ -104,6 +110,7 @@ local function GetSeconds()
     end
 
     -- Time until next battle
+    -- Returns time UNTIL (positive number)
     widgetText = GetInactiveTimerWidget()
     if widgetText then
         local minutes, seconds = widgetText:match("(%d+):(%d+)")
@@ -112,7 +119,20 @@ local function GetSeconds()
         end
     end
 
-    return 0
+    -- Unknown when battle is active and in Peninsula
+    return false
+end
+
+--- Returns a formatted Alliance/Horde string based on control value
+-- @return {string}
+local function ControlToString(control)
+    return control == "alliance" and L.Alliance or L.Horde
+end
+
+--- Returns a formatted Alliance/Horde string ID based on control value
+-- @return {string}
+local function ControlToStringID(control)
+    return control == "alliance" and "A" or "H"
 end
 
 --- Prints a message about the current battle state
@@ -124,103 +144,98 @@ local function TimerPrint(warmode, message, raidWarningGate)
     local controlledFormatted = warmode and (TBW_data.controlWM == "alliance" and allianceString or hordeString) or (TBW_data.control == "alliance" and allianceString or hordeString)
     DEFAULT_CHAT_FRAME:AddMessage("|cff" .. ns.color .. L.TimerPrint:format(warmodeFormatted, controlledFormatted) .. " |r" .. message .. (warmode ~= C_PvP.IsWarModeDesired() and " " .. L.AlertToggleWarmode:format(warmodeFormatted) or ""))
     if raidWarningGate and ns:GetOptionValue("raidwarning") then
-        local controlled = warmode and (TBW_data.controlWM == "alliance" and L.Alliance or L.Horde) or (TBW_data.control == "alliance" and L.Alliance or L.Horde)
+        local controlled = warmode and ControlToString(TBW_data.controlWM) or ControlToString(TBW_data.control)
         RaidNotice_AddMessage(RaidWarningFrame, L.TimerRaidWarning:format(warmode and L.Enabled or L.Disabled, controlled) .. " " .. message .. (warmode ~= C_PvP.IsWarModeDesired() and "|n" .. L.AlertToggleWarmode:format(warmode and L.Enabled or L.Disabled) or ""), ChatTypeInfo["RAID_WARNING"])
     end
 end
 
 --- Sets alerts for future battles
 -- @param {boolean} warmode
--- @param {number} now
--- @param {number} startTimestamp
+-- @param {number} timestamp
 -- @param {boolean} forced
-local function SetTimers(warmode, now, startTimestamp, forced)
-    local secondsLeft = startTimestamp - now
-    local minutesLeft = math.floor(secondsLeft / 60)
+local function SetTimers(warmode, timestamp, forced)
+    local now = GetServerTime()
+    local secondsUntil = timestamp - now
     local dateFormat = GetCVar("timeMgrUseMilitaryTime") == "1" and "%H:%M" or "%I:%M%p"
-    local startTime = date(dateFormat, startTimestamp)
+    local startTime = date(dateFormat, timestamp)
 
+    -- Remove starting zero from non-military time
     if GetCVar("timeMgrUseMilitaryTime") == "0" then
         startTime = startTime:gsub("^0", ""):lower()
     end
 
-    -- If the Battle has not started yet, set Alerts
-    if secondsLeft > 0 and (ns:GetOptionValue("alertStart") or ns:GetOptionValue("alert1Minute") or ns:GetOptionValue("alert2Minutes") or ns:GetOptionValue("alert10Minutes") or ns:GetOptionValue("alertCustomMinutes") > 1) and ((warmode and not ns.data.toggles.timingWM) or (not warmode and not ns.data.toggles.timing)) then
-        -- Timing has begun
-        ns:Toggle(warmode and "timingWM" or "timing", secondsLeft)
-
-        -- Alert that a timer will be set
-        ns:PrettyPrint(L.AlertSet)
-        PlaySound(ns.data.sounds.timerSet)
-
-        -- Set Custom Alerts
-        for minutes = 15, 55, 5 do
-            if secondsLeft >= (minutes * 60) then
-                CT.After(secondsLeft - (minutes * 60), function()
-                    if minutes == ns:GetOptionValue("alertCustomMinutes") then
-                        TimerPrint(warmode, L.AlertLong:format(minutes, startTime), true)
-                        PlaySound(ns.data.sounds.future)
-                        StartStopwatch(minutes, 0)
-                    end
-                end)
-            end
-        end
-
-        -- Set Pre-Defined Alerts
-        for option, minutes in pairs(ns.data.timers) do
-            if secondsLeft >= (minutes * 60) then
-                CT.After(secondsLeft - (minutes * 60), function()
-                    if ns:GetOptionValue(option) then
-                        TimerPrint(warmode, L.AlertLong:format(minutes, startTime), true)
-                        PlaySound(ns.data.sounds.future)
-                        StartStopwatch(minutes, 0)
-                    end
-                end)
-            end
-        end
-
-        -- Set Start Alert
-        CT.After(secondsLeft, function()
-            if ns:GetOptionValue("alertStart") then
-                if warmode then
-                    ns:Toggle("recentlyOutputWM", ns.data.timeouts.long)
-                else
-                    ns:Toggle("recentlyOutput", ns.data.timeouts.long)
-                end
-                TimerPrint(warmode, L.AlertStart:format(startTime), true)
-                PlaySound(ns.data.sounds.start)
-                if ns:GetOptionValue("stopwatch") then
-                    StopwatchFrame:Hide()
-                end
-            end
-        end)
+    -- If no alerts are enabled, exit function
+    if not ns:GetOptionValue("alertStart") and not ns:GetOptionValue("alert1Minute") and not ns:GetOptionValue("alert2Minutes") and not ns:GetOptionValue("alert10Minutes") and ns:GetOptionValue("alertCustomMinutes") == 1 then
+        return
     end
 
-    -- Inform the player about starting time
-    if secondsLeft + 900 > 0 and (forced or (warmode and not ns.data.toggles.recentlyOutputWM) or (not warmode and not ns.data.toggles.recentlyOutput)) then
-        ns:Toggle(warmode and "recentlyOutputWM" or "recentlyOutput")
+    -- Prevent duplicate timers
+    ns:Toggle(warmode and "timerActiveWM" or "timerActive", secondsUntil)
 
-        -- Start time is unknown (don't think this will ever happen anymore)
-        if secondsLeft == 0 then
-            TimerPrint(warmode, L.AlertStartUnsure, true)
-            PlaySound(ns.data.sounds.start)
-        -- Battle has started, print elapsed
-        elseif secondsLeft < 0 then
-            -- Convert to absolute values to present elapsed time
-            TimerPrint(warmode, L.AlertStartElapsed:format(Duration(secondsLeft * -1), startTime), true)
-            PlaySound(ns.data.sounds.start)
-        -- Print time to next battle
-        else
-            TimerPrint(warmode, L.AlertShort:format(Duration(secondsLeft), startTime))
+    -- Alert that timers have been set
+    ns:PrettyPrint(L.AlertSet)
+    PlaySound(ns.data.sounds.timerSet)
+
+    -- Set Pre-Defined Alerts
+    for option, minutes in pairs(ns.data.timers) do
+        if secondsUntil >= (minutes * 60) then
+            CT.After(secondsUntil - (minutes * 60), function()
+                if ns:GetOptionValue(option) then
+                    TimerPrint(warmode, L.AlertLong:format(minutes, startTime), true)
+                    PlaySound(ns.data.sounds.future)
+                    StartStopwatch(minutes, 0)
+                end
+            end)
         end
     end
+
+    -- Set Custom Alert
+    for minutes = 15, 55, 5 do
+        if secondsUntil >= (minutes * 60) then
+            CT.After(secondsUntil - (minutes * 60), function()
+                if minutes == ns:GetOptionValue("alertCustomMinutes") then
+                    TimerPrint(warmode, L.AlertLong:format(minutes, startTime), true)
+                    PlaySound(ns.data.sounds.future)
+                    StartStopwatch(minutes, 0)
+                end
+            end)
+        end
+    end
+
+    -- Set Start Alert
+    CT.After(secondsUntil, function()
+        if ns:GetOptionValue("alertStart") then
+            if warmode then
+                ns:Toggle("recentlyOutputWM", ns.data.timeouts.long)
+            else
+                ns:Toggle("recentlyOutput", ns.data.timeouts.long)
+            end
+            TimerPrint(warmode, L.AlertStart:format(startTime), true)
+            PlaySound(ns.data.sounds.start)
+            if ns:GetOptionValue("stopwatch") then
+                StopwatchFrame:Hide()
+            end
+        end
+    end)
 end
 
 --- Returns the faction that controls Tol Barad based on the widget texture
 -- @return {string}
 local function GetControl()
-    local textureIndex = C_AreaPoiInfo.GetAreaPOIInfo(244, 2485) and C_AreaPoiInfo.GetAreaPOIInfo(244, 2485).textureIndex or C_AreaPoiInfo.GetAreaPOIInfo(244, 2486).textureIndex
+    local textureIndex = C_AreaPoiInfo.GetAreaPOIInfo(ns.data.mapIDs.main, 2485) and C_AreaPoiInfo.GetAreaPOIInfo(ns.data.mapIDs.main, 2485).textureIndex or C_AreaPoiInfo.GetAreaPOIInfo(ns.data.mapIDs.main, 2486).textureIndex
     return textureIndex == 46 and "alliance" or "horde"
+end
+
+local function DateFormat(timestamp)
+    local dateFormat = GetCVar("timeMgrUseMilitaryTime") == "1" and "%H:%M" or "%I:%M%p"
+    local string = date(dateFormat, timestamp)
+
+    -- Remove starting zero from non-military time
+    if GetCVar("timeMgrUseMilitaryTime") == "0" then
+        string = string:gsub("^0", ""):lower()
+    end
+
+    return string
 end
 
 ---
@@ -267,17 +282,11 @@ function ns:PrettyPrint(message)
     DEFAULT_CHAT_FRAME:AddMessage("|cff" .. ns.color .. ns.name .. "|r " .. message)
 end
 
---- Checks if an element is in a table
--- @param {table} table
--- @param {string} input
--- @return {number|boolean}
-function ns:Contains(table, input)
-    for index, value in ipairs(table) do
-        if value == input then
-            return index
-        end
-    end
-    return false
+--- Checks if player is in Tol Barad
+-- @param {number} location
+-- @return {boolean}
+function ns:InTolBarad(location)
+    return location == ns.data.mapIDs.main or location == ns.data.mapIDs.peninsula
 end
 
 --- Toggles a feature with a specified timeout
@@ -311,56 +320,66 @@ end
 function ns:TimerCheck(forced)
     local now = GetServerTime()
     local warmode = C_PvP.IsWarModeDesired()
-    local secondsLeft = GetSeconds()
+    -- Remaining time (negative) or Until (positive) or Unknown (false)
+    local seconds = GetSeconds()
 
-    -- If we're in Tol Barad, secondsLeft is reliable
-    if ns:Contains(ns.data.mapIDs, ns.data.location) then
-        -- If Tol Barad is active
-        if secondsLeft == 0 then
-            if warmode then
-                if ns.data.location == 244 then
-                    TBW_data.startTimestampWM = now > TBW_data.startTimestampWM + 900 and now or TBW_data.startTimestampWM
-                end
-                TBW_data.controlWM = GetControl()
-            else
-                if ns.data.location == 244 then
-                    TBW_data.startTimestamp = now > TBW_data.startTimestamp + 900 and now or TBW_data.startTimestamp
-                end
-                TBW_data.control = GetControl()
-            end
-        else
-            if warmode then
-                TBW_data.startTimestampWM = now + secondsLeft
-                TBW_data.controlWM = GetControl()
-            else
-                TBW_data.startTimestamp = now + secondsLeft
-                TBW_data.control = GetControl()
-            end
+    -- If in Tol Barad, set the control based on WM enabled/disabled
+    if ns:InTolBarad(ns.data.location) then
+        TBW_data[warmode and "controlWM" or "control"] = GetControl()
+    end
+
+    -- If reliable seconds returned, then we're in Tol Barad, set the timestamp based on WM enabled/disabled
+    if seconds ~= false then
+        TBW_data[warmode and "startTimestampWM" or "startTimestamp"] = now + seconds
+    end
+
+    -- If within 15 minute window after start, battle may be active, display alert
+    -- For WM Enabled
+    if TBW_data.startTimestampWM < now and now < TBW_data.startTimestampWM + 900 then
+        if forced or not ns.data.toggles.recentlyOutputWM then
+            ns:Toggle("recentlyOutputWM")
+            TimerPrint(true, L.AlertStartElapsed:format(Duration((TBW_data.startTimestampWM - now) * -1), DateFormat(TBW_data.startTimestampWM)), true)
+            PlaySound(ns.data.sounds.start)
+        end
+    end
+    -- For WM Disabled
+    if TBW_data.startTimestamp < now and now < TBW_data.startTimestamp + 900 then
+        if forced or not ns.data.toggles.recentlyOutputWM then
+            ns:Toggle("recentlyOutput")
+            TimerPrint(false, L.AlertStartElapsed:format(Duration((TBW_data.startTimestamp - now) * -1), DateFormat(TBW_data.startTimestamp)), true)
+            PlaySound(ns.data.sounds.start)
         end
     end
 
-    -- If the cached battles are in the past, exit BattleCheck()
-    if (TBW_data.startTimestampWM + 900) < now and (TBW_data.startTimestamp + 900) < now then
-        local secondsLeft = GetSeconds()
-
-        -- Final check for Tol Barad Peninsula during battle
-        if ns.data.location == 245 then
-            -- Start time is unknown
-            if secondsLeft == 0 then
-                TimerPrint(warmode, L.AlertStartUnsure, true)
-                PlaySound(ns.data.sounds.start)
-            end
-        elseif forced then
-            ns:PrettyPrint(L.WarningNoInfo)
-        end
-        return
+    -- If past 15 minute window after start and FORCED, battle likely over, display alert
+    if TBW_data.startTimestampWM + 900 < now and TBW_data.startTimestamp + 900 < now and forced then
+        ns:PrettyPrint(L.WarningNoInfo)
     end
 
-    -- If we are in Tol Barad OR Forced
-    -- THEN send data over to SetTimers()
-    if (not ns.data.toggles.timingWM and TBW_data.startTimestampWM > now) or (not ns.data.toggles.timing and TBW_data.startTimestamp > now) or ns:Contains(ns.data.mapIDs, ns.data.location) or forced then
-        SetTimers(true, now, TBW_data.startTimestampWM, forced)
-        SetTimers(false, now, TBW_data.startTimestamp, forced)
+    -- If start is in the future
+    -- For WM Enabled
+    if now < TBW_data.startTimestampWM then
+        -- Set alert if timer isn't active
+        if not ns.data.toggles.timerActiveWM then
+            SetTimers(true, TBW_data.startTimestampWM, forced)
+        end
+        -- Alert Timer
+        if forced or not ns.data.toggles.recentlyOutputWM then
+            ns:Toggle("recentlyOutputWM")
+            TimerPrint(true, L.AlertShort:format(Duration(TBW_data.startTimestampWM - now), DateFormat(TBW_data.startTimestampWM)))
+        end
+    end
+    -- For WM Disabled
+    if now < TBW_data.startTimestamp then
+        -- Set alert if timer isn't active
+        if not ns.data.toggles.timerActive then
+            SetTimers(false, TBW_data.startTimestamp, forced)
+        end
+        -- Alert Timer
+        if forced or not ns.data.toggles.recentlyOutput then
+            ns:Toggle("recentlyOutput")
+            TimerPrint(warmode, L.AlertShort:format(Duration(TBW_data.startTimestamp - now), DateFormat(TBW_data.startTimestamp)))
+        end
     end
 end
 
@@ -415,27 +434,27 @@ function ns:SendStart(channel, target, announce)
             if announce then
                 if not ns.data.toggles.recentlyAnnouncedStart then
                     -- Announce
-                    local secondsLeft, minutesLeft, message
+                    local secondsUntil, message
                     ns:Toggle("recentlyAnnouncedStart")
                     -- WM Enabled
-                    secondsLeft = TBW_data.startTimestampWM - now
-                    if secondsLeft > 0 then
-                        message = L.AlertAnnounce:format(Duration(secondsLeft))
-                        SendChatMessage(L.TimerPrint:format(L.Enabled, TBW_data.controlWM == "alliance" and L.Alliance or L.Horde) .. " " .. message, string.upper(channel), nil, target)
-                    elseif secondsLeft > -900 then
+                    secondsUntil = TBW_data.startTimestampWM - now
+                    if secondsUntil > 0 then
+                        message = L.AlertAnnounce:format(Duration(secondsUntil))
+                        SendChatMessage(L.TimerPrint:format(L.Enabled, ControlToString(TBW_data.controlWM)) .. " " .. message, string.upper(channel), nil, target)
+                    elseif secondsUntil > -900 then
                         -- Convert to absolute values to present elapsed time
-                        message = L.AlertStartElapsedAnnounce:format(Duration(secondsLeft * -1))
-                        SendChatMessage(L.TimerPrint:format(L.Enabled, TBW_data.controlWM == "alliance" and L.Alliance or L.Horde) .. " " .. message, string.upper(channel), nil, target)
+                        message = L.AlertStartElapsedAnnounce:format(Duration(secondsUntil * -1))
+                        SendChatMessage(L.TimerPrint:format(L.Enabled, ControlToString(TBW_data.controlWM)) .. " " .. message, string.upper(channel), nil, target)
                     end
                     -- WM Disabled
-                    secondsLeft = TBW_data.startTimestamp - now
-                    if secondsLeft > 0 then
-                        message = L.AlertAnnounce:format(Duration(secondsLeft))
-                        SendChatMessage(L.TimerPrint:format(L.Disabled, TBW_data.control == "alliance" and L.Alliance or L.Horde) .. " " .. message, string.upper(channel), nil, target)
-                    elseif secondsLeft > -900 then
+                    secondsUntil = TBW_data.startTimestamp - now
+                    if secondsUntil > 0 then
+                        message = L.AlertAnnounce:format(Duration(secondsUntil))
+                        SendChatMessage(L.TimerPrint:format(L.Disabled, ControlToString(TBW_data.control)) .. " " .. message, string.upper(channel), nil, target)
+                    elseif secondsUntil > -900 then
                         -- Convert to absolute values to present elapsed time
-                        message = L.AlertStartElapsedAnnounce:format(Duration(secondsLeft * -1))
-                        SendChatMessage(L.TimerPrint:format(L.Disabled, TBW_data.control == "alliance" and L.Alliance or L.Horde) .. " " .. message, string.upper(channel), nil, target)
+                        message = L.AlertStartElapsedAnnounce:format(Duration(secondsUntil * -1))
+                        SendChatMessage(L.TimerPrint:format(L.Disabled, ControlToString(TBW_data.control)) .. " " .. message, string.upper(channel), nil, target)
                     end
                     if ns:GetOptionValue("debug") then
                         ns:PrettyPrint("\n" .. L.DebugAnnouncedStart:format(string.upper(channel)) .. "\n" .. message)
@@ -447,7 +466,7 @@ function ns:SendStart(channel, target, announce)
                 if not ns.data.toggles.recentlySentStart then
                     -- Send
                     ns:Toggle("recentlySentStart")
-                    local message = "S:" .. (TBW_data.controlWM == "alliance" and "A" or "H") .. TBW_data.startTimestampWM .. ":" .. (TBW_data.control == "alliance" and "A" or "H") .. TBW_data.startTimestamp
+                    local message = "S:" .. ControlToStringID(TBW_data.controlWM) .. TBW_data.startTimestampWM .. ":" .. ControlToStringID(TBW_data.control) .. TBW_data.startTimestamp
                     local response = C_ChatInfo.SendAddonMessage(ADDON_NAME, message, string.upper(channel), target)
                     if ns:GetOptionValue("debug") then
                         ns:PrettyPrint("\n" .. L.DebugSharedStart:format(string.upper(channel)) .. "\n" .. message)
@@ -467,8 +486,9 @@ end
 --- Increment wins & games based on WM enabled/disabled
 -- @param {string} message
 function ns:IncrementCounts(message)
-    local gamesKey = C_PvP.IsWarModeDesired() and "gamesWM" or "games"
-    local winsKey = C_PvP.IsWarModeDesired() and "winsWM" or "wins"
+    local warmode = C_PvP.IsWarModeDesired()
+    local gamesKey = warmode and "gamesWM" or "games"
+    local winsKey = warmode and "winsWM" or "wins"
 
     TBW_data.characters[character][gamesKey] = TBW_data.characters[character][gamesKey] + 1
     if message:match(localizedFactionName) then

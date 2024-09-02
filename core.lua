@@ -99,7 +99,7 @@ end
 
 local function ZoneChangedNewAreaEvent()
     local newLocation = C_Map.GetBestMapForUnit("player")
-    if not ns:Contains(ns.data.mapIDs, ns.data.location) or not ns:Contains(ns.data.mapIDs, newLocation) then
+    if not ns:InTolBarad(ns.data.location) or not ns:InTolBarad(newLocation) then
         CT.After(1, function()
             ns:TimerCheck()
         end)
@@ -140,7 +140,7 @@ function TolBaradWhen_OnEvent(self, event, arg, ...)
         ChatMsgAddonEvent(message, channel, sender)
     elseif event == "ZONE_CHANGED_NEW_AREA" then
         ZoneChangedNewAreaEvent()
-    elseif event == "RAID_BOSS_EMOTE" and ns:Contains(ns.data.mapIDs, ns.data.location) and arg:match(L.TolBarad) and not arg:match("1") then
+    elseif event == "RAID_BOSS_EMOTE" and ns:InTolBarad(ns.data.location) and arg:match(L.TolBarad) and not arg:match("1") then
         RaidBossEmoteEvent()
     end
 end

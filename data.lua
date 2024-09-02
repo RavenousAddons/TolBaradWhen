@@ -16,6 +16,8 @@ ns.data = {
         toggles = {},
         startTimestampWM = 0,
         startTimestamp = 0,
+        controlWM = "alliance",
+        control = "alliance",
         gamesWM = 0,
         games = 0,
         winsWM = 0,
@@ -39,8 +41,8 @@ ns.data = {
         long = 60,
     },
     toggles = {
-        timingWM = false,
-        timing = false,
+        timerActiveWM = false,
+        timerActive = false,
         recentlyOutputWM = false,
         recentlyOutput = false,
         recentlyReceivedStartWM = false,
@@ -59,8 +61,8 @@ ns.data = {
         future = 567458, -- alarmclockwarning3.ogg
     },
     mapIDs = {
-        244,
-        245,
+        main = 244, -- Tol Barad
+        peninsula = 245, -- Tol Barad Peninsula
     },
     classColors = {
         deathknight = "c41e3a",
