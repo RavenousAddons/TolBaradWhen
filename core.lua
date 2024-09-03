@@ -44,6 +44,9 @@ local function GroupRosterUpdateEvent()
 end
 
 local function ChatMsgAddonEvent(message, channel, sender)
+    if sender == character then
+        return
+    end
     if ns:GetOptionValue("debug") then
         ns:PrettyPrint("\n" .. L.DebugReceivedAddonMessage:format(sender, channel) .. "\n" .. message)
     end
