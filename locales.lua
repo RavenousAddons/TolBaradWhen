@@ -112,13 +112,17 @@ L.OptionsExtra = {
         tooltip = "Enables messages for debugging.",
     },
 }
+L.DebugTimerCheck = "TimerCheck()|n  Forced: %s"
+L.DebugSetTimers = "SetTimers()|n  Warmode: %s|n  Timestamp: %s|n  Forced: %s"
 L.DebugAnnouncedStart = "Announced start times in %s"
-L.DebugReceivedAddonMessage = "Received message from %s in %s"
 L.DebugRequestedStart = "Requested start times in %s"
 L.DebugSentVersion = "Sent version in %s"
 L.DebugToggleOn = "%s = true (%ss timeout)"
 L.DebugToggleOff = "%s = false"
 L.DebugSharedStart = "Shared start times in %s"
+L.DebugChatMsgAddon = "Received message from %s in %s"
+L.DebugZoneChangedNewArea = "ZoneChangedNewArea|n%s to %s"
+L.DebugRaidBossEmote = "RaidBossEmote|n%s"
 
 -- Check locale and apply appropriate changes below
 local CURRENT_LOCALE = GetLocale()

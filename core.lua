@@ -48,7 +48,7 @@ local function ChatMsgAddonEvent(message, channel, sender)
         return
     end
     if ns:GetOptionValue("debug") then
-        ns:PrettyPrint("\n" .. L.DebugReceivedAddonMessage:format(sender, channel) .. "\n" .. message)
+        ns:PrettyPrint("DEBUG " .. date("%H:%M:%S", GetServerTime()) .. "\n" .. L.DebugChatMsgAddon:format(sender, channel) .. "\n" .. message)
     end
     if message:match("V:") and not ns.data.toggles.updateFound then
         local version = message:gsub("V:", "")
@@ -98,6 +98,9 @@ local function ZoneChangedNewAreaEvent()
     local newLocation = C_Map.GetBestMapForUnit("player")
     local warmode = C_PvP.IsWarModeDesired()
     if (not ns:InTolBarad(ns.data.location) or ns:IsPast(warmode and TBW_data.startTimestampWM or TBW_data.startTimestamp)) and ns:InTolBarad(newLocation) then
+        if ns:GetOptionValue("debug") then
+            ns:PrettyPrint("DEBUG " .. date("%H:%M:%S", GetServerTime()) .. "\n" .. L.DebugZoneChangedNewArea:format(ns.data.location, newLocation))
+        end
         CT.After(1, function()
             ns:TimerCheck()
         end)
@@ -106,9 +109,12 @@ local function ZoneChangedNewAreaEvent()
 end
 
 local function RaidBossEmoteEvent(string)
+    if ns:GetOptionValue("debug") then
+        ns:PrettyPrint("DEBUG " .. date("%H:%M:%S", GetServerTime()) .. "\n" .. L.DebugRaidBossEmote:format(string))
+    end
     if not ns.data.toggles.recentlyEnded then
-        ns:Toggle("recentlyEnded", 3)
-        CT.After(1, function()
+        ns:Toggle("recentlyEnded", ns.data.timeouts.short)
+        CT.After(2, function()
             ns:IncrementCounts(string)
             ns:PrintCounts()
             ns:TimerCheck()

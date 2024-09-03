@@ -150,6 +150,10 @@ end
 -- @param {number} timestamp
 -- @param {boolean} forced
 local function SetTimers(warmode, timestamp, forced)
+    if ns:GetOptionValue("debug") then
+        ns:PrettyPrint("DEBUG " .. date("%H:%M:%S", GetServerTime()) .. "\n" .. L.DebugSetTimers:format(warmode and L.Enabled or L.Disabled, timestamp .. " " .. date("%H:%M:%S", timestamp), forced and L.Enabled or L.Disabled))
+    end
+
     local now = GetServerTime()
     local secondsUntil = timestamp - now
     local dateFormat = GetCVar("timeMgrUseMilitaryTime") == "1" and "%H:%M" or "%I:%M%p"
@@ -270,7 +274,7 @@ function ns:SendVersionUpdate(channel)
     ns:Toggle("recentlySentVersion")
     C_ChatInfo.SendAddonMessage(ADDON_NAME, "V:" .. ns.version, channel)
     if ns:GetOptionValue("debug") then
-        ns:PrettyPrint("\n" .. L.DebugSentVersion:format(channel) .. "\n" .. "V:" .. ns.version)
+        ns:PrettyPrint("DEBUG " .. date("%H:%M:%S", GetServerTime()) .. "\n" .. L.DebugSentVersion:format(channel) .. "\n" .. "V:" .. ns.version)
     end
 end
 
@@ -296,12 +300,12 @@ function ns:Toggle(toggle, timeout)
         ns.data.toggles[toggle] = true
         TBW_data.toggles[toggle] = GetServerTime()
         if ns:GetOptionValue("debug") then
-            ns:PrettyPrint("\n" .. L.DebugToggleOn:format(toggle, timeout))
+            ns:PrettyPrint("DEBUG " .. date("%H:%M:%S", GetServerTime()) .. "\n" .. L.DebugToggleOn:format(toggle, timeout))
         end
         CT.After(timeout, function()
             ns.data.toggles[toggle] = false
             if ns:GetOptionValue("debug") then
-                ns:PrettyPrint("\n" .. L.DebugToggleOff:format(toggle))
+                ns:PrettyPrint("DEBUG " .. date("%H:%M:%S", GetServerTime()) .. "\n" .. L.DebugToggleOff:format(toggle))
             end
         end)
     end
@@ -340,6 +344,10 @@ end
 --- Checks the current battle(s) state
 -- @param {boolean} forced
 function ns:TimerCheck(forced)
+    if ns:GetOptionValue("debug") then
+        ns:PrettyPrint("DEBUG " .. date("%H:%M:%S", GetServerTime()) .. "\n" .. L.DebugTimerCheck:format(forced and L.Enabled or L.Disabled))
+    end
+
     local now = GetServerTime()
     local warmode = C_PvP.IsWarModeDesired()
     -- Remaining time (negative) or Until (positive) or Unknown (false)
@@ -425,7 +433,7 @@ function ns:RequestStart(channel, target)
             local message = "R!" .. now
             local response = C_ChatInfo.SendAddonMessage(ADDON_NAME, message, string.upper(channel), target)
             if ns:GetOptionValue("debug") then
-                ns:PrettyPrint("\n" .. L.DebugRequestedStart:format(string.upper(channel)) .. "\n" .. message)
+                ns:PrettyPrint("DEBUG " .. date("%H:%M:%S", GetServerTime()) .. "\n" .. L.DebugRequestedStart:format(string.upper(channel)) .. "\n" .. message)
             end
         else
             ns:PrettyPrint(L.WarningNoRequest)
@@ -479,7 +487,7 @@ function ns:SendStart(channel, target, announce)
                         SendChatMessage(L.TimerPrint:format(L.Disabled, ControlToString(TBW_data.control)) .. " " .. message, string.upper(channel), nil, target)
                     end
                     if ns:GetOptionValue("debug") then
-                        ns:PrettyPrint("\n" .. L.DebugAnnouncedStart:format(string.upper(channel)))
+                        ns:PrettyPrint("DEBUG " .. date("%H:%M:%S", GetServerTime()) .. "\n" .. L.DebugAnnouncedStart:format(string.upper(channel)))
                     end
                 else
                     ns:PrettyPrint(L.WarningFastShare:format(20 - (GetServerTime() - TBW_data.toggles.recentlyAnnouncedStart)))
@@ -491,7 +499,7 @@ function ns:SendStart(channel, target, announce)
                     local message = "S:" .. ControlToStringID(TBW_data.controlWM) .. TBW_data.startTimestampWM .. ":" .. ControlToStringID(TBW_data.control) .. TBW_data.startTimestamp
                     local response = C_ChatInfo.SendAddonMessage(ADDON_NAME, message, string.upper(channel), target)
                     if ns:GetOptionValue("debug") then
-                        ns:PrettyPrint("\n" .. L.DebugSharedStart:format(string.upper(channel)) .. "\n" .. message)
+                        ns:PrettyPrint("DEBUG " .. date("%H:%M:%S", GetServerTime()) .. "\n" .. L.DebugSharedStart:format(string.upper(channel)) .. "\n" .. message)
                     end
                 else
                     ns:PrettyPrint(L.WarningFastShare:format(20 - (GetServerTime() - TBW_data.toggles.recentlySentStart)))
