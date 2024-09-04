@@ -172,10 +172,6 @@ local function SetTimers(warmode, timestamp, forced)
     -- Prevent duplicate timers
     ns:Toggle(warmode and "timerActiveWM" or "timerActive", secondsUntil)
 
-    -- Alert that timers have been set
-    ns:PrettyPrint(L.AlertSet)
-    PlaySound(ns.data.sounds.timerSet)
-
     -- Set Pre-Defined Alerts
     for option, minutes in pairs(ns.data.timers) do
         if secondsUntil >= (minutes * 60) then
@@ -211,7 +207,7 @@ local function SetTimers(warmode, timestamp, forced)
                 ns:Toggle("recentlyOutput", ns.data.timeouts.long)
             end
             TimerPrint(warmode, L.AlertStart:format(startTime), true)
-            PlaySound(ns.data.sounds.start)
+            PlaySound(ns.data.sounds.present)
             if ns:GetOptionValue("stopwatch") then
                 StopwatchFrame:Hide()
             end
@@ -377,7 +373,7 @@ function ns:TimerCheck(forced)
         if forced or not ns.data.toggles.recentlyOutputWM then
             ns:Toggle("recentlyOutputWM")
             TimerPrint(true, L.AlertStartElapsed:format(Duration((TBW_data.startTimestampWM - now) * -1), DateFormat(TBW_data.startTimestampWM)), true)
-            PlaySound(ns.data.sounds.start)
+            PlaySound(ns.data.sounds.present)
         end
     end
     -- For WM Disabled
@@ -385,7 +381,7 @@ function ns:TimerCheck(forced)
         if forced or not ns.data.toggles.recentlyOutputWM then
             ns:Toggle("recentlyOutput")
             TimerPrint(false, L.AlertStartElapsed:format(Duration((TBW_data.startTimestamp - now) * -1), DateFormat(TBW_data.startTimestamp)), true)
-            PlaySound(ns.data.sounds.start)
+            PlaySound(ns.data.sounds.present)
         end
     end
 

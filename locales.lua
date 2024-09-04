@@ -78,9 +78,8 @@ L.OptionsWhen = {
 }
 L.OptionsWhenCustom = {
     key = "alertCustomMinutes",
-    name = "Custom Alert",
+    name = "Custom Alert Timer",
     tooltip = L.OptionsWhenTooltip:format("at a custom time before"),
-    warning = "Requires a UI reload.",
 }
 L.OptionsHowTooltip = "When important alerts go off, they will be accompanied by a %s, in addition to the chat box alert."
 L.OptionsHow = {
