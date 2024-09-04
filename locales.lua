@@ -46,8 +46,6 @@ L.WinRecord = "Win Record"
 L.AddonCompartmentTooltip1 = "|cff" .. ns.color .. "Left-Click:|r Open Settings"
 L.AddonCompartmentTooltip2 = "|cff" .. ns.color .. "Right-Click:|r Share Timers"
 L.OptionsTitle1 = "When do you want to be alerted?"
-L.OptionsTitle2 = "How do you want to be alerted?"
-L.OptionsTitle3 = "Extra Options:"
 L.OptionsWhenTooltip = "Sets up an alert %s the next battle." -- string
 L.OptionsWhen = {
     [1] = {
@@ -81,6 +79,7 @@ L.OptionsWhenCustom = {
     name = "Custom Alert Timer",
     tooltip = L.OptionsWhenTooltip:format("at a custom time before"),
 }
+L.OptionsTitle2 = "How do you want to be alerted?"
 L.OptionsHowTooltip = "When important alerts go off, they will be accompanied by a %s, in addition to the chat box alert."
 L.OptionsHow = {
     [1] = {
@@ -99,6 +98,7 @@ L.OptionsHow = {
         tooltip = L.OptionsHowTooltip:format("Stopwatch"),
     },
 }
+L.OptionsTitle3 = "Extra Options:"
 L.OptionsExtra = {
     [1] = {
         key = "share",

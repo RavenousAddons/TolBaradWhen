@@ -451,7 +451,7 @@ end
 -- @param {string} channel
 -- @param {string} target
 -- @param {boolean} announce
-function ns:SendStart(channel, target, announce)
+function ns:SendStart(channel, target, announce, manuallyInvoked)
     announce = announce == nil and false or announce
     local now = GetServerTime()
     if ns:IsPresent(TBW_data.startTimestampWM) or ns:IsFuture(TBW_data.startTimestampWM) or ns:IsPresent(TBW_data.startTimestamp) or ns:IsFuture(TBW_data.startTimestamp) then
@@ -512,7 +512,7 @@ function ns:SendStart(channel, target, announce)
         else
             ns:PrettyPrint(L.WarningNoShare)
         end
-    else
+    elseif manuallyInvoked then
         ns:PrettyPrint(L.WarningNoData)
     end
 end

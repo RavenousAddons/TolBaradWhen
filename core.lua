@@ -197,12 +197,12 @@ SlashCmdList["TOLBARADWHEN"] = function(message)
     elseif message == "a" or message:match("ann") then
         -- Announce your timers in an appropriate chat channel
         local _, channel, target = strsplit(" ", message)
-        ns:SendStart(channel, target, true)
+        ns:SendStart(channel, target, true, true)
     elseif message == "s" or message:match("send") or message:match("share") then
         -- Share your timers in an appropriate chat channel
         if ns:GetOptionValue("share") then
             local _, channel, target = strsplit(" ", message)
-            ns:SendStart(channel, target)
+            ns:SendStart(channel, target, false, true)
         else
             ns:PrettyPrint(L.WarningDisabledShare)
         end
