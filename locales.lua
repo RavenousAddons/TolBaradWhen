@@ -21,7 +21,7 @@ L.Version = "%s is the current version." -- ns.version
 L.Install = "Thanks for installing version |cff%1$s%2$s|r!" -- ns.color, ns.version
 L.Update = "Thanks for updating to version |cff%1$s%2$s|r!" -- ns.color, ns.version
 L.UpdateFound = "Version %s is now available for download. Please update!" -- sentVersion
-L.Help = "This Addon sets alerts for future battles when you're in " .. L.TolBarad .. " and tracks some statistics.\nThere are also some slash commands available:\n/tbw options - Open options window\n/tbw share - Share your timers with group members\n/tbw request - Request timers from group members\n/tbw wins - See your win record across all tracked battles"
+L.Help = "This Addon sets alerts for future battles when you're in " .. L.TolBarad .. " and tracks some statistics.|nThere are also some slash commands available:|n/tbw options - Open options window|n/tbw share - Share your timers with group members|n/tbw request - Request timers from group members|n/tbw wins - See your win record across all tracked battles"
 L.AlertSet = "Timers have been set!"
 L.AlertAnnounce = "starts in %s."
 L.AlertShort = "starts in %s at %s."
@@ -112,17 +112,17 @@ L.OptionsExtra = {
         tooltip = "Enables messages for debugging.",
     },
 }
+L.DebugToggleOn = "%s = true (%ss timeout)"
+L.DebugToggleOff = "%s = false"
 L.DebugTimerCheck = "TimerCheck()|n  Forced: %s"
 L.DebugSetTimers = "SetTimers()|n  Warmode: %s|n  Timestamp: %s|n  Forced: %s"
 L.DebugAnnouncedStart = "Announced start times in %s"
-L.DebugRequestedStart = "Requested start times in %s"
-L.DebugSentVersion = "Sent version in %s"
-L.DebugToggleOn = "%s = true (%ss timeout)"
-L.DebugToggleOff = "%s = false"
-L.DebugSharedStart = "Shared start times in %s"
-L.DebugChatMsgAddon = "Received message from %s in %s"
-L.DebugZoneChangedNewArea = "ZoneChangedNewArea|n%s to %s"
-L.DebugRaidBossEmote = "RaidBossEmote|n%s"
+L.DebugRequestedStart = "Requested start times in %s|n%s"
+L.DebugSentVersion = "Sent version in %s|n%s"
+L.DebugSharedStart = "Shared start times in %s|n%s"
+L.DebugChatMsgAddon = "Event: ChatMsgAddon|nReceived message from %s in %s|n%s"
+L.DebugZoneChangedNewArea = "Event: ZoneChangedNewArea|n%s to %s"
+L.DebugRaidBossEmote = "Event: RaidBossEmote|n%s"
 
 -- Check locale and apply appropriate changes below
 local CURRENT_LOCALE = GetLocale()

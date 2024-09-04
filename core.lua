@@ -19,6 +19,7 @@ local function PlayerLoginEvent()
         -- Version-specific messages go here...
     end
     TBW_version = ns.version
+    ns.data.location = C_Map.GetBestMapForUnit("player")
     ns:TimerCheck()
     C_ChatInfo.RegisterAddonMessagePrefix(ADDON_NAME)
 end
@@ -48,7 +49,7 @@ local function ChatMsgAddonEvent(message, channel, sender)
         return
     end
     if ns:GetOptionValue("debug") then
-        ns:PrettyPrint("DEBUG " .. date("%H:%M:%S", GetServerTime()) .. "\n" .. L.DebugChatMsgAddon:format(sender, channel) .. "\n" .. message)
+        ns:DebugPrint(L.DebugChatMsgAddon:format(sender, channel, message))
     end
     if message:match("V:") and not ns.data.toggles.updateFound then
         local version = message:gsub("V:", "")
@@ -97,9 +98,9 @@ end
 local function ZoneChangedNewAreaEvent()
     local newLocation = C_Map.GetBestMapForUnit("player")
     local warmode = C_PvP.IsWarModeDesired()
-    if (not ns:InTolBarad(ns.data.location) or ns:IsPast(warmode and TBW_data.startTimestampWM or TBW_data.startTimestamp)) and ns:InTolBarad(newLocation) then
+    if ns.data.location and (not ns:InTolBarad(ns.data.location) or ns:IsPast(warmode and TBW_data.startTimestampWM or TBW_data.startTimestamp)) and ns:InTolBarad(newLocation) then
         if ns:GetOptionValue("debug") then
-            ns:PrettyPrint("DEBUG " .. date("%H:%M:%S", GetServerTime()) .. "\n" .. L.DebugZoneChangedNewArea:format(ns.data.location, newLocation))
+            ns:DebugPrint(L.DebugZoneChangedNewArea:format(ns.data.location, newLocation))
         end
         CT.After(1, function()
             ns:TimerCheck()
@@ -110,7 +111,7 @@ end
 
 local function RaidBossEmoteEvent(string)
     if ns:GetOptionValue("debug") then
-        ns:PrettyPrint("DEBUG " .. date("%H:%M:%S", GetServerTime()) .. "\n" .. L.DebugRaidBossEmote:format(string))
+        ns:DebugPrint(L.DebugRaidBossEmote:format(string))
     end
     if not ns.data.toggles.recentlyEnded then
         ns:Toggle("recentlyEnded", ns.data.timeouts.short)
@@ -181,7 +182,7 @@ SlashCmdList["TOLBARADWHEN"] = function(message)
         ns:PrettyPrint(L.Version:format(ns.version))
     elseif message == "h" or message:match("help") then
         -- Print ways to interact with addon
-        ns:PrettyPrint("\n" .. L.Help)
+        ns:PrettyPrint("|n" .. L.Help)
     elseif message == "c" or message:match("con") or message == "o" or message:match("opt") or message == "s" or message:match("sett") or message:match("togg") then
         -- Open settings window
         ns:OpenSettings()

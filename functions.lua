@@ -151,7 +151,7 @@ end
 -- @param {boolean} forced
 local function SetTimers(warmode, timestamp, forced)
     if ns:GetOptionValue("debug") then
-        ns:PrettyPrint("DEBUG " .. date("%H:%M:%S", GetServerTime()) .. "\n" .. L.DebugSetTimers:format(warmode and L.Enabled or L.Disabled, timestamp .. " " .. date("%H:%M:%S", timestamp), forced and L.Enabled or L.Disabled))
+        ns:DebugPrint(L.DebugSetTimers:format(warmode and L.Enabled or L.Disabled, timestamp .. " " .. date("%H:%M:%S", timestamp), forced and L.Enabled or L.Disabled))
     end
 
     local now = GetServerTime()
@@ -272,9 +272,10 @@ function ns:SendVersionUpdate(channel)
         return
     end
     ns:Toggle("recentlySentVersion")
-    C_ChatInfo.SendAddonMessage(ADDON_NAME, "V:" .. ns.version, channel)
+    local message = "V:" .. ns.version
+    C_ChatInfo.SendAddonMessage(ADDON_NAME, message, channel)
     if ns:GetOptionValue("debug") then
-        ns:PrettyPrint("DEBUG " .. date("%H:%M:%S", GetServerTime()) .. "\n" .. L.DebugSentVersion:format(channel) .. "\n" .. "V:" .. ns.version)
+        ns:DebugPrint(L.DebugSentVersion:format(channel, message))
     end
 end
 
@@ -282,6 +283,13 @@ end
 -- @param {string} message
 function ns:PrettyPrint(message)
     DEFAULT_CHAT_FRAME:AddMessage("|cff" .. ns.color .. ns.name .. "|r " .. message)
+end
+
+--- Prints a debug message to the chat
+-- @param {string} message
+function ns:DebugPrint(message)
+    local dateFormat = GetCVar("timeMgrUseMilitaryTime") == "1" and "%H:%M:%S" or "%I:%M:%S%p"
+    print("|cff" .. ns.color .. "TBW|r |cfff8b700Debug|r " .. date(dateFormat, GetServerTime()) .. "|n" .. message)
 end
 
 --- Checks if player is in Tol Barad
@@ -300,12 +308,12 @@ function ns:Toggle(toggle, timeout)
         ns.data.toggles[toggle] = true
         TBW_data.toggles[toggle] = GetServerTime()
         if ns:GetOptionValue("debug") then
-            ns:PrettyPrint("DEBUG " .. date("%H:%M:%S", GetServerTime()) .. "\n" .. L.DebugToggleOn:format(toggle, timeout))
+            ns:DebugPrint(L.DebugToggleOn:format(toggle, timeout))
         end
         CT.After(timeout, function()
             ns.data.toggles[toggle] = false
             if ns:GetOptionValue("debug") then
-                ns:PrettyPrint("DEBUG " .. date("%H:%M:%S", GetServerTime()) .. "\n" .. L.DebugToggleOff:format(toggle))
+                ns:DebugPrint(L.DebugToggleOff:format(toggle))
             end
         end)
     end
@@ -345,7 +353,7 @@ end
 -- @param {boolean} forced
 function ns:TimerCheck(forced)
     if ns:GetOptionValue("debug") then
-        ns:PrettyPrint("DEBUG " .. date("%H:%M:%S", GetServerTime()) .. "\n" .. L.DebugTimerCheck:format(forced and L.Enabled or L.Disabled))
+        ns:DebugPrint(L.DebugTimerCheck:format(forced and L.Enabled or L.Disabled))
     end
 
     local now = GetServerTime()
@@ -433,7 +441,7 @@ function ns:RequestStart(channel, target)
             local message = "R!" .. now
             local response = C_ChatInfo.SendAddonMessage(ADDON_NAME, message, string.upper(channel), target)
             if ns:GetOptionValue("debug") then
-                ns:PrettyPrint("DEBUG " .. date("%H:%M:%S", GetServerTime()) .. "\n" .. L.DebugRequestedStart:format(string.upper(channel)) .. "\n" .. message)
+                ns:DebugPrint(L.DebugRequestedStart:format(string.upper(channel), message))
             end
         else
             ns:PrettyPrint(L.WarningNoRequest)
@@ -487,7 +495,7 @@ function ns:SendStart(channel, target, announce)
                         SendChatMessage(L.TimerPrint:format(L.Disabled, ControlToString(TBW_data.control)) .. " " .. message, string.upper(channel), nil, target)
                     end
                     if ns:GetOptionValue("debug") then
-                        ns:PrettyPrint("DEBUG " .. date("%H:%M:%S", GetServerTime()) .. "\n" .. L.DebugAnnouncedStart:format(string.upper(channel)))
+                        ns:DebugPrint(L.DebugAnnouncedStart:format(string.upper(channel)))
                     end
                 else
                     ns:PrettyPrint(L.WarningFastShare:format(20 - (GetServerTime() - TBW_data.toggles.recentlyAnnouncedStart)))
@@ -499,7 +507,7 @@ function ns:SendStart(channel, target, announce)
                     local message = "S:" .. ControlToStringID(TBW_data.controlWM) .. TBW_data.startTimestampWM .. ":" .. ControlToStringID(TBW_data.control) .. TBW_data.startTimestamp
                     local response = C_ChatInfo.SendAddonMessage(ADDON_NAME, message, string.upper(channel), target)
                     if ns:GetOptionValue("debug") then
-                        ns:PrettyPrint("DEBUG " .. date("%H:%M:%S", GetServerTime()) .. "\n" .. L.DebugSharedStart:format(string.upper(channel)) .. "\n" .. message)
+                        ns:DebugPrint(L.DebugSharedStart:format(string.upper(channel), message))
                     end
                 else
                     ns:PrettyPrint(L.WarningFastShare:format(20 - (GetServerTime() - TBW_data.toggles.recentlySentStart)))
@@ -547,9 +555,9 @@ function ns:PrintCounts()
     local warbandWinsTotal = warbandWinsWM + warbandWins
 
     -- Warband-Wide
-    string = "|cff01e2ff" .. L.WarbandWide .. ":|r\n" .. L.WinRecord .. ": " .. warbandWinsTotal .. "/" .. warbandGamesTotal
-    string = string .. "\n" .. L.WarMode .. " |cff44ff44" .. L.Enabled .. "|r: " .. warbandWinsWM .. "/" .. warbandGamesWM
-    string = string .. "\n" .. L.WarMode .. " |cffff4444" .. L.Disabled .. "|r: " .. warbandWins .. "/" .. warbandGames
+    string = "|cff01e2ff" .. L.WarbandWide .. ":|r|n" .. L.WinRecord .. ": " .. warbandWinsTotal .. "/" .. warbandGamesTotal
+    string = string .. "|n" .. L.WarMode .. " |cff44ff44" .. L.Enabled .. "|r: " .. warbandWinsWM .. "/" .. warbandGamesWM
+    string = string .. "|n" .. L.WarMode .. " |cffff4444" .. L.Disabled .. "|r: " .. warbandWins .. "/" .. warbandGames
     print(string)
 
     local characterGamesWM = TBW_data.characters[character].gamesWM
@@ -560,8 +568,8 @@ function ns:PrintCounts()
     local characterWinsTotal = characterWinsWM + characterWins
 
     -- Character-Specific
-    string = "|cff" .. ns.data.classColors[className:lower()] .. character .. ":|r\n" .. L.WinRecord .. ": " .. characterWinsTotal .. "/" .. characterGamesTotal
-    string = string .. "\n" .. L.WarMode .. " |cff44ff44" .. L.Enabled .. "|r: " .. characterWinsWM .. "/" .. characterGamesWM
-    string = string .. "\n" .. L.WarMode .. " |cffff4444" .. L.Disabled .. "|r: " .. characterWins .. "/" .. characterGames
+    string = "|cff" .. ns.data.classColors[className:lower()] .. character .. ":|r|n" .. L.WinRecord .. ": " .. characterWinsTotal .. "/" .. characterGamesTotal
+    string = string .. "|n" .. L.WarMode .. " |cff44ff44" .. L.Enabled .. "|r: " .. characterWinsWM .. "/" .. characterGamesWM
+    string = string .. "|n" .. L.WarMode .. " |cffff4444" .. L.Disabled .. "|r: " .. characterWins .. "/" .. characterGames
     print(string)
 end
