@@ -7,7 +7,18 @@ local character = UnitName("player") .. "-" .. GetRealmName("player")
 local allianceString = "|cff0078ff" .. L.Alliance .. "|r"
 local hordeString = "|cffb30000" .. L.Horde .. "|r"
 
--- Event Functions
+-- Load the Addon
+
+function TolBaradWhen_OnLoad(self)
+    self:RegisterEvent("PLAYER_LOGIN")
+    self:RegisterEvent("PLAYER_ENTERING_WORLD")
+    self:RegisterEvent("CHAT_MSG_ADDON")
+    self:RegisterEvent("GROUP_ROSTER_UPDATE")
+    self:RegisterEvent("ZONE_CHANGED_NEW_AREA")
+    self:RegisterEvent("RAID_BOSS_EMOTE")
+end
+
+-- Event Triggers
 
 local function PlayerLoginEvent()
     ns:SetDefaultOptions()
@@ -19,9 +30,12 @@ local function PlayerLoginEvent()
         -- Version-specific messages go here...
     end
     TBW_version = ns.version
+    C_ChatInfo.RegisterAddonMessagePrefix(ADDON_NAME)
+end
+
+local function PlayerEnteringWorldEvent()
     ns.data.location = C_Map.GetBestMapForUnit("player")
     ns:TimerCheck()
-    C_ChatInfo.RegisterAddonMessagePrefix(ADDON_NAME)
 end
 
 local function GroupRosterUpdateEvent()
@@ -48,9 +62,7 @@ local function ChatMsgAddonEvent(message, channel, sender)
     if sender == character then
         return
     end
-    if ns:GetOptionValue("debug") then
-        ns:DebugPrint(L.DebugChatMsgAddon:format(sender, channel, message))
-    end
+    ns:DebugPrint(L.DebugChatMsgAddon:format(sender, channel, message))
     if message:match("V:") and not ns.data.toggles.updateFound then
         local version = message:gsub("V:", "")
         if not message:match("-") then
@@ -99,9 +111,7 @@ local function ZoneChangedNewAreaEvent()
     local newLocation = C_Map.GetBestMapForUnit("player")
     local warmode = C_PvP.IsWarModeDesired()
     if ns.data.location and (not ns:InTolBarad(ns.data.location) or ns:IsPast(warmode and TBW_data.startTimestampWM or TBW_data.startTimestamp)) and ns:InTolBarad(newLocation) then
-        if ns:GetOptionValue("debug") then
-            ns:DebugPrint(L.DebugZoneChangedNewArea:format(ns.data.location, newLocation))
-        end
+        ns:DebugPrint(L.DebugZoneChangedNewArea:format(ns.data.location, newLocation))
         CT.After(1, function()
             ns:TimerCheck()
         end)
@@ -110,9 +120,7 @@ local function ZoneChangedNewAreaEvent()
 end
 
 local function RaidBossEmoteEvent(string)
-    if ns:GetOptionValue("debug") then
-        ns:DebugPrint(L.DebugRaidBossEmote:format(string))
-    end
+    ns:DebugPrint(L.DebugRaidBossEmote:format(string))
     if not ns.data.toggles.recentlyEnded then
         ns:Toggle("recentlyEnded", ns.data.timeouts.short)
         CT.After(2, function()
@@ -123,21 +131,13 @@ local function RaidBossEmoteEvent(string)
     end
 end
 
--- Load the Addon
-
-function TolBaradWhen_OnLoad(self)
-    self:RegisterEvent("PLAYER_LOGIN")
-    self:RegisterEvent("CHAT_MSG_ADDON")
-    self:RegisterEvent("GROUP_ROSTER_UPDATE")
-    self:RegisterEvent("ZONE_CHANGED_NEW_AREA")
-    self:RegisterEvent("RAID_BOSS_EMOTE")
-end
-
--- Event Triggers
+-- Event Functions
 
 function TolBaradWhen_OnEvent(self, event, arg, ...)
     if event == "PLAYER_LOGIN" then
         PlayerLoginEvent()
+    elseif event == "PLAYER_ENTERING_WORLD" then
+        PlayerEnteringWorldEvent()
     elseif event == "GROUP_ROSTER_UPDATE" then
         GroupRosterUpdateEvent()
     elseif event == "CHAT_MSG_ADDON" and arg == ADDON_NAME and ns:GetOptionValue("share") then
@@ -150,6 +150,8 @@ function TolBaradWhen_OnEvent(self, event, arg, ...)
     end
 end
 
+-- Addon Compartment Handling
+
 AddonCompartmentFrame:RegisterAddon({
     text = ns.title,
     icon = ns.icon,
@@ -158,7 +160,7 @@ AddonCompartmentFrame:RegisterAddon({
     func = function(button, menuInputData, menu)
         local mouseButton = menuInputData.buttonName
         if mouseButton == "RightButton" then
-            ns:SendStart()
+            ns:SendStart(nil, nil, false, true)
             return
         end
         ns:OpenSettings()
@@ -175,6 +177,8 @@ AddonCompartmentFrame:RegisterAddon({
         GameTooltip:Hide()
     end,
 })
+
+-- Slash Command Handling
 
 SlashCmdList["TOLBARADWHEN"] = function(message)
     if message == "v" or message:match("ver") then
@@ -219,7 +223,6 @@ SlashCmdList["TOLBARADWHEN"] = function(message)
         ns:TimerCheck(true)
     end
 end
-
 SLASH_TOLBARADWHEN1 = "/" .. ns.command
 SLASH_TOLBARADWHEN2 = "/tb"
 SLASH_TOLBARADWHEN3 = "/tolbarad"

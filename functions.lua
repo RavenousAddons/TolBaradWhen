@@ -150,9 +150,7 @@ end
 -- @param {number} timestamp
 -- @param {boolean} forced
 local function SetTimers(warmode, timestamp, forced)
-    if ns:GetOptionValue("debug") then
-        ns:DebugPrint(L.DebugSetTimers:format(warmode and L.Enabled or L.Disabled, timestamp .. " " .. date("%H:%M:%S", timestamp), forced and L.Enabled or L.Disabled))
-    end
+    ns:DebugPrint(L.DebugSetTimers:format(warmode and L.Enabled or L.Disabled, timestamp .. " " .. date("%H:%M:%S", timestamp), forced and L.Enabled or L.Disabled))
 
     local now = GetServerTime()
     local secondsUntil = timestamp - now
@@ -270,9 +268,7 @@ function ns:SendVersionUpdate(channel)
     ns:Toggle("recentlySentVersion")
     local message = "V:" .. ns.version
     C_ChatInfo.SendAddonMessage(ADDON_NAME, message, channel)
-    if ns:GetOptionValue("debug") then
-        ns:DebugPrint(L.DebugSentVersion:format(channel, message))
-    end
+    ns:DebugPrint(L.DebugSentVersion:format(channel, message))
 end
 
 --- Prints a formatted message to the chat
@@ -284,8 +280,10 @@ end
 --- Prints a debug message to the chat
 -- @param {string} message
 function ns:DebugPrint(message)
-    local dateFormat = GetCVar("timeMgrUseMilitaryTime") == "1" and "%H:%M:%S" or "%I:%M:%S%p"
-    print("|cff" .. ns.color .. "TBW|r |cfff8b700Debug|r " .. date(dateFormat, GetServerTime()) .. "|n" .. message)
+    if ns:GetOptionValue("debug") then
+        local dateFormat = GetCVar("timeMgrUseMilitaryTime") == "1" and "%H:%M:%S" or "%I:%M:%S%p"
+        print("|cff" .. ns.color .. "TBW|r |cfff8b700Debug|r " .. date(dateFormat, GetServerTime()) .. "|n" .. message)
+    end
 end
 
 --- Checks if player is in Tol Barad
@@ -303,14 +301,10 @@ function ns:Toggle(toggle, timeout)
     if not ns.data.toggles[toggle] then
         ns.data.toggles[toggle] = true
         TBW_data.toggles[toggle] = GetServerTime()
-        if ns:GetOptionValue("debug") then
-            ns:DebugPrint(L.DebugToggleOn:format(toggle, timeout))
-        end
+        ns:DebugPrint(L.DebugToggleOn:format(toggle, timeout))
         CT.After(timeout, function()
             ns.data.toggles[toggle] = false
-            if ns:GetOptionValue("debug") then
-                ns:DebugPrint(L.DebugToggleOff:format(toggle))
-            end
+            ns:DebugPrint(L.DebugToggleOff:format(toggle))
         end)
     end
 end
@@ -348,9 +342,7 @@ end
 --- Checks the current battle(s) state
 -- @param {boolean} forced
 function ns:TimerCheck(forced)
-    if ns:GetOptionValue("debug") then
-        ns:DebugPrint(L.DebugTimerCheck:format(forced and L.Enabled or L.Disabled))
-    end
+    ns:DebugPrint(L.DebugTimerCheck:format(forced and L.Enabled or L.Disabled))
 
     local now = GetServerTime()
     local warmode = C_PvP.IsWarModeDesired()
@@ -436,9 +428,7 @@ function ns:RequestStart(channel, target)
             ns:Toggle("recentlyRequestedStart")
             local message = "R!" .. now
             local response = C_ChatInfo.SendAddonMessage(ADDON_NAME, message, string.upper(channel), target)
-            if ns:GetOptionValue("debug") then
-                ns:DebugPrint(L.DebugRequestedStart:format(string.upper(channel), message))
-            end
+            ns:DebugPrint(L.DebugRequestedStart:format(string.upper(channel), message))
         else
             ns:PrettyPrint(L.WarningNoRequest)
         end
@@ -490,9 +480,7 @@ function ns:SendStart(channel, target, announce, manuallyInvoked)
                         message = L.AlertStartElapsedAnnounce:format(Duration(secondsUntil * -1))
                         SendChatMessage(L.TimerPrint:format(L.Disabled, ControlToString(TBW_data.control)) .. " " .. message, string.upper(channel), nil, target)
                     end
-                    if ns:GetOptionValue("debug") then
-                        ns:DebugPrint(L.DebugAnnouncedStart:format(string.upper(channel)))
-                    end
+                    ns:DebugPrint(L.DebugAnnouncedStart:format(string.upper(channel)))
                 else
                     ns:PrettyPrint(L.WarningFastShare:format(20 - (GetServerTime() - TBW_data.toggles.recentlyAnnouncedStart)))
                 end
@@ -502,9 +490,7 @@ function ns:SendStart(channel, target, announce, manuallyInvoked)
                     ns:Toggle("recentlySentStart")
                     local message = "S:" .. ControlToStringID(TBW_data.controlWM) .. TBW_data.startTimestampWM .. ":" .. ControlToStringID(TBW_data.control) .. TBW_data.startTimestamp
                     local response = C_ChatInfo.SendAddonMessage(ADDON_NAME, message, string.upper(channel), target)
-                    if ns:GetOptionValue("debug") then
-                        ns:DebugPrint(L.DebugSharedStart:format(string.upper(channel), message))
-                    end
+                    ns:DebugPrint(L.DebugSharedStart:format(string.upper(channel), message))
                 else
                     ns:PrettyPrint(L.WarningFastShare:format(20 - (GetServerTime() - TBW_data.toggles.recentlySentStart)))
                 end
