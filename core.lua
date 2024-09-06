@@ -11,7 +11,6 @@ local hordeString = "|cffb30000" .. L.Horde .. "|r"
 
 function TolBaradWhen_OnLoad(self)
     self:RegisterEvent("PLAYER_LOGIN")
-    self:RegisterEvent("PLAYER_ENTERING_WORLD")
     self:RegisterEvent("CHAT_MSG_ADDON")
     self:RegisterEvent("GROUP_ROSTER_UPDATE")
     self:RegisterEvent("ZONE_CHANGED_NEW_AREA")
@@ -31,9 +30,6 @@ local function PlayerLoginEvent()
     end
     TBW_version = ns.version
     C_ChatInfo.RegisterAddonMessagePrefix(ADDON_NAME)
-end
-
-local function PlayerEnteringWorldEvent()
     ns.data.location = C_Map.GetBestMapForUnit("player")
     ns:TimerCheck()
 end

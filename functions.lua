@@ -27,9 +27,9 @@ end
 -- @param {number} seconds
 local function StartStopwatch(minutes, seconds)
     if ns:GetOptionValue("stopwatch") and not ns.data.toggles.stopwatch then
+        ns:Toggle("stopwatch", (minutes * 60) + seconds)
         minutes = minutes or 0
         seconds = seconds or 0
-        ns:Toggle("stopwatch", (minutes * 60) + seconds)
         StopwatchFrame:Show()
         Stopwatch_StartCountdown(0, minutes, seconds)
         Stopwatch_Play()
@@ -135,13 +135,23 @@ end
 -- @param {boolean} warmode
 -- @param {string} message
 -- @param {boolean} raidWarning
-local function TimerPrint(warmode, message, raidWarningGate)
+local function TimerAlert(warmode, message, sound, stopwatchMinutes, raidWarningGate)
     local warmodeFormatted = "|cff" .. (warmode and ("44ff44" .. L.Enabled) or ("ff4444" .. L.Disabled)) .. "|r"
     local controlledFormatted = warmode and (TBW_data.controlWM == "alliance" and allianceString or hordeString) or (TBW_data.control == "alliance" and allianceString or hordeString)
-    DEFAULT_CHAT_FRAME:AddMessage("|cff" .. ns.color .. L.TimerPrint:format(warmodeFormatted, controlledFormatted) .. " |r" .. message .. (warmode ~= C_PvP.IsWarModeDesired() and " " .. L.AlertToggleWarmode:format(warmodeFormatted) or ""))
+    DEFAULT_CHAT_FRAME:AddMessage("|cff" .. ns.color .. L.TimerAlert:format(warmodeFormatted, controlledFormatted) .. " |r" .. message .. (warmode ~= C_PvP.IsWarModeDesired() and " " .. L.AlertToggleWarmode:format(warmodeFormatted) or ""))
     if raidWarningGate and ns:GetOptionValue("raidwarning") then
         local controlled = warmode and ControlToString(TBW_data.controlWM) or ControlToString(TBW_data.control)
         RaidNotice_AddMessage(RaidWarningFrame, L.TimerRaidWarning:format(warmode and L.Enabled or L.Disabled, controlled) .. " " .. message .. (warmode ~= C_PvP.IsWarModeDesired() and "|n" .. L.AlertToggleWarmode:format(warmode and L.Enabled or L.Disabled) or ""), ChatTypeInfo["RAID_WARNING"])
+    end
+    if sound then
+        PlaySound(ns.data.sounds[sound])
+    end
+    if stopwatchMinutes == 0 then
+        if ns:GetOptionValue("stopwatch") then
+            StopwatchFrame:Hide()
+        end
+    elseif stopwatchMinutes then
+        StartStopwatch(stopwatchMinutes, 0)
     end
 end
 
@@ -175,9 +185,7 @@ local function SetTimers(warmode, timestamp, forced)
         if secondsUntil >= (minutes * 60) then
             CT.After(secondsUntil - (minutes * 60), function()
                 if ns:GetOptionValue(option) then
-                    TimerPrint(warmode, L.AlertLong:format(minutes, startTime), true)
-                    PlaySound(ns.data.sounds.future)
-                    StartStopwatch(minutes, 0)
+                    TimerAlert(warmode, L.AlertLong:format(minutes, startTime), "future", minutes, true)
                 end
             end)
         end
@@ -188,9 +196,7 @@ local function SetTimers(warmode, timestamp, forced)
         if secondsUntil >= (minutes * 60) then
             CT.After(secondsUntil - (minutes * 60), function()
                 if minutes == ns:GetOptionValue("alertCustomMinutes") then
-                    TimerPrint(warmode, L.AlertLong:format(minutes, startTime), true)
-                    PlaySound(ns.data.sounds.future)
-                    StartStopwatch(minutes, 0)
+                    TimerAlert(warmode, L.AlertLong:format(minutes, startTime), "future", minutes, true)
                 end
             end)
         end
@@ -204,11 +210,7 @@ local function SetTimers(warmode, timestamp, forced)
             else
                 ns:Toggle("recentlyOutput", ns.data.timeouts.long)
             end
-            TimerPrint(warmode, L.AlertStart:format(startTime), true)
-            PlaySound(ns.data.sounds.present)
-            if ns:GetOptionValue("stopwatch") then
-                StopwatchFrame:Hide()
-            end
+            TimerAlert(warmode, L.AlertStart:format(startTime), "present", 0, true)
         end
     end)
 end
@@ -364,16 +366,14 @@ function ns:TimerCheck(forced)
     if ns:IsPresent(TBW_data.startTimestampWM) then
         if forced or not ns.data.toggles.recentlyOutputWM then
             ns:Toggle("recentlyOutputWM")
-            TimerPrint(true, L.AlertStartElapsed:format(Duration((TBW_data.startTimestampWM - now) * -1), DateFormat(TBW_data.startTimestampWM)), true)
-            PlaySound(ns.data.sounds.present)
+            TimerAlert(true, L.AlertStartElapsed:format(Duration((TBW_data.startTimestampWM - now) * -1), DateFormat(TBW_data.startTimestampWM)), "present", nil, true)
         end
     end
     -- For WM Disabled
     if ns:IsPresent(TBW_data.startTimestamp) then
         if forced or not ns.data.toggles.recentlyOutputWM then
             ns:Toggle("recentlyOutput")
-            TimerPrint(false, L.AlertStartElapsed:format(Duration((TBW_data.startTimestamp - now) * -1), DateFormat(TBW_data.startTimestamp)), true)
-            PlaySound(ns.data.sounds.present)
+            TimerAlert(false, L.AlertStartElapsed:format(Duration((TBW_data.startTimestamp - now) * -1), DateFormat(TBW_data.startTimestamp)), "present", nil, true)
         end
     end
 
@@ -392,7 +392,7 @@ function ns:TimerCheck(forced)
         -- Alert Timer
         if forced or not ns.data.toggles.recentlyOutputWM then
             ns:Toggle("recentlyOutputWM")
-            TimerPrint(true, L.AlertShort:format(Duration(TBW_data.startTimestampWM - now), DateFormat(TBW_data.startTimestampWM)))
+            TimerAlert(true, L.AlertShort:format(Duration(TBW_data.startTimestampWM - now), DateFormat(TBW_data.startTimestampWM)))
         end
     end
     -- For WM Disabled
@@ -404,7 +404,7 @@ function ns:TimerCheck(forced)
         -- Alert Timer
         if forced or not ns.data.toggles.recentlyOutput then
             ns:Toggle("recentlyOutput")
-            TimerPrint(warmode, L.AlertShort:format(Duration(TBW_data.startTimestamp - now), DateFormat(TBW_data.startTimestamp)))
+            TimerAlert(warmode, L.AlertShort:format(Duration(TBW_data.startTimestamp - now), DateFormat(TBW_data.startTimestamp)))
         end
     end
 end
@@ -464,21 +464,21 @@ function ns:SendStart(channel, target, announce, manuallyInvoked)
                     secondsUntil = TBW_data.startTimestampWM - now
                     if secondsUntil > 0 then
                         message = L.AlertAnnounce:format(Duration(secondsUntil))
-                        SendChatMessage(L.TimerPrint:format(L.Enabled, ControlToString(TBW_data.controlWM)) .. " " .. message, string.upper(channel), nil, target)
+                        SendChatMessage(L.TimerAlert:format(L.Enabled, ControlToString(TBW_data.controlWM)) .. " " .. message, string.upper(channel), nil, target)
                     elseif secondsUntil > -900 then
                         -- Convert absolute values to present elapsed time
                         message = L.AlertStartElapsedAnnounce:format(Duration(secondsUntil * -1))
-                        SendChatMessage(L.TimerPrint:format(L.Enabled, ControlToString(TBW_data.controlWM)) .. " " .. message, string.upper(channel), nil, target)
+                        SendChatMessage(L.TimerAlert:format(L.Enabled, ControlToString(TBW_data.controlWM)) .. " " .. message, string.upper(channel), nil, target)
                     end
                     -- WM Disabled
                     secondsUntil = TBW_data.startTimestamp - now
                     if secondsUntil > 0 then
                         message = L.AlertAnnounce:format(Duration(secondsUntil))
-                        SendChatMessage(L.TimerPrint:format(L.Disabled, ControlToString(TBW_data.control)) .. " " .. message, string.upper(channel), nil, target)
+                        SendChatMessage(L.TimerAlert:format(L.Disabled, ControlToString(TBW_data.control)) .. " " .. message, string.upper(channel), nil, target)
                     elseif secondsUntil > -900 then
                         -- Convert absolute values to present elapsed time
                         message = L.AlertStartElapsedAnnounce:format(Duration(secondsUntil * -1))
-                        SendChatMessage(L.TimerPrint:format(L.Disabled, ControlToString(TBW_data.control)) .. " " .. message, string.upper(channel), nil, target)
+                        SendChatMessage(L.TimerAlert:format(L.Disabled, ControlToString(TBW_data.control)) .. " " .. message, string.upper(channel), nil, target)
                     end
                     ns:DebugPrint(L.DebugAnnouncedStart:format(string.upper(channel)))
                 else
