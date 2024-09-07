@@ -76,7 +76,7 @@ L.OptionsWhen = {
 }
 L.OptionsWhenCustom = {
     key = "alertCustomMinutes",
-    name = "Custom Alert Timer",
+    name = "Custom before",
     tooltip = L.OptionsWhenTooltip:format("at a custom time before"),
 }
 L.OptionsTitle2 = "How do you want to be alerted?"

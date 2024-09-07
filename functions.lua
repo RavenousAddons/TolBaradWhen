@@ -16,7 +16,7 @@ local hordeString = "|cffb30000" .. L.Horde .. "|r"
 --- Plays a sound if "sound" option in enabled
 -- @param {number} id
 local function PlaySound(id)
-    if ns:GetOptionValue("sound") then
+    if ns:OptionValue("sound") then
         PlaySoundFile(id)
     end
 end
@@ -26,7 +26,7 @@ end
 -- @param {number} minutes
 -- @param {number} seconds
 local function StartStopwatch(minutes, seconds)
-    if ns:GetOptionValue("stopwatch") and not ns.data.toggles.stopwatch then
+    if ns:OptionValue("stopwatch") and not ns.data.toggles.stopwatch then
         ns:Toggle("stopwatch", (minutes * 60) + seconds)
         minutes = minutes or 0
         seconds = seconds or 0
@@ -139,7 +139,7 @@ local function TimerAlert(warmode, message, sound, stopwatchMinutes, raidWarning
     local warmodeFormatted = "|cff" .. (warmode and ("44ff44" .. L.Enabled) or ("ff4444" .. L.Disabled)) .. "|r"
     local controlledFormatted = warmode and (TBW_data.controlWM == "alliance" and allianceString or hordeString) or (TBW_data.control == "alliance" and allianceString or hordeString)
     DEFAULT_CHAT_FRAME:AddMessage("|cff" .. ns.color .. L.TimerAlert:format(warmodeFormatted, controlledFormatted) .. " |r" .. message .. (warmode ~= C_PvP.IsWarModeDesired() and " " .. L.AlertToggleWarmode:format(warmodeFormatted) or ""))
-    if raidWarningGate and ns:GetOptionValue("raidwarning") then
+    if raidWarningGate and ns:OptionValue("raidwarning") then
         local controlled = warmode and ControlToString(TBW_data.controlWM) or ControlToString(TBW_data.control)
         RaidNotice_AddMessage(RaidWarningFrame, L.TimerRaidWarning:format(warmode and L.Enabled or L.Disabled, controlled) .. " " .. message .. (warmode ~= C_PvP.IsWarModeDesired() and "|n" .. L.AlertToggleWarmode:format(warmode and L.Enabled or L.Disabled) or ""), ChatTypeInfo["RAID_WARNING"])
     end
@@ -147,7 +147,7 @@ local function TimerAlert(warmode, message, sound, stopwatchMinutes, raidWarning
         PlaySound(ns.data.sounds[sound])
     end
     if stopwatchMinutes == 0 then
-        if ns:GetOptionValue("stopwatch") then
+        if ns:OptionValue("stopwatch") then
             StopwatchFrame:Hide()
         end
     elseif stopwatchMinutes then
@@ -173,7 +173,7 @@ local function SetTimers(warmode, timestamp, forced)
     end
 
     -- If no alerts are enabled, exit function
-    if not ns:GetOptionValue("alertStart") and not ns:GetOptionValue("alert1Minute") and not ns:GetOptionValue("alert2Minutes") and not ns:GetOptionValue("alert10Minutes") and ns:GetOptionValue("alertCustomMinutes") == 1 then
+    if not ns:OptionValue("alertStart") and not ns:OptionValue("alert1Minute") and not ns:OptionValue("alert2Minutes") and not ns:OptionValue("alert10Minutes") and ns:OptionValue("alertCustomMinutes") == 1 then
         return
     end
 
@@ -184,7 +184,7 @@ local function SetTimers(warmode, timestamp, forced)
     for option, minutes in pairs(ns.data.timers) do
         if secondsUntil >= (minutes * 60) then
             CT.After(secondsUntil - (minutes * 60), function()
-                if ns:GetOptionValue(option) then
+                if ns:OptionValue(option) then
                     TimerAlert(warmode, L.AlertLong:format(minutes, startTime), "future", minutes, true)
                 end
             end)
@@ -195,7 +195,7 @@ local function SetTimers(warmode, timestamp, forced)
     for minutes = 15, 55, 5 do
         if secondsUntil >= (minutes * 60) then
             CT.After(secondsUntil - (minutes * 60), function()
-                if minutes == ns:GetOptionValue("alertCustomMinutes") then
+                if minutes == ns:OptionValue("alertCustomMinutes") then
                     TimerAlert(warmode, L.AlertLong:format(minutes, startTime), "future", minutes, true)
                 end
             end)
@@ -204,7 +204,7 @@ local function SetTimers(warmode, timestamp, forced)
 
     -- Set Start Alert
     CT.After(secondsUntil, function()
-        if ns:GetOptionValue("alertStart") then
+        if ns:OptionValue("alertStart") then
             if warmode then
                 ns:Toggle("recentlyOutputWM", ns.data.timeouts.long)
             else
@@ -242,7 +242,7 @@ end
 
 --- Returns an option from the options table
 -- @return {any}
-function ns:GetOptionValue(option)
+function ns:OptionValue(option)
     return TBW_options[ns.prefix .. option]
 end
 
@@ -282,7 +282,7 @@ end
 --- Prints a debug message to the chat
 -- @param {string} message
 function ns:DebugPrint(message)
-    if ns:GetOptionValue("debug") then
+    if ns:OptionValue("debug") then
         local dateFormat = GetCVar("timeMgrUseMilitaryTime") == "1" and "%H:%M:%S" or "%I:%M:%S%p"
         print("|cff" .. ns.color .. "TBW|r |cfff8b700Debug|r " .. date(dateFormat, GetServerTime()) .. "|n" .. message)
     end

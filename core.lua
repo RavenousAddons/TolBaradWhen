@@ -37,7 +37,7 @@ end
 local function GroupRosterUpdateEvent()
     local partyMembers = GetNumSubgroupMembers()
     local raidMembers = IsInRaid() and GetNumGroupMembers() or 0
-    if not ns.version:match("-") and ns:GetOptionValue("share") and not IsInGroup(LE_PARTY_CATEGORY_INSTANCE) then
+    if not ns.version:match("-") and ns:OptionValue("share") and not IsInGroup(LE_PARTY_CATEGORY_INSTANCE) then
         if raidMembers == 0 and partyMembers > ns.data.partyMembers then
             ns:SendVersionUpdate("PARTY")
             if not ns.data.toggles.recentlySentStart then
@@ -136,7 +136,7 @@ function TolBaradWhen_OnEvent(self, event, arg, ...)
         PlayerEnteringWorldEvent()
     elseif event == "GROUP_ROSTER_UPDATE" then
         GroupRosterUpdateEvent()
-    elseif event == "CHAT_MSG_ADDON" and arg == ADDON_NAME and ns:GetOptionValue("share") then
+    elseif event == "CHAT_MSG_ADDON" and arg == ADDON_NAME and ns:OptionValue("share") then
         local message, channel, sender, _ = ...
         ChatMsgAddonEvent(message, channel, sender)
     elseif event == "ZONE_CHANGED_NEW_AREA" then
@@ -188,7 +188,7 @@ SlashCmdList["TOLBARADWHEN"] = function(message)
         ns:OpenSettings()
     elseif message == "r" or message:match("req") then
         -- Request TB times from an appropriate chat channel
-        if ns:GetOptionValue("share") then
+        if ns:OptionValue("share") then
             local _, channel, target = strsplit(" ", message)
             ns:RequestStart(channel, target)
         else
@@ -200,7 +200,7 @@ SlashCmdList["TOLBARADWHEN"] = function(message)
         ns:SendStart(channel, target, true, true)
     elseif message == "s" or message:match("send") or message:match("share") then
         -- Share your timers in an appropriate chat channel
-        if ns:GetOptionValue("share") then
+        if ns:OptionValue("share") then
             local _, channel, target = strsplit(" ", message)
             ns:SendStart(channel, target, false, true)
         else
