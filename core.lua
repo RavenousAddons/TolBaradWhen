@@ -11,6 +11,7 @@ local hordeString = "|cffb30000" .. L.Horde .. "|r"
 
 function TolBaradWhen_OnLoad(self)
     self:RegisterEvent("PLAYER_LOGIN")
+    self:RegisterEvent("PLAYER_ENTERING_WORLD")
     self:RegisterEvent("CHAT_MSG_ADDON")
     self:RegisterEvent("GROUP_ROSTER_UPDATE")
     self:RegisterEvent("ZONE_CHANGED_NEW_AREA")
@@ -21,6 +22,10 @@ end
 
 local function PlayerLoginEvent()
     ns:SetDefaultOptions()
+    C_ChatInfo.RegisterAddonMessagePrefix(ADDON_NAME)
+end
+
+local function PlayerEnteringWorldEvent()
     ns:CreateSettingsPanel()
     if not TBW_version then
         ns:PrettyPrint(L.Install:format(ns.color, ns.version))
@@ -29,7 +34,6 @@ local function PlayerLoginEvent()
         -- Version-specific messages go here...
     end
     TBW_version = ns.version
-    C_ChatInfo.RegisterAddonMessagePrefix(ADDON_NAME)
     ns.data.location = C_Map.GetBestMapForUnit("player")
     ns:TimerCheck()
 end
@@ -134,6 +138,7 @@ function TolBaradWhen_OnEvent(self, event, arg, ...)
         PlayerLoginEvent()
     elseif event == "PLAYER_ENTERING_WORLD" then
         PlayerEnteringWorldEvent()
+        self:UnregisterEvent("PLAYER_ENTERING_WORLD")
     elseif event == "GROUP_ROSTER_UPDATE" then
         GroupRosterUpdateEvent()
     elseif event == "CHAT_MSG_ADDON" and arg == ADDON_NAME and ns:OptionValue("share") then
