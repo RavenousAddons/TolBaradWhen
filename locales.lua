@@ -10,6 +10,7 @@ end })
 
 -- Global
 L.Enabled = _G.VIDEO_OPTIONS_ENABLED
+L.Disabled = _G.VIDEO_OPTIONS_DISABLED
 L.WarMode = _G.PVP_LABEL_WAR_MODE
 L.TolBarad = _G.DUNGEON_FLOOR_TOLBARADWARLOCKSCENARIO0
 L.Alliance = _G.FACTION_ALLIANCE
@@ -31,6 +32,7 @@ L.AlertStartElapsedAnnounce = "started %s ago."
 L.AlertStartElapsed = "started %s ago at %s."
 L.AlertStartUnsure = "started and may still be ongoing!"
 L.AlertToggleWarmode = "You will have to set " .. L.WarMode .. " to %s to participate!"
+L.NMinutes = "%s minutes"
 L.WarningNoInfo = "Unfortunately, " .. L.TolBarad .. " information is unavailable here! You'll have to go to " .. L.TolBarad .. " or ask for a group member to share their data with you."
 L.WarningNoData = "Your " .. L.TolBarad .. " data doesn't contain any upcoming alerts that you can share."
 L.WarningDisabledShare = "You must enable sharing in Options in order to share your " .. L.TolBarad .. " data with group members."
@@ -103,7 +105,7 @@ L.OptionsExtra = {
     [1] = {
         key = "share",
         name = "Sharing",
-        tooltip = "Enables silently sharing of start times with group members.",
+        tooltip = "Enables silently sharing of start times with group members and through some chat channels.",
     },
     [2] = {
         key = "debug",
@@ -126,35 +128,5 @@ L.DebugRaidBossEmote = "Event: RaidBossEmote|n%s"
 -- Check locale and apply appropriate changes below
 local CURRENT_LOCALE = GetLocale()
 
--- German
-if CURRENT_LOCALE == "deDE" then return end
-
--- Spanish
-if CURRENT_LOCALE == "esES" then return end
-
--- Latin-American Spanish
-if CURRENT_LOCALE == "esMX" then return end
-
--- French
-if CURRENT_LOCALE == "frFR" then return end
-
--- Italian
-if CURRENT_LOCALE == "itIT" then return end
-
--- Brazilian Portuguese
-if CURRENT_LOCALE == "ptBR" then return end
-
--- Russian
-if CURRENT_LOCALE == "ruRU" then return end
-
--- Korean
-if CURRENT_LOCALE == "koKR" then return end
-
--- Simplified Chinese
-if CURRENT_LOCALE == "zhCN" then return end
-
--- Traditional Chinese
-if CURRENT_LOCALE == "zhTW" then return end
-
--- Swedish
-if CURRENT_LOCALE == "svSE" then return end
+-- XXXX
+-- if CURRENT_LOCALE == "xxXX" then return end

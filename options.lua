@@ -26,9 +26,9 @@ function ns:CreateSettingsPanel()
 
     local function GetCustomAlertOptions()
         local container = Settings.CreateControlTextContainer()
-        container:Add(1, "Disabled")
+        container:Add(1, L.Disabled)
         for i = 15, 55, 5 do
-            container:Add(i, i .. " minutes")
+            container:Add(i, L.NMinutes:format(i))
         end
         return container:GetData()
     end

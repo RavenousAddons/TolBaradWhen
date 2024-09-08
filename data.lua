@@ -18,10 +18,6 @@ ns.data = {
         startTimestamp = 0,
         controlWM = "alliance",
         control = "alliance",
-        gamesWM = 0,
-        games = 0,
-        winsWM = 0,
-        wins = 0,
     },
     characterDefaults = {
         gamesWM = 0,
