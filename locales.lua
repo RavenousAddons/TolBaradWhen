@@ -45,6 +45,7 @@ L.TimerAlert = L.TolBarad .. " (" .. L.WarMode .. ": %s, Control: %s)"
 L.TimerRaidWarning = "The Battle for " .. L.TolBarad .. " (" .. L.WarMode .. ": %s, Control: %s)"
 L.ReceivedRequest = "Received request from %s in %s"
 L.WinRecord = "Win Record"
+L.DebugEnabled = "Debugging toggle enabled in Addon options. Reload your UI to see it."
 L.AddonCompartmentTooltip1 = "|cff" .. ns.color .. "Left-Click:|r Open Settings"
 L.AddonCompartmentTooltip2 = "|cff" .. ns.color .. "Right-Click:|r Share Timers"
 L.OptionsTitle1 = "When do you want to be alerted?"
@@ -75,42 +76,67 @@ L.OptionsWhen = {
         name = "10 minutes before",
         tooltip = L.OptionsWhenTooltip:format("10 minutes before"),
     },
-}
-L.OptionsWhenCustom = {
-    key = "alertCustomMinutes",
-    name = "Custom before",
-    tooltip = L.OptionsWhenTooltip:format("at a custom time before"),
+    [6] = {
+        key = "alertCustomMinutes",
+        name = "Custom before",
+        tooltip = L.OptionsWhenTooltip:format("at a custom time before"),
+        fn = function()
+            local container = Settings.CreateControlTextContainer()
+            container:Add(1, L.Disabled)
+            for i = 15, 55, 5 do
+                container:Add(i, L.NMinutes:format(i))
+            end
+            return container:GetData()
+        end,
+    },
 }
 L.OptionsTitle2 = "How do you want to be alerted?"
-L.OptionsHowTooltip = "When important alerts go off, they will be accompanied by a %s, in addition to the chat box alert."
+L.OptionsHowTooltip = "When important alerts go off, they will be accompanied by a %s."
 L.OptionsHow = {
     [1] = {
-        key = "sound",
-        name = "Sounds",
-        tooltip = L.OptionsHowTooltip:format("Sound"),
+        key = "printText",
+        name = "Chat Messages",
+        tooltip = L.OptionsHowTooltip:format("chat message"),
     },
     [2] = {
+        key = "sound",
+        name = "Sounds",
+        tooltip = L.OptionsHowTooltip:format("sound"),
+    },
+    [3] = {
         key = "raidwarning",
         name = "Raid Warnings",
         tooltip = L.OptionsHowTooltip:format("Raid Warning"),
-    },
-    [3] = {
-        key = "stopwatch",
-        name = "Stopwatch",
-        tooltip = L.OptionsHowTooltip:format("Stopwatch"),
     },
 }
 L.OptionsTitle3 = "Extra Options:"
 L.OptionsExtra = {
     [1] = {
+        key = "timeFormat",
+        name = "Time Format",
+        tooltip = "Choose a short or long time formatting.",
+        fn = function()
+            local container = Settings.CreateControlTextContainer()
+            container:Add(1, "h, m, s")
+            container:Add(2, "hours, minutes, seconds")
+            return container:GetData()
+        end,
+    },
+    [2] = {
+        key = "printWinsOnEnd",
+        name = "Display wins/losses on end",
+        tooltip = "Prints your win/loss ratio in your chat window when battles end.",
+    },
+    [3] = {
         key = "share",
         name = "Sharing",
         tooltip = "Enables silently sharing of start times with group members and through some chat channels.",
     },
-    [2] = {
+    [4] = {
         key = "debug",
         name = "Debugging",
         tooltip = "Enables messages for debugging.",
+        optionValue ="allowDebug",
     },
 }
 L.DebugToggleOn = "%s = true (%ss timeout)"

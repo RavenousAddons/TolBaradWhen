@@ -21,31 +21,39 @@ function ns:CreateSettingsPanel()
 
     for index = 1, #L.OptionsWhen do
         local option = L.OptionsWhen[index]
-        CreateCheckBox(category, option.key, option.name, option.tooltip)
-    end
-
-    local function GetCustomAlertOptions()
-        local container = Settings.CreateControlTextContainer()
-        container:Add(1, L.Disabled)
-        for i = 15, 55, 5 do
-            container:Add(i, L.NMinutes:format(i))
+        if option.optionValue == nil or (option.optionValue and ns:OptionValue(option.optionValue)) then
+            if option.fn then
+                CreateDropDown(category, option.key, option.name, option.fn, option.tooltip)
+            else
+                CreateCheckBox(category, option.key, option.name, option.tooltip)
+            end
         end
-        return container:GetData()
     end
-    CreateDropDown(category, L.OptionsWhenCustom.key, L.OptionsWhenCustom.name, GetCustomAlertOptions, L.OptionsWhenCustom.tooltip)
 
     layout:AddInitializer(CreateSettingsListSectionHeaderInitializer(L.OptionsTitle2))
 
     for index = 1, #L.OptionsHow do
         local option = L.OptionsHow[index]
-        CreateCheckBox(category, option.key, option.name, option.tooltip)
+        if option.optionValue == nil or (option.optionValue and ns:OptionValue(option.optionValue)) then
+            if option.fn then
+                CreateDropDown(category, option.key, option.name, option.fn, option.tooltip)
+            else
+                CreateCheckBox(category, option.key, option.name, option.tooltip)
+            end
+        end
     end
 
     layout:AddInitializer(CreateSettingsListSectionHeaderInitializer(L.OptionsTitle3))
 
     for index = 1, #L.OptionsExtra do
         local option = L.OptionsExtra[index]
-        CreateCheckBox(category, option.key, option.name, option.tooltip)
+        if option.optionValue == nil or (option.optionValue and ns:OptionValue(option.optionValue)) then
+            if option.fn then
+                CreateDropDown(category, option.key, option.name, option.fn, option.tooltip)
+            else
+                CreateCheckBox(category, option.key, option.name, option.tooltip)
+            end
+        end
     end
 
     ns.Settings = category

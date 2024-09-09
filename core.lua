@@ -11,7 +11,6 @@ local hordeString = "|cffb30000" .. L.Horde .. "|r"
 
 function TolBaradWhen_OnLoad(self)
     self:RegisterEvent("PLAYER_LOGIN")
-    self:RegisterEvent("PLAYER_ENTERING_WORLD")
     self:RegisterEvent("CHAT_MSG_ADDON")
     self:RegisterEvent("GROUP_ROSTER_UPDATE")
     self:RegisterEvent("ZONE_CHANGED_NEW_AREA")
@@ -23,8 +22,6 @@ end
 function TolBaradWhen_OnEvent(self, event, arg, ...)
     if event == "PLAYER_LOGIN" then
         ns:SetDefaultOptions()
-        C_ChatInfo.RegisterAddonMessagePrefix(ADDON_NAME)
-    elseif event == "PLAYER_ENTERING_WORLD" then
         ns:CreateSettingsPanel()
         if not TBW_version then
             ns:PrettyPrint(L.Install:format(ns.color, ns.version))
@@ -33,19 +30,19 @@ function TolBaradWhen_OnEvent(self, event, arg, ...)
             -- Version-specific messages go here...
         end
         TBW_version = ns.version
+        C_ChatInfo.RegisterAddonMessagePrefix(ADDON_NAME)
         ns.data.location = C_Map.GetBestMapForUnit("player")
         ns:TimerCheck()
-        self:UnregisterEvent("PLAYER_ENTERING_WORLD")
     elseif event == "GROUP_ROSTER_UPDATE" then
         local partyMembers = GetNumSubgroupMembers()
         local raidMembers = IsInRaid() and GetNumGroupMembers() or 0
         if not ns.version:match("-") and ns:OptionValue("share") and not IsInGroup(LE_PARTY_CATEGORY_INSTANCE) then
-            if raidMembers == 0 and partyMembers > ns.data.partyMembers then
+            if raidMembers == 0 and ns.data.partyMembers < partyMembers then
                 ns:SendVersionUpdate("PARTY")
                 if not ns.data.toggles.recentlySentStart then
                     ns:SendStart("PARTY")
                 end
-            elseif raidMembers > ns.data.raidMembers then
+            elseif ns.data.raidMembers < raidMembers then
                 ns:SendVersionUpdate("RAID")
                 if not ns.data.toggles.recentlySentStart then
                     ns:SendStart("RAID")
@@ -67,7 +64,7 @@ function TolBaradWhen_OnEvent(self, event, arg, ...)
                 local c1, c2, c3 = strsplit(".", ns.version)
                 v1, v2, v3 = tonumber(v1), tonumber(v2), tonumber(string.match(v3, "([^%-]+)"))
                 c1, c2, c3 = tonumber(c1), tonumber(c2), tonumber(string.match(c3, "([^%-]+)"))
-                if v1 > c1 or (v1 == c1 and v2 > c2) or (v1 == c1 and v2 == c2 and v3 > c3) then
+                if c1 < v1 or (c1 == v1 and c2 < v2) or (c1 == v1 and c2 == v2 and c3 < v3) then
                     ns:PrettyPrint(L.UpdateFound:format(version))
                     ns.data.toggles.updateFound = true
                 end
@@ -86,7 +83,7 @@ function TolBaradWhen_OnEvent(self, event, arg, ...)
             local startTimestampWM = dataWM:gsub("A", ""):gsub("H", "")
             local startTimestamp = data:gsub("A", ""):gsub("H", "")
             if not ns.data.toggles.recentlyReceivedStartWM then
-                if tonumber(startTimestampWM) > tonumber(TBW_data.startTimestampWM) + 1 then
+                if tonumber(TBW_data.startTimestampWM) + 1 < tonumber(startTimestampWM) then
                     ns:Toggle("recentlyReceivedStartWM")
                     TBW_data.controlWM = controlWM
                     TBW_data.startTimestampWM = tonumber(startTimestampWM)
@@ -94,7 +91,7 @@ function TolBaradWhen_OnEvent(self, event, arg, ...)
                 end
             end
             if not ns.data.toggles.recentlyReceivedStart then
-                if tonumber(startTimestamp) > tonumber(TBW_data.startTimestamp) + 1 then
+                if tonumber(TBW_data.startTimestamp) + 1 < tonumber(startTimestamp) then
                     ns:Toggle("recentlyReceivedStart")
                     TBW_data.control = control
                     TBW_data.startTimestamp = tonumber(startTimestamp)
@@ -118,7 +115,9 @@ function TolBaradWhen_OnEvent(self, event, arg, ...)
             ns:Toggle("recentlyEnded", ns.data.timeouts.short)
             CT.After(2, function()
                 ns:IncrementCounts(arg)
-                ns:PrintCounts()
+                if ns:OptionValue("printWinsOnEnd") then
+                    ns:PrintCounts()
+                end
                 ns:TimerCheck()
             end)
         end
@@ -193,6 +192,14 @@ SlashCmdList["TOLBARADWHEN"] = function(message)
         local now = GetServerTime()
         print(L.WarMode .. " |cff44ff44" .. L.Enabled .. "|r, Control: " .. (TBW_data.controlWM == "alliance" and allianceString or hordeString) .. " " .. (TBW_data.startTimestampWM - now))
         print(L.WarMode .. " |cffff4444" .. L.Disabled .. "|r, Control: " .. (TBW_data.control == "alliance" and allianceString or hordeString) .. " " .. (TBW_data.startTimestamp - now))
+        -- Handle Debug enabling/disabling
+        if not TBW_options[ns.prefix .. "allowDebug"] and not message:match("disable") then
+            TBW_options[ns.prefix .. "allowDebug"] = true
+            ns:PrettyPrint(L.DebugEnabled)
+        elseif message:match("disable") then
+            TBW_options[ns.prefix .. "allowDebug"] = false
+            TBW_options[ns.prefix .. "debug"] = false
+        end
     else
         -- Print your timers
         ns:TimerCheck(true)
