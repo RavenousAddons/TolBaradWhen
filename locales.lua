@@ -46,6 +46,20 @@ L.TimerRaidWarning = "The Battle for " .. L.TolBarad .. " (" .. L.WarMode .. ": 
 L.ReceivedRequest = "Received request from %s in %s"
 L.WinRecord = "Win Record"
 L.DebugEnabled = "Debugging toggle enabled in Addon options. Reload your UI to see it."
+L.Units = {
+    minute = {
+        s = "minute",
+        p = "minutes",
+        a = "min.",
+        t = "m",
+    },
+    second = {
+        s = "second",
+        p = "seconds",
+        a = "sec.",
+        t = "s",
+    },
+}
 L.AddonCompartmentTooltip1 = "|cff" .. ns.color .. "Left-Click:|r Open Settings"
 L.AddonCompartmentTooltip2 = "|cff" .. ns.color .. "Right-Click:|r Share Timers"
 L.OptionsTitle1 = "When do you want to be alerted?"
@@ -117,15 +131,16 @@ L.OptionsExtra = {
         tooltip = "Choose a short or long time formatting.",
         fn = function()
             local container = Settings.CreateControlTextContainer()
-            container:Add(1, "h, m, s")
-            container:Add(2, "hours, minutes, seconds")
+            container:Add(1, "12" .. L.Units.minute.t .. " 34" .. L.Units.second.t)
+            container:Add(2, "12 " .. L.Units.minute.a .. " 34 " .. L.Units.second.a)
+            container:Add(3, "12 " .. L.Units.minute.p .. " 34 " .. L.Units.second.p)
             return container:GetData()
         end,
     },
     [2] = {
         key = "printWinsOnEnd",
-        name = "Display wins/losses on end",
-        tooltip = "Prints your win/loss ratio in your chat window when battles end.",
+        name = "Display wins/games on end",
+        tooltip = "Prints your win/games record in your chat window when battles end.",
     },
     [3] = {
         key = "share",

@@ -9,6 +9,9 @@ local _, localizedFactionName = UnitFactionGroup("player")
 local allianceString = "|cff0078ff" .. L.Alliance .. "|r"
 local hordeString = "|cffb30000" .. L.Horde .. "|r"
 
+local minute = L.Units.minute
+local second = L.Units.second
+
 ---
 -- Local Functions
 ---
@@ -26,11 +29,20 @@ end
 -- @param {boolean} long
 -- @return {string}
 local function Duration(duration)
-    local long = ns:OptionValue("timeFormat") == 2
+    local timeFormat = ns:OptionValue("timeFormat")
     local minutes = math.floor(duration / 60)
     local seconds = math.fmod(duration, 60)
-    local m = long and (" minute" .. (minutes > 1 and "s" or "")) or "m"
-    local s = long and (" second" .. (seconds > 1 and "s" or "")) or "s"
+    local m, s
+    if timeFormat == 3 then
+        m = " " .. (minutes > 1 and minute.p or minute.s)
+        s = " " .. (seconds > 1 and second.p or second.s)
+    elseif timeFormat == 2 then
+        m = " " .. minute.a
+        s = " " .. second.a
+    else
+        m = minute.t
+        s = second.t
+    end
     if minutes > 0 then
         if seconds > 0 then
             return string.format("%d" .. m .. " %d" .. s, minutes, seconds)
@@ -502,7 +514,7 @@ function ns:PrintCounts()
     local warmode = C_PvP.IsWarModeDesired()
     local string
 
-    ns:PrettyPrint("")
+    ns:PrettyPrint("Wins/Games Record")
 
     local warbandGamesWM = TBW_data.gamesWM
     local warbandGames = TBW_data.games
@@ -518,9 +530,9 @@ function ns:PrintCounts()
     local warbandWinsTotal = warbandWinsWM + warbandWins
 
     -- Warband-Wide
-    string = "|cff01e2ff" .. L.WarbandWide .. ":|r|n" .. L.WinRecord .. ": " .. warbandWinsTotal .. "/" .. warbandGamesTotal
-    string = string .. "|n" .. L.WarMode .. " |cff44ff44" .. L.Enabled .. "|r: " .. warbandWinsWM .. "/" .. warbandGamesWM
-    string = string .. "|n" .. L.WarMode .. " |cffff4444" .. L.Disabled .. "|r: " .. warbandWins .. "/" .. warbandGames
+    string = "|cff01e2ff" .. L.WarbandWide .. ":|r"
+    string = string .. "|n|cff" .. ns.color .. L.WinRecord .. ":|r " .. warbandWinsTotal .. "/" .. warbandGamesTotal
+    string = string .. "|n|cff" .. ns.color .. L.WarMode .. ":|r |cff44ff44" .. L.Enabled .. "|r " .. warbandWinsWM .. "/" .. warbandGamesWM .. "  |cffff4444" .. L.Disabled .. "|r " .. warbandWins .. "/" .. warbandGames
     print(string)
 
     local characterGamesWM = TBW_data.characters[character].gamesWM
@@ -531,8 +543,8 @@ function ns:PrintCounts()
     local characterWinsTotal = characterWinsWM + characterWins
 
     -- Character-Specific
-    string = "|cff" .. ns.data.classColors[className:lower()] .. character .. ":|r|n" .. L.WinRecord .. ": " .. characterWinsTotal .. "/" .. characterGamesTotal
-    string = string .. "|n" .. L.WarMode .. " |cff44ff44" .. L.Enabled .. "|r: " .. characterWinsWM .. "/" .. characterGamesWM
-    string = string .. "|n" .. L.WarMode .. " |cffff4444" .. L.Disabled .. "|r: " .. characterWins .. "/" .. characterGames
+    string = "|cff" .. ns.data.classColors[className:lower()] .. character .. ":|r"
+    string = string .. "|n|cff" .. ns.color .. L.WinRecord .. ":|r " .. characterWinsTotal .. "/" .. characterGamesTotal
+    string = string .. "|n|cff" .. ns.color .. L.WarMode .. ":|r |cff44ff44" .. L.Enabled .. "|r " .. characterWinsWM .. "/" .. characterGamesWM .. "  |cffff4444" .. L.Disabled .. "|r " .. characterWins .. "/" .. characterGames
     print(string)
 end
