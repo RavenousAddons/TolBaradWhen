@@ -234,6 +234,7 @@ end
 -- Namespaced Functions
 ---
 
+--- Set some data about the player
 function ns:SetPlayerState()
     ns.data.characterName = UnitName("player") .. "-" .. GetNormalizedRealmName("player")
     local _, className, _ = UnitClass("player")
@@ -241,6 +242,7 @@ function ns:SetPlayerState()
     local _, factionName = UnitFactionGroup("player")
     ns.data.factionName = factionName
     ns.data.location = C_Map.GetBestMapForUnit("player")
+    ns.data.characterNameFormatted = "|cff" .. ns.data.classColors[ns.data.className:lower()] .. ns.data.characterName .. "|r"
 end
 
 --- Returns an option from the options table
@@ -547,9 +549,8 @@ function ns:PrintCounts()
     local warbandWinsTotal = warbandWinsWM + warbandWins
 
     -- Warband-Wide
-    string = "|cff01e2ff" .. L.WarbandWide .. ":|r"
-    string = string .. "|n|cff" .. ns.color .. L.WinRecord .. ":|r " .. warbandWinsTotal .. "/" .. warbandGamesTotal
-    string = string .. "|n|cff" .. ns.color .. L.WarMode .. ":|r |cff44ff44" .. L.Enabled .. "|r " .. warbandWinsWM .. "/" .. warbandGamesWM .. "  |cffff4444" .. L.Disabled .. "|r " .. warbandWins .. "/" .. warbandGames
+    string = "|cff01e2ff" .. L.WarbandWide .. "|r:  " .. warbandWinsTotal .. "/" .. warbandGamesTotal
+    string = string .. "|n|cff" .. ns.color .. L.WarMode .. "|r:  |cff44ff44" .. L.Enabled .. "|r " .. warbandWinsWM .. "/" .. warbandGamesWM .. "  |cffff4444" .. L.Disabled .. "|r " .. warbandWins .. "/" .. warbandGames
     print(string)
 
     local characterGamesWM = TBW_data.characters[ns.data.characterName].gamesWM
@@ -560,8 +561,7 @@ function ns:PrintCounts()
     local characterWinsTotal = characterWinsWM + characterWins
 
     -- Character-Specific
-    string = "|cff" .. ns.data.classColors[className:lower()] .. ns.data.characterName .. ":|r"
-    string = string .. "|n|cff" .. ns.color .. L.WinRecord .. ":|r " .. characterWinsTotal .. "/" .. characterGamesTotal
-    string = string .. "|n|cff" .. ns.color .. L.WarMode .. ":|r |cff44ff44" .. L.Enabled .. "|r " .. characterWinsWM .. "/" .. characterGamesWM .. "  |cffff4444" .. L.Disabled .. "|r " .. characterWins .. "/" .. characterGames
+    string = ns.data.characterNameFormatted .. ":  " .. characterWinsTotal .. "/" .. characterGamesTotal
+    string = string .. "|n|cff" .. ns.color .. L.WarMode .. "|r: |cff44ff44" .. L.Enabled .. "|r: " .. characterWinsWM .. "/" .. characterGamesWM .. "  |cffff4444" .. L.Disabled .. "|r " .. characterWins .. "/" .. characterGames
     print(string)
 end
