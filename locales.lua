@@ -130,9 +130,9 @@ L.OptionsExtra = {
         tooltip = "Choose a short or long time formatting.",
         fn = function()
             local container = Settings.CreateControlTextContainer()
-            container:Add(1, "12" .. L.Units.minute.t .. " 34" .. L.Units.second.t)
-            container:Add(2, "12 " .. L.Units.minute.a .. " 34 " .. L.Units.second.a)
-            container:Add(3, "12 " .. L.Units.minute.p .. " 34 " .. L.Units.second.p)
+            for i = 1, 3, 1 do
+                container:Add(i, ns:Duration(754, i))
+            end
             return container:GetData()
         end,
     },

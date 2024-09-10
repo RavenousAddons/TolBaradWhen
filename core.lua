@@ -117,16 +117,15 @@ function TolBaradWhen_OnEvent(self, event, ...)
     elseif event == "RAID_BOSS_EMOTE" and ns:InTolBarad(ns.data.location) then
         local string, _ = ...
         if string:match(L.TolBarad) and not string:match("1") then
+            local control = string:match(L.Alliance) and "alliance" or "horde"
             ns:DebugPrint(L.DebugRaidBossEmote:format(string))
             if not ns.data.toggles.recentlyEnded then
                 ns:Toggle("recentlyEnded", ns.data.timeouts.short)
-                CT.After(2, function()
-                    ns:IncrementCounts(string)
-                    if ns:OptionValue("printWinsOnEnd") then
-                        ns:PrintCounts()
-                    end
-                    ns:TimerCheck()
-                end)
+                ns:IncrementCounts(string)
+                if ns:OptionValue("printWinsOnEnd") then
+                    ns:PrintCounts()
+                end
+                ns:TimerCheck(false, 3600, control)
             end
         end
     end

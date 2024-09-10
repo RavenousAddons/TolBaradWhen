@@ -21,34 +21,6 @@ local function PlaySound(id)
     end
 end
 
---- Formats a duration in seconds to a "Xh Xm XXs" string
--- @param {number} duration
--- @param {boolean} long
--- @return {string}
-local function Duration(duration)
-    local timeFormat = ns:OptionValue("timeFormat")
-    local minutes = math.floor(duration / 60)
-    local seconds = math.fmod(duration, 60)
-    local m, s
-    if timeFormat == 3 then
-        m = " " .. (minutes > 1 and minute.p or minute.s)
-        s = " " .. (seconds > 1 and second.p or second.s)
-    elseif timeFormat == 2 then
-        m = " " .. minute.a
-        s = " " .. second.a
-    else
-        m = minute.t
-        s = second.t
-    end
-    if minutes > 0 then
-        if seconds > 0 then
-            return string.format("%d" .. m .. " %d" .. s, minutes, seconds)
-        end
-        return string.format("%d" .. m, minutes)
-    end
-    return string.format("%d" .. s, seconds)
-end
-
 --- Format a timestamp to a local time string
 -- @param {number} timestamp
 -- @return {string}
@@ -101,7 +73,7 @@ end
 local function GetSeconds()
     -- Unknown when not in either zone
     if not ns:InTolBarad(ns.data.location) then
-        return false
+        return nil
     end
 
     local widget
@@ -127,7 +99,7 @@ local function GetSeconds()
     end
 
     -- Unknown when battle is active and in Peninsula
-    return false
+    return nil
 end
 
 --- Returns a formatted Alliance/Horde string based on control value
@@ -285,6 +257,34 @@ function ns:SendVersionUpdate(channel)
     ns:DebugPrint(L.DebugSentVersion:format(channel, message))
 end
 
+--- Formats a duration in seconds to a "Xm Xs" string
+-- @param {number} duration
+-- @param {number} [timeFormat]
+-- @return {string}
+function ns:Duration(duration, timeFormat)
+    timeFormat = timeFormat and timeFormat or ns:OptionValue("timeFormat")
+    local minutes = math.floor(duration / 60)
+    local seconds = math.fmod(duration, 60)
+    local m, s
+    if timeFormat == 3 then
+        m = " " .. (minutes > 1 and minute.p or minute.s)
+        s = " " .. (seconds > 1 and second.p or second.s)
+    elseif timeFormat == 2 then
+        m = " " .. minute.a
+        s = " " .. second.a
+    else
+        m = minute.t
+        s = second.t
+    end
+    if minutes > 0 then
+        if seconds > 0 then
+            return string.format("%d" .. m .. ", %d" .. s, minutes, seconds)
+        end
+        return string.format("%d" .. m, minutes)
+    end
+    return string.format("%d" .. s, seconds)
+end
+
 --- Prints a formatted message to the chat
 -- @param {string} message
 function ns:PrettyPrint(message)
@@ -354,21 +354,21 @@ end
 
 --- Checks the current battle(s) state
 -- @param {boolean} forced
-function ns:TimerCheck(forced)
+function ns:TimerCheck(forced, seconds, control)
     ns:DebugPrint(L.DebugTimerCheck:format(forced and L.Enabled or L.Disabled))
 
     local now = GetServerTime()
     local warmode = C_PvP.IsWarModeDesired()
-    -- Remaining time (negative) or Until (positive) or Unknown (false)
-    local seconds = GetSeconds()
+    -- Remaining time (negative) or Until (positive) or Unknown (nil)
+    seconds = seconds and seconds or GetSeconds()
 
     -- If in Tol Barad, set the control based on WM enabled/disabled
-    if ns:InTolBarad(ns.data.location) then
-        TBW_data[warmode and "controlWM" or "control"] = GetControl()
+    if control or ns:InTolBarad(ns.data.location) then
+        TBW_data[warmode and "controlWM" or "control"] = control and control or GetControl()
     end
 
     -- If reliable seconds returned, then we're in Tol Barad, set the timestamp based on WM enabled/disabled
-    if seconds ~= false then
+    if seconds ~= nil then
         TBW_data[warmode and "startTimestampWM" or "startTimestamp"] = now + seconds
     end
 
@@ -377,14 +377,14 @@ function ns:TimerCheck(forced)
     if ns:IsPresent(TBW_data.startTimestampWM) then
         if forced or not ns.data.toggles.recentlyOutputWM then
             ns:Toggle("recentlyOutputWM")
-            TimerAlert(true, L.AlertStartElapsed:format(Duration((TBW_data.startTimestampWM - now) * -1), TimeFormat(TBW_data.startTimestampWM)), "present", true)
+            TimerAlert(true, L.AlertStartElapsed:format(ns:Duration((TBW_data.startTimestampWM - now) * -1), TimeFormat(TBW_data.startTimestampWM)), "present", true)
         end
     end
     -- For WM Disabled
     if ns:IsPresent(TBW_data.startTimestamp) then
         if forced or not ns.data.toggles.recentlyOutput then
             ns:Toggle("recentlyOutput")
-            TimerAlert(false, L.AlertStartElapsed:format(Duration((TBW_data.startTimestamp - now) * -1), TimeFormat(TBW_data.startTimestamp)), "present", true)
+            TimerAlert(false, L.AlertStartElapsed:format(ns:Duration((TBW_data.startTimestamp - now) * -1), TimeFormat(TBW_data.startTimestamp)), "present", true)
         end
     end
 
@@ -403,7 +403,7 @@ function ns:TimerCheck(forced)
         -- Alert Timer
         if forced or not ns.data.toggles.recentlyOutputWM then
             ns:Toggle("recentlyOutputWM")
-            TimerAlert(true, L.AlertShort:format(Duration(TBW_data.startTimestampWM - now), TimeFormat(TBW_data.startTimestampWM)), not forced and "future" or nil, true)
+            TimerAlert(true, L.AlertShort:format(ns:Duration(TBW_data.startTimestampWM - now), TimeFormat(TBW_data.startTimestampWM)), not forced and "future" or nil, true)
         end
     end
     -- For WM Disabled
@@ -415,7 +415,7 @@ function ns:TimerCheck(forced)
         -- Alert Timer
         if forced or not ns.data.toggles.recentlyOutput then
             ns:Toggle("recentlyOutput")
-            TimerAlert(false, L.AlertShort:format(Duration(TBW_data.startTimestamp - now), TimeFormat(TBW_data.startTimestamp)), not forced and "future" or nil, true)
+            TimerAlert(false, L.AlertShort:format(ns:Duration(TBW_data.startTimestamp - now), TimeFormat(TBW_data.startTimestamp)), not forced and "future" or nil, true)
         end
     end
 end
@@ -474,21 +474,21 @@ function ns:SendStart(channel, target, announce, manuallyInvoked)
                     -- WM Enabled
                     secondsUntil = TBW_data.startTimestampWM - now
                     if secondsUntil > 0 then
-                        message = L.AlertAnnounce:format(Duration(secondsUntil))
+                        message = L.AlertAnnounce:format(ns:Duration(secondsUntil))
                         SendChatMessage(L.TimerAlert:format(L.Enabled, ControlToString(TBW_data.controlWM)) .. " " .. message, string.upper(channel), nil, target)
                     elseif secondsUntil > -900 then
                         -- Convert absolute values to present elapsed time
-                        message = L.AlertStartElapsedAnnounce:format(Duration(secondsUntil * -1))
+                        message = L.AlertStartElapsedAnnounce:format(ns:Duration(secondsUntil * -1))
                         SendChatMessage(L.TimerAlert:format(L.Enabled, ControlToString(TBW_data.controlWM)) .. " " .. message, string.upper(channel), nil, target)
                     end
                     -- WM Disabled
                     secondsUntil = TBW_data.startTimestamp - now
                     if secondsUntil > 0 then
-                        message = L.AlertAnnounce:format(Duration(secondsUntil))
+                        message = L.AlertAnnounce:format(ns:Duration(secondsUntil))
                         SendChatMessage(L.TimerAlert:format(L.Disabled, ControlToString(TBW_data.control)) .. " " .. message, string.upper(channel), nil, target)
                     elseif secondsUntil > -900 then
                         -- Convert absolute values to present elapsed time
-                        message = L.AlertStartElapsedAnnounce:format(Duration(secondsUntil * -1))
+                        message = L.AlertStartElapsedAnnounce:format(ns:Duration(secondsUntil * -1))
                         SendChatMessage(L.TimerAlert:format(L.Disabled, ControlToString(TBW_data.control)) .. " " .. message, string.upper(channel), nil, target)
                     end
                     ns:DebugPrint(L.DebugAnnouncedStart:format(string.upper(channel)))
