@@ -32,8 +32,8 @@ function TolBaradWhen_OnEvent(self, event, ...)
                 -- Version-specific messages go here...
             end
             TBW_version = ns.version
-            ns:TimerCheck()
         end
+        ns:TimerCheck()
         self:UnregisterEvent("PLAYER_ENTERING_WORLD")
     elseif event == "GROUP_ROSTER_UPDATE" then
         local partyMembers = GetNumSubgroupMembers()
@@ -169,7 +169,7 @@ SlashCmdList["TOLBARADWHEN"] = function(message)
     elseif message == "h" or message:match("help") then
         -- Print ways to interact with addon
         ns:PrettyPrint("|n" .. L.Help)
-    elseif message == "c" or message:match("con") or message == "o" or message:match("opt") or message == "s" or message:match("sett") or message:match("togg") then
+    elseif message == "c" or message:match("con") or message == "o" or message:match("opt") or message:match("sett") or message:match("togg") then
         -- Open settings window
         ns:OpenSettings()
     elseif message == "r" or message:match("req") then
@@ -180,7 +180,7 @@ SlashCmdList["TOLBARADWHEN"] = function(message)
         else
             ns:PrettyPrint(L.WarningDisabledShare)
         end
-    elseif message == "a" or message:match("ann") then
+    elseif message:match("ann") then
         -- Announce your timers in an appropriate chat channel
         local _, channel, target = strsplit(" ", message)
         ns:SendStart(channel, target, true, true)

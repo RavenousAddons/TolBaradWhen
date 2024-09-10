@@ -138,7 +138,7 @@ L.OptionsExtra = {
     },
     [2] = {
         key = "printWinsOnEnd",
-        name = "Display wins/games at end",
+        name = "Display wins/games stats at end",
         tooltip = "Prints your win/games record in your chat window when battles end.",
     },
     [3] = {

@@ -108,7 +108,7 @@ local function GetSeconds()
 
     -- Time remaining in active battle
     -- Returns time REMAINING (negative number)
-    widget = GetActiveTimerWidget()
+    widget = GetWidget(ns.data.widgets.active.timer)
     if widget then
         local minutes, seconds = widget.Text:GetText():match("(%d+):(%d+)")
         if minutes and seconds then
@@ -118,7 +118,7 @@ local function GetSeconds()
 
     -- Time until next battle
     -- Returns time UNTIL (positive number)
-    widget = GetInactiveTimerWidget()
+    widget = GetWidget(ns.data.widgets.inactive.timer)
     if widget then
         local minutes, seconds = widget.Text:GetText():match("(%d+):(%d+)")
         if minutes and seconds then
@@ -218,16 +218,15 @@ end
 -- @return {string}
 local function GetControl()
     local widget
-
-    widget = GetWidget(ns.data.widgets.inactive.control)
-    if widget then
-        return widget.Text:GetText():match(L.Alliance) and "alliance" or "horde"
-    end
-
     widget = GetWidget(ns.data.widgets.active.control)
     if widget then
         return widget.Text:GetText():match(L.Alliance) and "horde" or "alliance"
     end
+    widget = GetWidget(ns.data.widgets.inactive.control)
+    if widget then
+        return widget.Text:GetText():match(L.Alliance) and "alliance" or "horde"
+    end
+    ns:PrettyPrint("Something has gone wrong with getting control data!")
 end
 
 ---
@@ -523,7 +522,7 @@ function ns:IncrementCounts(message)
     local winsKey = warmode and "winsWM" or "wins"
 
     TBW_data.characters[ns.data.characterName][gamesKey] = TBW_data.characters[ns.data.characterName][gamesKey] + 1
-    if message:match(localizedFactionName) then
+    if message:match(ns.data.factionName) then
         TBW_data.characters[ns.data.characterName][winsKey] = TBW_data.characters[ns.data.characterName][winsKey] + 1
     end
 end

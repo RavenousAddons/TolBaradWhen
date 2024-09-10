@@ -63,7 +63,7 @@ ns.data = {
     },
     widgets = {
         active = {
-            control = 701,
+            control = 702,
             timer = 682,
         },
         inactive = {
