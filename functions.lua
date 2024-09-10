@@ -3,9 +3,6 @@ local L = ns.L
 
 local CT = C_Timer
 
-local character = UnitName("player") .. "-" .. GetRealmName("player")
-local _, className, _ = UnitClass("player")
-local _, localizedFactionName = UnitFactionGroup("player")
 local allianceString = "|cff0078ff" .. L.Alliance .. "|r"
 local hordeString = "|cffb30000" .. L.Horde .. "|r"
 
@@ -86,23 +83,17 @@ end
 -- @param {string} option
 -- @param {any} default
 local function RegisterDefaultCharacterData(option, default)
-    if TBW_data.characters[character][option] == nil then
-        TBW_data.characters[character][option] = 0
+    if TBW_data.characters[ns.data.characterName][option] == nil then
+        TBW_data.characters[ns.data.characterName][option] = 0
     end
 end
 
---- Get active widget text.
--- @return {string}
-local function GetActiveTimerWidget()
-    local widget = _G["UIWidgetTopCenterContainerFrame"]["widgetFrames"][682]
-    return widget and widget.Text:GetText() or nil
-end
-
---- Get inactive widget text.
--- @return {string}
-local function GetInactiveTimerWidget()
-    local widget = _G["UIWidgetTopCenterContainerFrame"]["widgetFrames"][688]
-    return widget and widget.Text:GetText() or nil
+--- Get widget text.
+-- @param {number}
+-- @return {table}
+local function GetWidget(id)
+    local widget = _G["UIWidgetTopCenterContainerFrame"]["widgetFrames"][id]
+    return widget
 end
 
 --- Get remaining seconds in current battle (negative) or until next battle (positive).
@@ -113,13 +104,13 @@ local function GetSeconds()
         return false
     end
 
-    local widgetText
+    local widget
 
     -- Time remaining in active battle
     -- Returns time REMAINING (negative number)
-    widgetText = GetActiveTimerWidget()
-    if widgetText then
-        local minutes, seconds = widgetText:match("(%d+):(%d+)")
+    widget = GetActiveTimerWidget()
+    if widget then
+        local minutes, seconds = widget.Text:GetText():match("(%d+):(%d+)")
         if minutes and seconds then
             return (900 - (tonumber(minutes) * 60) - tonumber(seconds)) * -1
         end
@@ -127,9 +118,9 @@ local function GetSeconds()
 
     -- Time until next battle
     -- Returns time UNTIL (positive number)
-    widgetText = GetInactiveTimerWidget()
-    if widgetText then
-        local minutes, seconds = widgetText:match("(%d+):(%d+)")
+    widget = GetInactiveTimerWidget()
+    if widget then
+        local minutes, seconds = widget.Text:GetText():match("(%d+):(%d+)")
         if minutes and seconds then
             return (tonumber(minutes) * 60) + tonumber(seconds)
         end
@@ -226,13 +217,31 @@ end
 --- Returns the faction that controls Tol Barad based on the widget texture
 -- @return {string}
 local function GetControl()
-    local textureIndex = C_AreaPoiInfo.GetAreaPOIInfo(ns.data.mapIDs.main, 2485) and C_AreaPoiInfo.GetAreaPOIInfo(ns.data.mapIDs.main, 2485).textureIndex or C_AreaPoiInfo.GetAreaPOIInfo(ns.data.mapIDs.main, 2486).textureIndex
-    return textureIndex == 46 and "alliance" or "horde"
+    local widget
+
+    widget = GetWidget(ns.data.widgets.inactive.control)
+    if widget then
+        return widget.Text:GetText():match(L.Alliance) and "alliance" or "horde"
+    end
+
+    widget = GetWidget(ns.data.widgets.active.control)
+    if widget then
+        return widget.Text:GetText():match(L.Alliance) and "horde" or "alliance"
+    end
 end
 
 ---
 -- Namespaced Functions
 ---
+
+function ns:SetPlayerState()
+    ns.data.characterName = UnitName("player") .. "-" .. GetNormalizedRealmName("player")
+    local _, className, _ = UnitClass("player")
+    ns.data.className = className
+    local _, factionName = UnitFactionGroup("player")
+    ns.data.factionName = factionName
+    ns.data.location = C_Map.GetBestMapForUnit("player")
+end
 
 --- Returns an option from the options table
 -- @return {any}
@@ -243,8 +252,16 @@ end
 --- Sets default options if they are not already set
 function ns:SetDefaultOptions()
     TBW_data = TBW_data or {}
+    TBW_data.startTimestampWM = TBW_data.startTimestampWM or 0
+    TBW_data.startTimestamp = TBW_data.startTimestamp or 0
+    TBW_data.toggles = TBW_data.toggles or {}
     TBW_data.characters = TBW_data.characters or {}
-    TBW_data.characters[character] = TBW_data.characters[character] or {}
+    local oldCharKey = UnitName("player") .. "-" .. GetRealmName("player")
+    if oldCharKey ~= ns.data.characterName and TBW_data.characters[oldCharKey] then
+        TBW_data.characters[ns.data.characterName] = TBW_data.characters[oldCharKey]
+        TBW_data.characters[oldCharKey] = nil
+    end
+    TBW_data.characters[ns.data.characterName] = TBW_data.characters[ns.data.characterName] or {}
     for option, default in pairs(ns.data.characterDefaults) do
         RegisterDefaultCharacterData(option, default)
     end
@@ -503,9 +520,9 @@ function ns:IncrementCounts(message)
     local gamesKey = warmode and "gamesWM" or "games"
     local winsKey = warmode and "winsWM" or "wins"
 
-    TBW_data.characters[character][gamesKey] = TBW_data.characters[character][gamesKey] + 1
+    TBW_data.characters[ns.data.characterName][gamesKey] = TBW_data.characters[ns.data.characterName][gamesKey] + 1
     if message:match(localizedFactionName) then
-        TBW_data.characters[character][winsKey] = TBW_data.characters[character][winsKey] + 1
+        TBW_data.characters[ns.data.characterName][winsKey] = TBW_data.characters[ns.data.characterName][winsKey] + 1
     end
 end
 
@@ -535,15 +552,15 @@ function ns:PrintCounts()
     string = string .. "|n|cff" .. ns.color .. L.WarMode .. ":|r |cff44ff44" .. L.Enabled .. "|r " .. warbandWinsWM .. "/" .. warbandGamesWM .. "  |cffff4444" .. L.Disabled .. "|r " .. warbandWins .. "/" .. warbandGames
     print(string)
 
-    local characterGamesWM = TBW_data.characters[character].gamesWM
-    local characterGames = TBW_data.characters[character].games
-    local characterWinsWM = TBW_data.characters[character].winsWM
-    local characterWins = TBW_data.characters[character].wins
+    local characterGamesWM = TBW_data.characters[ns.data.characterName].gamesWM
+    local characterGames = TBW_data.characters[ns.data.characterName].games
+    local characterWinsWM = TBW_data.characters[ns.data.characterName].winsWM
+    local characterWins = TBW_data.characters[ns.data.characterName].wins
     local characterGamesTotal = characterGamesWM + characterGames
     local characterWinsTotal = characterWinsWM + characterWins
 
     -- Character-Specific
-    string = "|cff" .. ns.data.classColors[className:lower()] .. character .. ":|r"
+    string = "|cff" .. ns.data.classColors[className:lower()] .. ns.data.characterName .. ":|r"
     string = string .. "|n|cff" .. ns.color .. L.WinRecord .. ":|r " .. characterWinsTotal .. "/" .. characterGamesTotal
     string = string .. "|n|cff" .. ns.color .. L.WarMode .. ":|r |cff44ff44" .. L.Enabled .. "|r " .. characterWinsWM .. "/" .. characterGamesWM .. "  |cffff4444" .. L.Disabled .. "|r " .. characterWins .. "/" .. characterGames
     print(string)

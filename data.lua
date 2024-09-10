@@ -61,6 +61,16 @@ ns.data = {
         main = 244, -- Tol Barad
         peninsula = 245, -- Tol Barad Peninsula
     },
+    widgets = {
+        active = {
+            control = 701,
+            timer = 682,
+        },
+        inactive = {
+            control = 687,
+            timer = 688,
+        },
+    },
     classColors = {
         deathknight = "c41e3a",
         demonhunter = "a330c9",

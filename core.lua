@@ -3,14 +3,12 @@ local L = ns.L
 
 local CT = C_Timer
 
-local character = UnitName("player") .. "-" .. GetRealmName("player")
 local allianceString = "|cff0078ff" .. L.Alliance .. "|r"
 local hordeString = "|cffb30000" .. L.Horde .. "|r"
 
 -- Load the Addon
 
 function TolBaradWhen_OnLoad(self)
-    self:RegisterEvent("PLAYER_LOGIN")
     self:RegisterEvent("PLAYER_ENTERING_WORLD")
     self:RegisterEvent("CHAT_MSG_ADDON")
     self:RegisterEvent("GROUP_ROSTER_UPDATE")
@@ -20,20 +18,22 @@ end
 
 -- Event Triggers
 
-function TolBaradWhen_OnEvent(self, event, arg, ...)
-    if event == "PLAYER_LOGIN" then
+function TolBaradWhen_OnEvent(self, event, ...)
+    if event == "PLAYER_ENTERING_WORLD" then
+        local isInitialLogin, isReloadingUi = ...
+        ns:SetPlayerState()
         ns:SetDefaultOptions()
         ns:CreateSettingsPanel()
         C_ChatInfo.RegisterAddonMessagePrefix(ADDON_NAME)
-    elseif event == "PLAYER_ENTERING_WORLD" then
-        if not TBW_version then
-            ns:PrettyPrint(L.Install:format(ns.color, ns.version))
-        elseif TBW_version ~= ns.version then
-            -- Version-specific messages go here...
+        if isInitialLogin then
+            if not TBW_version then
+                ns:PrettyPrint(L.Install:format(ns.color, ns.version))
+            elseif TBW_version ~= ns.version then
+                -- Version-specific messages go here...
+            end
+            TBW_version = ns.version
+            ns:TimerCheck()
         end
-        TBW_version = ns.version
-        ns.data.location = C_Map.GetBestMapForUnit("player")
-        ns:TimerCheck()
         self:UnregisterEvent("PLAYER_ENTERING_WORLD")
     elseif event == "GROUP_ROSTER_UPDATE" then
         local partyMembers = GetNumSubgroupMembers()
@@ -53,9 +53,12 @@ function TolBaradWhen_OnEvent(self, event, arg, ...)
         end
         ns.data.partyMembers = partyMembers
         ns.data.raidMembers = raidMembers
-    elseif event == "CHAT_MSG_ADDON" and arg == ADDON_NAME and ns:OptionValue("share") then
-        local message, channel, sender, _ = ...
-        if sender == character then
+    elseif event == "CHAT_MSG_ADDON" and ns:OptionValue("share") then
+        local arg, message, channel, sender, _ = ...
+        if arg ~= ADDON_NAME then
+            return
+        end
+        if sender == ns.data.characterName then
             return
         end
         ns:DebugPrint(L.DebugChatMsgAddon:format(sender, channel, message))
@@ -111,17 +114,20 @@ function TolBaradWhen_OnEvent(self, event, arg, ...)
             end)
         end
         ns.data.location = newLocation
-    elseif event == "RAID_BOSS_EMOTE" and ns:InTolBarad(ns.data.location) and arg:match(L.TolBarad) and not arg:match("1") then
-        ns:DebugPrint(L.DebugRaidBossEmote:format(arg))
-        if not ns.data.toggles.recentlyEnded then
-            ns:Toggle("recentlyEnded", ns.data.timeouts.short)
-            CT.After(2, function()
-                ns:IncrementCounts(arg)
-                if ns:OptionValue("printWinsOnEnd") then
-                    ns:PrintCounts()
-                end
-                ns:TimerCheck()
-            end)
+    elseif event == "RAID_BOSS_EMOTE" and ns:InTolBarad(ns.data.location) then
+        local string, _ = ...
+        if string:match(L.TolBarad) and not string:match("1") then
+            ns:DebugPrint(L.DebugRaidBossEmote:format(string))
+            if not ns.data.toggles.recentlyEnded then
+                ns:Toggle("recentlyEnded", ns.data.timeouts.short)
+                CT.After(2, function()
+                    ns:IncrementCounts(string)
+                    if ns:OptionValue("printWinsOnEnd") then
+                        ns:PrintCounts()
+                    end
+                    ns:TimerCheck()
+                end)
+            end
         end
     end
 end

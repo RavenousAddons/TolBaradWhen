@@ -112,14 +112,14 @@ L.OptionsHow = {
         tooltip = L.OptionsHowTooltip:format("chat message"),
     },
     [2] = {
+        key = "raidwarning",
+        name = "Raid Warning Messages",
+        tooltip = L.OptionsHowTooltip:format("raid warning message"),
+    },
+    [3] = {
         key = "sound",
         name = "Sounds",
         tooltip = L.OptionsHowTooltip:format("sound"),
-    },
-    [3] = {
-        key = "raidwarning",
-        name = "Raid Warnings",
-        tooltip = L.OptionsHowTooltip:format("Raid Warning"),
     },
 }
 L.OptionsTitle3 = "Extra Options:"
@@ -138,7 +138,7 @@ L.OptionsExtra = {
     },
     [2] = {
         key = "printWinsOnEnd",
-        name = "Display wins/games on end",
+        name = "Display wins/games at end",
         tooltip = "Prints your win/games record in your chat window when battles end.",
     },
     [3] = {
