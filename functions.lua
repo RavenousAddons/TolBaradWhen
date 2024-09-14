@@ -198,7 +198,7 @@ local function GetControl()
     if widget then
         return widget.Text:GetText():match(L.Alliance) and "alliance" or "horde"
     end
-    ns:PrettyPrint("Something has gone wrong with getting control data!")
+    ns:PrettyPrint("Something has gone wrong! Type /tbw to get the Addon to try getting fresh data.")
 end
 
 ---
@@ -561,6 +561,6 @@ function ns:PrintCounts()
 
     -- Character-Specific
     string = ns.data.characterNameFormatted .. ":  " .. characterWinsTotal .. "/" .. characterGamesTotal
-    string = string .. "|n|cff" .. ns.color .. L.WarMode .. "|r: |cff44ff44" .. L.Enabled .. "|r: " .. characterWinsWM .. "/" .. characterGamesWM .. "  |cffff4444" .. L.Disabled .. "|r " .. characterWins .. "/" .. characterGames
+    string = string .. "|n|cff" .. ns.color .. L.WarMode .. "|r:  |cff44ff44" .. L.Enabled .. "|r: " .. characterWinsWM .. "/" .. characterGamesWM .. "  |cffff4444" .. L.Disabled .. "|r " .. characterWins .. "/" .. characterGames
     print(string)
 end

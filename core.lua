@@ -25,15 +25,15 @@ function TolBaradWhen_OnEvent(self, event, ...)
         ns:SetDefaultOptions()
         ns:CreateSettingsPanel()
         C_ChatInfo.RegisterAddonMessagePrefix(ADDON_NAME)
-        if isInitialLogin then
-            if not TBW_version then
-                ns:PrettyPrint(L.Install:format(ns.color, ns.version))
-            elseif TBW_version ~= ns.version then
-                -- Version-specific messages go here...
-            end
-            TBW_version = ns.version
+        if not TBW_version then
+            ns:PrettyPrint(L.Install:format(ns.color, ns.version))
+        elseif TBW_version ~= ns.version then
+            -- Version-specific messages go here...
         end
-        ns:TimerCheck()
+        TBW_version = ns.version
+        if isInitialLogin then
+            ns:TimerCheck()
+        end
         self:UnregisterEvent("PLAYER_ENTERING_WORLD")
     elseif event == "GROUP_ROSTER_UPDATE" then
         local partyMembers = GetNumSubgroupMembers()
@@ -197,8 +197,8 @@ SlashCmdList["TOLBARADWHEN"] = function(message)
     elseif message == "d" or message:match("bug") then
         -- Debug
         local now = GetServerTime()
-        print(L.WarMode .. " |cff44ff44" .. L.Enabled .. "|r, Control: " .. (TBW_data.controlWM == "alliance" and allianceString or hordeString) .. " " .. (TBW_data.startTimestampWM - now))
-        print(L.WarMode .. " |cffff4444" .. L.Disabled .. "|r, Control: " .. (TBW_data.control == "alliance" and allianceString or hordeString) .. " " .. (TBW_data.startTimestamp - now))
+        print((TBW_data.startTimestampWM - now) .. "  " .. L.AlertDetail:format( "|cff44ff44" .. L.Enabled .. "|r", (TBW_data.controlWM == "alliance" and allianceString or hordeString)))
+        print((TBW_data.startTimestamp - now) .. "  " .. L.AlertDetail:format( "|cffff4444" .. L.Disabled .. "|r", (TBW_data.control == "alliance" and allianceString or hordeString)))
         -- Handle Debug enabling/disabling
         if not TBW_options[ns.prefix .. "allowDebug"] and not message:match("disable") then
             TBW_options[ns.prefix .. "allowDebug"] = true
