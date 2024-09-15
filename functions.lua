@@ -122,10 +122,10 @@ local function TimerAlert(warmode, message, sound, raidWarningGate)
     local warmodeFormatted = "|cff" .. (warmode and ("44ff44" .. L.Enabled) or ("ff4444" .. L.Disabled)) .. "|r"
     local controlledFormatted = warmode and (TBW_data.controlWM == "alliance" and allianceString or hordeString) or (TBW_data.control == "alliance" and allianceString or hordeString)
     if ns:OptionValue("printText") then
-        DEFAULT_CHAT_FRAME:AddMessage("|cff" .. ns.color .. L.TimerAlert:format(warmodeFormatted, controlledFormatted) .. " |r" .. message .. (warmode ~= C_PvP.IsWarModeDesired() and " |cffffff00" .. L.AlertToggleWarmode:format(warmodeFormatted) .. "|r" or ""))
+        DEFAULT_CHAT_FRAME:AddMessage("|cff" .. ns.color .. L.TimerAlert:format(controlledFormatted, warmodeFormatted) .. " |r" .. message .. (warmode ~= C_PvP.IsWarModeDesired() and " |cffffff00" .. L.AlertToggleWarmode:format(warmodeFormatted) .. "|r" or ""))
     end
     if raidWarningGate and ns:OptionValue("raidwarning") then
-        RaidNotice_AddMessage(RaidWarningFrame, "|cff" .. ns.color .. L.TimerRaidWarning:format(warmodeFormatted, controlledFormatted) .. "|r |cffffffff" .. message .. (warmode ~= C_PvP.IsWarModeDesired() and "|n|cffffff00" .. L.AlertToggleWarmode:format(warmodeFormatted) .. "|r" or "") .. "|r", ChatTypeInfo["RAID_WARNING"])
+        RaidNotice_AddMessage(RaidWarningFrame, "|cff" .. ns.color .. L.TimerRaidWarning:format(controlledFormatted, warmodeFormatted) .. "|r |cffffffff" .. message .. (warmode ~= C_PvP.IsWarModeDesired() and "|n|cffffff00" .. L.AlertToggleWarmode:format(warmodeFormatted) .. "|r" or "") .. "|r", ChatTypeInfo["RAID_WARNING"])
     end
     if sound then
         PlaySound(ns.data.sounds[sound])

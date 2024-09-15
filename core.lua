@@ -197,8 +197,8 @@ SlashCmdList["TOLBARADWHEN"] = function(message)
     elseif message == "d" or message:match("bug") then
         -- Debug
         local now = GetServerTime()
-        print((TBW_data.startTimestampWM - now) .. "  " .. L.AlertDetail:format( "|cff44ff44" .. L.Enabled .. "|r", (TBW_data.controlWM == "alliance" and allianceString or hordeString)))
-        print((TBW_data.startTimestamp - now) .. "  " .. L.AlertDetail:format( "|cffff4444" .. L.Disabled .. "|r", (TBW_data.control == "alliance" and allianceString or hordeString)))
+        print((TBW_data.startTimestampWM - now) .. "  " .. L.AlertDetail:format((TBW_data.controlWM == "alliance" and allianceString or hordeString), "|cff44ff44" .. L.Enabled .. "|r"))
+        print((TBW_data.startTimestamp - now) .. "  " .. L.AlertDetail:format((TBW_data.control == "alliance" and allianceString or hordeString), "|cffff4444" .. L.Disabled .. "|r"))
         -- Handle Debug enabling/disabling
         if not TBW_options[ns.prefix .. "allowDebug"] and not message:match("disable") then
             TBW_options[ns.prefix .. "allowDebug"] = true
