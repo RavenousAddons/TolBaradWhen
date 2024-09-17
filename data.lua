@@ -70,6 +70,9 @@ ns.data = {
             control = 687,
             timer = 688,
         },
+        activePeninsula = {
+            control = 701,
+        },
     },
     classColors = {
         deathknight = "c41e3a",

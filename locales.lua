@@ -22,29 +22,29 @@ L.Version = "%s is the current version." -- ns.version
 L.Install = "Thanks for installing version |cff%1$s%2$s|r!" -- ns.color, ns.version
 L.UpdateFound = "Version %s is now available for download. Please update!" -- sentVersion
 L.Help = "This Addon sets alerts for future battles when you're in " .. L.TolBarad .. " and tracks some statistics.|nThere are also some slash commands available:|n/tbw options - Open options window|n/tbw share - Share your timers with group members|n/tbw request - Request timers from group members|n/tbw wins - See your win record across all tracked battles"
-L.AlertSet = "Timers have been set!"
-L.AlertAnnounce = "starts in %s."
-L.AlertShort = "starts in %s at %s."
-L.AlertLong = "starts in %s minutes at %s."
-L.AlertStart = "has started (at %s)!"
-L.AlertStartElapsedAnnounce = "started %s ago."
-L.AlertStartElapsed = "started %s ago at %s."
-L.AlertStartUnsure = "started and may still be ongoing!"
+L.AlertDetail = "(Control: %s, " .. L.WarMode .. ": %s)"
+L.AlertAnnouncePast = "started %s ago."
+L.AlertAnnounceFuture = "starts in %s."
+L.AlertPast = "started %s ago at %s."
+L.AlertNow = "has started (at %s)!"
+L.AlertFuture = "starts in %s at %s."
+L.AlertPastUnknown = "started and may still be ongoing!"
 L.AlertToggleWarmode = "You will have to set " .. L.WarMode .. " to %s to participate!"
-L.NMinutes = "%s minutes"
+L.TimerAlert = L.TolBarad .. " " .. L.AlertDetail
+L.TimerRaidWarning = "The Battle for " .. L.TolBarad .. " " .. L.AlertDetail
+L.WinRecord = "Win Record"
 L.WarningNoInfo = "Unfortunately, " .. L.TolBarad .. " information is unavailable here! You'll have to go to " .. L.TolBarad .. " or ask for a group member to share their data with you."
+L.WarningNoInfoPeninsula = "Unfortunately, " .. L.TolBarad .. " information is unavailable on the Peninsula! You'll have to go into " .. L.TolBarad .. " or ask for a group member to share their data with you."
 L.WarningNoData = "Your " .. L.TolBarad .. " data doesn't contain any upcoming alerts that you can share."
-L.WarningDisabledShare = "You must enable sharing in Options in order to share your " .. L.TolBarad .. " data with group members."
-L.WarningNoShare = "You must either be in a group or specify a channel (e.g. party, raid, guild) in order to share your " .. L.TolBarad .. " data."
-L.WarningNoRequest = "You must either be in a group or specify a channel (e.g. party, raid, guild) in order to request " .. L.TolBarad .. " data."
+L.WarningShareDisabled = "You must enable sharing in Options in order to share your " .. L.TolBarad .. " data with group members."
+L.WarningShareUnable = "You must either be in a group or specify a channel (e.g. party, raid, guild) in order to share your " .. L.TolBarad .. " data."
+L.WarningRequestUnable = "You must either be in a group or specify a channel (e.g. party, raid, guild) in order to request " .. L.TolBarad .. " data."
 L.WarningFastAnnounce = "You must wait %s seconds before announcing your " .. L.TolBarad .. " data again." -- integer
 L.WarningFastShare = "You must wait %s seconds before sharing your " .. L.TolBarad .. " data again." -- integer
 L.WarningFastRequest = "You must wait %s seconds before requesting " .. L.TolBarad .. " data again." -- integer
-L.AlertDetail = "(Control: %s, " .. L.WarMode .. ": %s)"
-L.TimerAlert = L.TolBarad .. " " .. L.AlertDetail
-L.TimerRaidWarning = "The Battle for " .. L.TolBarad .. " " .. L.AlertDetail
 L.ReceivedRequest = "Received request from %s in %s"
-L.WinRecord = "Win Record"
+L.SharedStart = "Shared start times %s"
+L.ControlError = "Something has gone wrong! Type /" .. ns.command .. " to get the Addon to try getting fresh data."
 L.DebugEnabled = "Debugging toggle enabled in Addon options. Reload your UI to see it."
 L.Units = {
     minute = {
@@ -98,7 +98,7 @@ L.OptionsWhen = {
             local container = Settings.CreateControlTextContainer()
             container:Add(1, L.Disabled)
             for i = 15, 55, 5 do
-                container:Add(i, L.NMinutes:format(i))
+                container:Add(i, ns:DurationFormat(i  *60, 3))
             end
             return container:GetData()
         end,
@@ -132,7 +132,7 @@ L.OptionsExtra = {
         fn = function()
             local container = Settings.CreateControlTextContainer()
             for i = 1, 3, 1 do
-                container:Add(i, ns:Duration(754, i))
+                container:Add(i, ns:DurationFormat(754, i))
             end
             return container:GetData()
         end,
@@ -161,7 +161,6 @@ L.DebugSetTimers = "SetTimers()|n  Warmode: %s|n  Timestamp: %s|n  Forced: %s"
 L.DebugAnnouncedStart = "Announced start times in %s"
 L.DebugRequestedStart = "Requested start times in %s|n%s"
 L.DebugSentVersion = "Sent version in %s|n%s"
-L.DebugSharedStart = "Shared start times in %s|n%s"
 L.DebugChatMsgAddon = "Event: ChatMsgAddon|nReceived message from %s in %s|n%s"
 L.DebugZoneChangedNewArea = "Event: ZoneChangedNewArea|n%s to %s"
 L.DebugRaidBossEmote = "Event: RaidBossEmote|n%s"

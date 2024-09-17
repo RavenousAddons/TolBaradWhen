@@ -147,8 +147,21 @@ AddonCompartmentFrame:RegisterAddon({
         ns:OpenSettings()
     end,
     funcOnEnter = function(menuItem)
+        local now = GetServerTime()
+        local warmode = C_PvP.IsWarModeDesired()
+        local timestamp = TBW_data[warmode and "startTimestampWM" or "startTimestamp"]
+        local control = TBW_data[warmode and "controlWM" or "control"]
+        local warmodeFormatted = "|cff" .. (warmode and ("44ff44" .. L.Enabled) or ("ff4444" .. L.Disabled)) .. "|r"
+        local controlFormatted = warmode and (TBW_data.controlWM == "alliance" and allianceString or hordeString) or (TBW_data.control == "alliance" and allianceString or hordeString)
         GameTooltip:SetOwner(menuItem)
         GameTooltip:SetText(ns.name .. "        v" .. ns.version)
+        if now < timestamp then
+            GameTooltip:AddLine(" ", 1, 1, 1, true)
+            GameTooltip:AddLine("|cff" .. ns.color .. L.TimerRaidWarning:format(controlFormatted, warmodeFormatted) .. "|r " .. L.AlertFuture:format(ns:DurationFormat(timestamp - now), ns:TimeFormat(timestamp)), 1, 1, 1, true)
+        elseif now < timestamp + 900 then
+            GameTooltip:AddLine(" ", 1, 1, 1, true)
+            GameTooltip:AddLine("|cff" .. ns.color .. L.TimerRaidWarning:format(controlFormatted, warmodeFormatted) .. "|r " .. L.AlertPast:format(ns:DurationFormat((timestamp - now) * -1), ns:TimeFormat(timestamp)), 1, 1, 1, true)
+        end
         GameTooltip:AddLine(" ", 1, 1, 1, true)
         GameTooltip:AddLine(L.AddonCompartmentTooltip1, 1, 1, 1, true)
         GameTooltip:AddLine(L.AddonCompartmentTooltip2, 1, 1, 1, true)
@@ -177,7 +190,7 @@ SlashCmdList["TOLBARADWHEN"] = function(message)
             local _, channel, target = strsplit(" ", message)
             ns:RequestStart(channel, target)
         else
-            ns:PrettyPrint(L.WarningDisabledShare)
+            ns:PrettyPrint(L.WarningShareDisabled)
         end
     elseif message:match("ann") then
         -- Announce your timers in an appropriate chat channel
@@ -189,7 +202,7 @@ SlashCmdList["TOLBARADWHEN"] = function(message)
             local _, channel, target = strsplit(" ", message)
             ns:SendStart(channel, target, false, true)
         else
-            ns:PrettyPrint(L.WarningDisabledShare)
+            ns:PrettyPrint(L.WarningShareDisabled)
         end
     elseif message == "w" or message:match("win") or message == "g" or message:match("game") or message == "b" or message:match("battle") then
         -- Print wins / battles counts

@@ -21,22 +21,6 @@ local function PlaySound(id)
     end
 end
 
---- Format a timestamp to a local time string
--- @param {number} timestamp
--- @return {string}
-local function TimeFormat(timestamp, includeSeconds)
-    local useMilitaryTime = GetCVar("timeMgrUseMilitaryTime") == "1"
-    local timeFormat = useMilitaryTime and ("%H:%M" .. (includeSeconds and ":%S" or "")) or ("%I:%M" .. (includeSeconds and ":%S" or "") .. "%p")
-    local time = date(timeFormat, timestamp)
-
-    -- Remove starting zero from non-military time
-    if not useMilitaryTime then
-        time = time:gsub("^0", ""):lower()
-    end
-
-    return time
-end
-
 -- Set default values for options which are not yet set.
 -- @param {string} option
 -- @param {any} default
@@ -120,12 +104,12 @@ end
 -- @param {boolean} raidWarning
 local function TimerAlert(warmode, message, sound, raidWarningGate)
     local warmodeFormatted = "|cff" .. (warmode and ("44ff44" .. L.Enabled) or ("ff4444" .. L.Disabled)) .. "|r"
-    local controlledFormatted = warmode and (TBW_data.controlWM == "alliance" and allianceString or hordeString) or (TBW_data.control == "alliance" and allianceString or hordeString)
+    local controlFormatted = warmode and (TBW_data.controlWM == "alliance" and allianceString or hordeString) or (TBW_data.control == "alliance" and allianceString or hordeString)
     if ns:OptionValue("printText") then
-        DEFAULT_CHAT_FRAME:AddMessage("|cff" .. ns.color .. L.TimerAlert:format(controlledFormatted, warmodeFormatted) .. " |r" .. message .. (warmode ~= C_PvP.IsWarModeDesired() and " |cffffff00" .. L.AlertToggleWarmode:format(warmodeFormatted) .. "|r" or ""))
+        DEFAULT_CHAT_FRAME:AddMessage("|cff" .. ns.color .. L.TimerAlert:format(controlFormatted, warmodeFormatted) .. " |r" .. message .. (warmode ~= C_PvP.IsWarModeDesired() and " |cffffff00" .. L.AlertToggleWarmode:format(warmodeFormatted) .. "|r" or ""))
     end
     if raidWarningGate and ns:OptionValue("raidwarning") then
-        RaidNotice_AddMessage(RaidWarningFrame, "|cff" .. ns.color .. L.TimerRaidWarning:format(controlledFormatted, warmodeFormatted) .. "|r |cffffffff" .. message .. (warmode ~= C_PvP.IsWarModeDesired() and "|n|cffffff00" .. L.AlertToggleWarmode:format(warmodeFormatted) .. "|r" or "") .. "|r", ChatTypeInfo["RAID_WARNING"])
+        RaidNotice_AddMessage(RaidWarningFrame, "|cff" .. ns.color .. L.TimerRaidWarning:format(controlFormatted, warmodeFormatted) .. "|r |cffffffff" .. message .. (warmode ~= C_PvP.IsWarModeDesired() and "|n|cffffff00" .. L.AlertToggleWarmode:format(warmodeFormatted) .. "|r" or "") .. "|r", ChatTypeInfo["RAID_WARNING"])
     end
     if sound then
         PlaySound(ns.data.sounds[sound])
@@ -137,11 +121,11 @@ end
 -- @param {number} timestamp
 -- @param {boolean} forced
 local function SetTimers(warmode, timestamp, forced)
-    ns:DebugPrint(L.DebugSetTimers:format(warmode and L.Enabled or L.Disabled, timestamp .. " " .. TimeFormat(timestamp, true), forced and L.Enabled or L.Disabled))
+    ns:DebugPrint(L.DebugSetTimers:format(warmode and L.Enabled or L.Disabled, timestamp .. " " .. ns:TimeFormat(timestamp, true), forced and L.Enabled or L.Disabled))
 
     local now = GetServerTime()
     local secondsUntil = timestamp - now
-    local startTime = TimeFormat(timestamp)
+    local startTime = ns:TimeFormat(timestamp)
 
     -- If no alerts are enabled, exit function
     if not ns:OptionValue("alertStart") and not ns:OptionValue("alert1Minute") and not ns:OptionValue("alert2Minutes") and not ns:OptionValue("alert10Minutes") and ns:OptionValue("alertCustomMinutes") == 1 then
@@ -156,7 +140,7 @@ local function SetTimers(warmode, timestamp, forced)
         if secondsUntil >= (minutes * 60) then
             CT.After(secondsUntil - (minutes * 60), function()
                 if ns:OptionValue(option) then
-                    TimerAlert(warmode, L.AlertLong:format(minutes, startTime), "future", true)
+                    TimerAlert(warmode, L.AlertFuture:format(ns:DurationFormat(minutes * 60), ns:TimeFormat(now + minutes * 60)), "future", true)
                 end
             end)
         end
@@ -167,7 +151,7 @@ local function SetTimers(warmode, timestamp, forced)
         if secondsUntil >= (minutes * 60) then
             CT.After(secondsUntil - (minutes * 60), function()
                 if minutes == ns:OptionValue("alertCustomMinutes") then
-                    TimerAlert(warmode, L.AlertLong:format(minutes, startTime), "future", true)
+                    TimerAlert(warmode, L.AlertFuture:format(ns:DurationFormat(minutes * 60), ns:TimeFormat(now + minutes * 60)), "future", true)
                 end
             end)
         end
@@ -181,7 +165,7 @@ local function SetTimers(warmode, timestamp, forced)
             else
                 ns:Toggle("recentlyOutput", ns.data.timeouts.long)
             end
-            TimerAlert(warmode, L.AlertStart:format(startTime), "present", true)
+            TimerAlert(warmode, L.AlertStartNow:format(startTime), "present", true)
         end
     end)
 end
@@ -198,7 +182,10 @@ local function GetControl()
     if widget then
         return widget.Text:GetText():match(L.Alliance) and "alliance" or "horde"
     end
-    ns:PrettyPrint("Something has gone wrong! Type /tbw to get the Addon to try getting fresh data.")
+    widget = GetWidget(ns.data.widgets.activePeninsula.control)
+    if widget then
+        return widget.Text:GetText():match(L.Alliance) and "alliance" or "horde"
+    end
 end
 
 ---
@@ -261,7 +248,7 @@ end
 -- @param {number} duration
 -- @param {number} [timeFormat]
 -- @return {string}
-function ns:Duration(duration, timeFormat)
+function ns:DurationFormat(duration, timeFormat)
     timeFormat = timeFormat and timeFormat or ns:OptionValue("timeFormat")
     local minutes = math.floor(duration / 60)
     local seconds = math.fmod(duration, 60)
@@ -278,11 +265,27 @@ function ns:Duration(duration, timeFormat)
     end
     if minutes > 0 then
         if seconds > 0 then
-            return string.format("%d" .. m .. ", %d" .. s, minutes, seconds)
+            return string.format("%d" .. m .. (timeFormat ~= 2 and "," or "") .. " %d" .. s, minutes, seconds)
         end
         return string.format("%d" .. m, minutes)
     end
     return string.format("%d" .. s, seconds)
+end
+
+--- Format a timestamp to a local time string
+-- @param {number} timestamp
+-- @return {string}
+function ns:TimeFormat(timestamp, includeSeconds)
+    local useMilitaryTime = GetCVar("timeMgrUseMilitaryTime") == "1"
+    local timeFormat = useMilitaryTime and ("%H:%M" .. (includeSeconds and ":%S" or "")) or ("%I:%M" .. (includeSeconds and ":%S" or "") .. "%p")
+    local time = date(timeFormat, timestamp)
+
+    -- Remove starting zero from non-military time
+    if not useMilitaryTime then
+        time = time:gsub("^0", ""):lower()
+    end
+
+    return time
 end
 
 --- Prints a formatted message to the chat
@@ -295,7 +298,7 @@ end
 -- @param {string} message
 function ns:DebugPrint(message)
     if ns:OptionValue("allowDebug") and ns:OptionValue("debug") then
-        print("|cff" .. ns.color .. "TBW|r |cfff8b700Debug|r " .. TimeFormat(GetServerTime(), true) .. "|n" .. message)
+        print("|cff" .. ns.color .. "TBW|r |cfff8b700Debug|r " .. ns:TimeFormat(GetServerTime(), true) .. "|n" .. message)
     end
 end
 
@@ -377,20 +380,24 @@ function ns:TimerCheck(forced, seconds, control)
     if ns:IsPresent(TBW_data.startTimestampWM) then
         if forced or not ns.data.toggles.recentlyOutputWM then
             ns:Toggle("recentlyOutputWM")
-            TimerAlert(true, L.AlertStartElapsed:format(ns:Duration((TBW_data.startTimestampWM - now) * -1), TimeFormat(TBW_data.startTimestampWM)), "present", true)
+            TimerAlert(true, L.AlertPast:format(ns:DurationFormat((TBW_data.startTimestampWM - now) * -1), ns:TimeFormat(TBW_data.startTimestampWM)), "present", true)
         end
     end
     -- For WM Disabled
     if ns:IsPresent(TBW_data.startTimestamp) then
         if forced or not ns.data.toggles.recentlyOutput then
             ns:Toggle("recentlyOutput")
-            TimerAlert(false, L.AlertStartElapsed:format(ns:Duration((TBW_data.startTimestamp - now) * -1), TimeFormat(TBW_data.startTimestamp)), "present", true)
+            TimerAlert(false, L.AlertPast:format(ns:DurationFormat((TBW_data.startTimestamp - now) * -1), ns:TimeFormat(TBW_data.startTimestamp)), "present", true)
         end
     end
 
     -- If past 15 minute window after start and FORCED, battle likely over, display alert
     if forced and ns:IsPast(TBW_data.startTimestampWM) and ns:IsPast(TBW_data.startTimestamp) then
-        ns:PrettyPrint(L.WarningNoInfo)
+        if ns.data.location == ns.data.mapIDs.peninsula then
+            ns:PrettyPrint(L.WarningNoInfoPeninsula)
+        else
+            ns:PrettyPrint(L.WarningNoInfo)
+        end
     end
 
     -- If start is in the future
@@ -403,7 +410,7 @@ function ns:TimerCheck(forced, seconds, control)
         -- Alert Timer
         if forced or not ns.data.toggles.recentlyOutputWM then
             ns:Toggle("recentlyOutputWM")
-            TimerAlert(true, L.AlertShort:format(ns:Duration(TBW_data.startTimestampWM - now), TimeFormat(TBW_data.startTimestampWM)), not forced and "future" or nil, true)
+            TimerAlert(true, L.AlertFuture:format(ns:DurationFormat(TBW_data.startTimestampWM - now), ns:TimeFormat(TBW_data.startTimestampWM)), not forced and "future" or nil, true)
         end
     end
     -- For WM Disabled
@@ -415,7 +422,7 @@ function ns:TimerCheck(forced, seconds, control)
         -- Alert Timer
         if forced or not ns.data.toggles.recentlyOutput then
             ns:Toggle("recentlyOutput")
-            TimerAlert(false, L.AlertShort:format(ns:Duration(TBW_data.startTimestamp - now), TimeFormat(TBW_data.startTimestamp)), not forced and "future" or nil, true)
+            TimerAlert(false, L.AlertFuture:format(ns:DurationFormat(TBW_data.startTimestamp - now), ns:TimeFormat(TBW_data.startTimestamp)), not forced and "future" or nil, true)
         end
     end
 end
@@ -441,7 +448,7 @@ function ns:RequestStart(channel, target)
             local response = C_ChatInfo.SendAddonMessage(ADDON_NAME, message, string.upper(channel), target)
             ns:DebugPrint(L.DebugRequestedStart:format(string.upper(channel), message))
         else
-            ns:PrettyPrint(L.WarningNoRequest)
+            ns:PrettyPrint(L.WarningRequestUnable)
         end
     else
         ns:PrettyPrint(L.WarningFastRequest:format(20 - (GetServerTime() - TBW_data.toggles.recentlyRequestedStart)))
@@ -474,21 +481,21 @@ function ns:SendStart(channel, target, announce, manuallyInvoked)
                     -- WM Enabled
                     secondsUntil = TBW_data.startTimestampWM - now
                     if secondsUntil > 0 then
-                        message = L.AlertAnnounce:format(ns:Duration(secondsUntil))
+                        message = L.AlertAnnounceFuture:format(ns:DurationFormat(secondsUntil))
                         SendChatMessage(L.TimerAlert:format(L.Enabled, ControlToString(TBW_data.controlWM)) .. " " .. message, string.upper(channel), nil, target)
                     elseif secondsUntil > -900 then
                         -- Convert absolute values to present elapsed time
-                        message = L.AlertStartElapsedAnnounce:format(ns:Duration(secondsUntil * -1))
+                        message = L.AlertAnnouncePast:format(ns:DurationFormat(secondsUntil * -1))
                         SendChatMessage(L.TimerAlert:format(L.Enabled, ControlToString(TBW_data.controlWM)) .. " " .. message, string.upper(channel), nil, target)
                     end
                     -- WM Disabled
                     secondsUntil = TBW_data.startTimestamp - now
                     if secondsUntil > 0 then
-                        message = L.AlertAnnounce:format(ns:Duration(secondsUntil))
+                        message = L.AlertAnnounceFuture:format(ns:DurationFormat(secondsUntil))
                         SendChatMessage(L.TimerAlert:format(L.Disabled, ControlToString(TBW_data.control)) .. " " .. message, string.upper(channel), nil, target)
                     elseif secondsUntil > -900 then
                         -- Convert absolute values to present elapsed time
-                        message = L.AlertStartElapsedAnnounce:format(ns:Duration(secondsUntil * -1))
+                        message = L.AlertAnnouncePast:format(ns:DurationFormat(secondsUntil * -1))
                         SendChatMessage(L.TimerAlert:format(L.Disabled, ControlToString(TBW_data.control)) .. " " .. message, string.upper(channel), nil, target)
                     end
                     ns:DebugPrint(L.DebugAnnouncedStart:format(string.upper(channel)))
@@ -501,13 +508,13 @@ function ns:SendStart(channel, target, announce, manuallyInvoked)
                     ns:Toggle("recentlySentStart")
                     local message = "S:" .. ControlToStringID(TBW_data.controlWM) .. TBW_data.startTimestampWM .. ":" .. ControlToStringID(TBW_data.control) .. TBW_data.startTimestamp
                     local response = C_ChatInfo.SendAddonMessage(ADDON_NAME, message, string.upper(channel), target)
-                    ns:DebugPrint(L.DebugSharedStart:format(string.upper(channel), message))
+                    ns:PrettyPrint(L.SharedStart:format(target and ("to " .. target) or ("in " .. string.upper(channel))))
                 else
                     ns:PrettyPrint(L.WarningFastShare:format(20 - (GetServerTime() - TBW_data.toggles.recentlySentStart)))
                 end
             end
         else
-            ns:PrettyPrint(L.WarningNoShare)
+            ns:PrettyPrint(L.WarningShareUnable)
         end
     elseif manuallyInvoked then
         ns:PrettyPrint(L.WarningNoData)
