@@ -508,7 +508,11 @@ function ns:SendStart(channel, target, announce, manuallyInvoked)
                     ns:Toggle("recentlySentStart")
                     local message = "S:" .. ControlToStringID(TBW_data.controlWM) .. TBW_data.startTimestampWM .. ":" .. ControlToStringID(TBW_data.control) .. TBW_data.startTimestamp
                     local response = C_ChatInfo.SendAddonMessage(ADDON_NAME, message, string.upper(channel), target)
-                    ns:PrettyPrint(L.SharedStart:format(target and ("to " .. target) or ("in " .. string.upper(channel))))
+                    if manuallyInvoked then
+                        ns:PrettyPrint(L.SharedStart:format(target and ("to " .. target) or ("in " .. string.upper(channel))))
+                    else
+                        ns:DebugPrint(L.SharedStart:format(target and ("to " .. target) or ("in " .. string.upper(channel))))
+                    end
                 else
                     ns:PrettyPrint(L.WarningFastShare:format(20 - (GetServerTime() - TBW_data.toggles.recentlySentStart)))
                 end
