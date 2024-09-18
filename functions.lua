@@ -165,7 +165,7 @@ local function SetTimers(warmode, timestamp, forced)
             else
                 ns:Toggle("recentlyOutput", ns.data.timeouts.long)
             end
-            TimerAlert(warmode, L.AlertStartNow:format(startTime), "present", true)
+            TimerAlert(warmode, L.AlertNow:format(startTime), "present", true)
         end
     end)
 end
