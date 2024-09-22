@@ -70,7 +70,7 @@ local function GetSeconds()
     if widget then
         local minutes, seconds = widget.Text:GetText():match("(%d+):(%d+)")
         if minutes and seconds then
-            return (900 - (tonumber(minutes) * 60) - tonumber(seconds)) * -1
+            return (ns.data.durations.full - (tonumber(minutes) * 60) - tonumber(seconds)) * -1
         end
     end
 
@@ -342,7 +342,7 @@ end
 -- @return {boolean}
 function ns:IsPast(timestamp)
     local now = GetServerTime()
-    return timestamp + 900 < now
+    return timestamp + ns.data.durations.full < now
 end
 
 --- Returns true if timestamp is inside the active battle time
@@ -350,7 +350,7 @@ end
 -- @return {boolean}
 function ns:IsPresent(timestamp)
     local now = GetServerTime()
-    return timestamp < now and now < timestamp + 900
+    return timestamp < now and now < timestamp + ns.data.durations.full
 end
 
 --- Returns true if timestamp is before the active battle time
@@ -491,7 +491,7 @@ function ns:SendStart(channel, target, announce, manuallyInvoked)
                         message = L.AlertAnnounceFutureDuration:format(ns:DurationFormat(secondsUntil))
                         ns:Toggle("recentlyAnnouncedStart")
                         SendChatMessage(L.TimerAlert:format(L.Enabled, ControlToString(TBW_data.controlWM)) .. " " .. message, string.upper(channel), nil, target)
-                    elseif secondsUntil > -900 then
+                    elseif secondsUntil > (ns.data.durations.full * -1) then
                         -- Convert absolute values to present elapsed time
                         message = L.AlertAnnouncePastDuration:format(ns:DurationFormat(secondsUntil * -1))
                         ns:Toggle("recentlyAnnouncedStart")
@@ -503,7 +503,7 @@ function ns:SendStart(channel, target, announce, manuallyInvoked)
                         message = L.AlertAnnounceFutureDuration:format(ns:DurationFormat(secondsUntil))
                         ns:Toggle("recentlyAnnouncedStart")
                         SendChatMessage(L.TimerAlert:format(L.Disabled, ControlToString(TBW_data.control)) .. " " .. message, string.upper(channel), nil, target)
-                    elseif secondsUntil > -900 then
+                    elseif secondsUntil > (ns.data.durations.full * -1) then
                         -- Convert absolute values to present elapsed time
                         message = L.AlertAnnouncePastDuration:format(ns:DurationFormat(secondsUntil * -1))
                         ns:Toggle("recentlyAnnouncedStart")
@@ -611,7 +611,7 @@ function ns:BuildLibData()
                 local timestamp = TBW_data[ns.data.warmode and "startTimestampWM" or "startTimestamp"]
                 local wmMismatchAlert
                 tooltip:SetText(ns.name .. "        v" .. ns.version)
-                if now < TBW_data.startTimestampWM + 900 then
+                if now < TBW_data.startTimestampWM + ns.data.durations.full then
                     wmMismatchAlert = (ns:OptionValue("warnAboutWMMismatch") and ns.data.warmode == false) and "|n|cffffff00" .. L.AlertToggleWarmode:format(enabledString) .. "|r" or ""
                     tooltip:AddLine(" ")
                     if now < TBW_data.startTimestampWM then
@@ -620,7 +620,7 @@ function ns:BuildLibData()
                         tooltip:AddLine("|cff" .. ns.color .. L.TimerRaidWarning:format(TBW_data.controlWM == "alliance" and allianceString or hordeString, enabledString) .. "|r|n|cffffffff" .. ns:AlertPast(now, TBW_data.startTimestampWM) .. wmMismatchAlert .. "|r")
                     end
                 end
-                if now < TBW_data.startTimestamp + 900 then
+                if now < TBW_data.startTimestamp + ns.data.durations.full then
                     wmMismatchAlert = (ns:OptionValue("warnAboutWMMismatch") and ns.data.warmode == true) and "|n|cffffff00" .. L.AlertToggleWarmode:format(disabledString) .. "|r" or ""
                     tooltip:AddLine(" ")
                     if now < TBW_data.startTimestamp then
@@ -646,7 +646,7 @@ function ns:SetDataBrokerText()
         local timestamp = ns.data.warmode and TBW_data.startTimestampWM or TBW_data.startTimestamp
         if now < timestamp then
             ns.DataSource.text = L.AlertAnnounceFutureTime:format(ns:TimeFormat(timestamp))
-        elseif now - 900 < timestamp then
+        elseif now - ns.data.durations.full < timestamp then
             ns.DataSource.text = L.AlertAnnouncePastTime:format(ns:TimeFormat(timestamp))
         else
             ns.DataSource.text = L.Unknown
@@ -720,11 +720,11 @@ function ns:GetSendTarget(announce)
 end
 
 function ns:AlertFuture(now, timestamp)
-    local durationColor = timestamp - now <= 300 and "44ff44" or timestamp - now <= 600 and "66ff66" or timestamp - now <= 1800 and "88ff88" or "aaffaa"
+    local durationColor = timestamp - now <= ns.data.durations.short and "44ff44" or timestamp - now <= ns.data.durations.medium and "66ff66" or timestamp - now <= ns.data.durations.long and "88ff88" or "aaffaa"
     return L.AlertFuture:format(durationColor, ns:DurationFormat(timestamp - now), ns:TimeFormat(timestamp))
 end
 
 function ns:AlertPast(now, timestamp)
-    local durationColor = (timestamp - now) * -1 <= 300 and "ff8888" or (timestamp - now) * -1 <= 600 and "ff6666" or "ff4444"
+    local durationColor = (timestamp - now) * -1 <= ns.data.durations.short and "ff8888" or (timestamp - now) * -1 <= ns.data.durations.medium and "ff6666" or "ff4444"
     return L.AlertPast:format(durationColor, ns:DurationFormat((timestamp - now) * -1), ns:TimeFormat(timestamp))
 end

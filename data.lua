@@ -40,6 +40,12 @@ ns.data = {
         medium = 20,
         long = 60,
     },
+    durations = {
+        short = 300,
+        medium = 600,
+        full = 900,
+        long = 1800,
+    },
     toggles = {
         timerActiveWM = false,
         timerActive = false,

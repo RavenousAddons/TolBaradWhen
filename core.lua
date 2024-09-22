@@ -167,7 +167,7 @@ AddonCompartmentFrame:RegisterAddon({
         local wmMismatchAlert
         GameTooltip:SetOwner(menuItem)
         GameTooltip:SetText(ns.name .. "        v" .. ns.version)
-        if now < TBW_data.startTimestampWM + 900 then
+        if now < TBW_data.startTimestampWM + ns.data.durations.full then
             wmMismatchAlert = (ns:OptionValue("warnAboutWMMismatch") and ns.data.warmode == false) and "|n|cffffff00" .. L.AlertToggleWarmode:format(enabledString) .. "|r" or ""
             GameTooltip:AddLine(" ", 1, 1, 1, true)
             if now < TBW_data.startTimestampWM then
@@ -176,7 +176,7 @@ AddonCompartmentFrame:RegisterAddon({
                 GameTooltip:AddLine("|cff" .. ns.color .. L.TimerRaidWarning:format(TBW_data.controlWM == "alliance" and allianceString or hordeString, enabledString) .. "|r |cffffffff" .. ns:AlertPast(now, TBW_data.startTimestampWM) .. wmMismatchAlert .. "|r", 1, 1, 1, true)
             end
         end
-        if now < TBW_data.startTimestamp + 900 then
+        if now < TBW_data.startTimestamp + ns.data.durations.full then
             wmMismatchAlert = (ns:OptionValue("warnAboutWMMismatch") and ns.data.warmode == true) and "|n|cffffff00" .. L.AlertToggleWarmode:format(disabledString) .. "|r" or ""
             GameTooltip:AddLine(" ", 1, 1, 1, true)
             if now < TBW_data.startTimestamp then
