@@ -118,64 +118,6 @@ local function TimerAlert(warmode, message, sound, raidWarningGate)
     end
 end
 
---- Sets alerts for future battles
--- @param {boolean} warmode
--- @param {number} timestamp
--- @param {boolean} forced
-local function SetTimers(warmode, timestamp, forced)
-    ns:DebugPrint(L.DebugSetTimers:format(ns.data.warmode and L.Enabled or L.Disabled, timestamp .. " " .. ns:TimeFormat(timestamp, true), forced and L.Enabled or L.Disabled))
-
-    local now = GetServerTime()
-    local secondsUntil = timestamp - now
-    local startTime = ns:TimeFormat(timestamp)
-
-    -- If no alerts are enabled, exit function
-    if not ns:OptionValue("alertStart") and not ns:OptionValue("alert1Minute") and not ns:OptionValue("alert2Minutes") and not ns:OptionValue("alert10Minutes") and ns:OptionValue("alertCustomMinutes") == 1 then
-        return
-    end
-
-    -- Prevent duplicate timers
-    ns:Toggle(ns.data.warmode and "timerActiveWM" or "timerActive", secondsUntil)
-
-
-    -- Set Pre-Defined Alerts
-    for option, minutes in pairs(ns.data.timers) do
-        if secondsUntil >= (minutes * 60) then
-            CT.After(secondsUntil - (minutes * 60), function()
-                if ns:OptionValue(option) then
-                    local futureNow = GetServerTime()
-                    TimerAlert(warmode, ns:AlertFuture(futureNow, futureNow + minutes * 60), "future", true)
-                end
-            end)
-        end
-    end
-
-    -- Set Custom Alert
-    for minutes = 15, 55, 5 do
-        if secondsUntil >= (minutes * 60) then
-            CT.After(secondsUntil - (minutes * 60), function()
-                if minutes == ns:OptionValue("alertCustomMinutes") then
-                    print("HELLO")
-                    local futureNow = GetServerTime()
-                    TimerAlert(warmode, ns:AlertFuture(futureNow, futureNow + minutes * 60), "future", true)
-                end
-            end)
-        end
-    end
-
-    -- Set Start Alert
-    CT.After(secondsUntil, function()
-        if ns:OptionValue("alertStart") then
-            if ns.data.warmode then
-                ns:Toggle("recentlyOutputWM", ns.data.timeouts.long)
-            else
-                ns:Toggle("recentlyOutput", ns.data.timeouts.long)
-            end
-            TimerAlert(warmode, L.AlertNow:format(startTime), "present", true)
-        end
-    end)
-end
-
 --- Returns the faction that controls Tol Barad based on the widget texture
 -- @return {string}
 local function GetControl()
@@ -361,6 +303,63 @@ function ns:IsFuture(timestamp)
     return now < timestamp
 end
 
+--- Sets alerts for future battles
+-- @param {boolean} warmode
+-- @param {number} timestamp
+-- @param {boolean} forced
+function ns:SetTimers(warmode, timestamp)
+    ns:DebugPrint(L.DebugSetTimers:format(ns.data.warmode and L.Enabled or L.Disabled, timestamp .. " " .. ns:TimeFormat(timestamp, true)))
+
+    local now = GetServerTime()
+    local secondsUntil = timestamp - now
+    local startTime = ns:TimeFormat(timestamp)
+
+    -- If no alerts are enabled, exit function
+    if not ns:OptionValue("alertStart") and not ns:OptionValue("alert1Minute") and not ns:OptionValue("alert2Minutes") and not ns:OptionValue("alert10Minutes") and ns:OptionValue("alertCustomMinutes") == 1 then
+        return
+    end
+
+    -- Prevent duplicate timers
+    ns:Toggle(ns.data.warmode and "timerActiveWM" or "timerActive", secondsUntil)
+
+
+    -- Set Pre-Defined Alerts
+    for option, minutes in pairs(ns.data.timers) do
+        if secondsUntil >= (minutes * 60) then
+            CT.After(secondsUntil - (minutes * 60), function()
+                if ns:OptionValue(option) then
+                    local futureNow = GetServerTime()
+                    TimerAlert(warmode, ns:AlertFuture(futureNow, futureNow + minutes * 60), "future", true)
+                end
+            end)
+        end
+    end
+
+    -- Set Custom Alert
+    for minutes = 15, 55, 5 do
+        if secondsUntil >= (minutes * 60) then
+            CT.After(secondsUntil - (minutes * 60), function()
+                if minutes == ns:OptionValue("alertCustomMinutes") then
+                    local futureNow = GetServerTime()
+                    TimerAlert(warmode, ns:AlertFuture(futureNow, futureNow + minutes * 60), "future", true)
+                end
+            end)
+        end
+    end
+
+    -- Set Start Alert
+    CT.After(secondsUntil, function()
+        if ns:OptionValue("alertStart") then
+            if ns.data.warmode then
+                ns:Toggle("recentlyOutputWM", ns.data.timeouts.long)
+            else
+                ns:Toggle("recentlyOutput", ns.data.timeouts.long)
+            end
+            TimerAlert(warmode, L.AlertNow:format(startTime), "present", true)
+        end
+    end)
+end
+
 --- Checks the current battle(s) state
 -- @param {boolean} forced
 function ns:TimerCheck(forced, seconds, control)
@@ -413,7 +412,7 @@ function ns:TimerCheck(forced, seconds, control)
     if now < TBW_data.startTimestampWM then
         -- Set alert if timer isn't active
         if not ns.data.toggles.timerActiveWM then
-            SetTimers(true, TBW_data.startTimestampWM, forced)
+            ns:SetTimers(true, TBW_data.startTimestampWM)
         end
         -- Alert Timer
         if forced or not ns.data.toggles.recentlyOutputWM then
@@ -425,7 +424,7 @@ function ns:TimerCheck(forced, seconds, control)
     if now < TBW_data.startTimestamp then
         -- Set alert if timer isn't active
         if not ns.data.toggles.timerActive then
-            SetTimers(false, TBW_data.startTimestamp, forced)
+            ns:SetTimers(false, TBW_data.startTimestamp)
         end
         -- Alert Timer
         if forced or not ns.data.toggles.recentlyOutput then

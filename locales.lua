@@ -174,7 +174,7 @@ L.OptionsExtra = {
 L.DebugToggleOn = "%s = true (%ss timeout)"
 L.DebugToggleOff = "%s = false"
 L.DebugTimerCheck = "TimerCheck()|n  Forced: %s"
-L.DebugSetTimers = "SetTimers()|n  Warmode: %s|n  Timestamp: %s|n  Forced: %s"
+L.DebugSetTimers = "SetTimers()|n  Warmode: %s|n  Timestamp: %s"
 L.DebugAnnouncedStart = "Announced start times in %s"
 L.DebugRequestedStart = "Requested start times in %s|n%s"
 L.DebugSentVersion = "Sent version in %s|n%s"

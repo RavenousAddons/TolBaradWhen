@@ -49,7 +49,6 @@ ns.data = {
     toggles = {
         timerActiveWM = false,
         timerActive = false,
-        dataBrokerTimerActive = false,
         recentlyOutputWM = false,
         recentlyOutput = false,
         recentlyReceivedStartWM = false,
@@ -59,6 +58,7 @@ ns.data = {
         recentlyAnnouncedStart = false,
         recentlySentVersion = false,
         recentlyEnded = false,
+        dataBrokerTimerActive = false,
         updateFound = false,
     },
     sounds = {
