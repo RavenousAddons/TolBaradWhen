@@ -82,6 +82,12 @@ ns.data = {
             control = 701,
         },
     },
+    colors = {
+        alliance = "0078ff",
+        horde = "c41e3a",
+        enabled = "44ff44",
+        disabled = "ff4444",
+    },
     durationColors = {
         future = {
             short = "9fee8d",

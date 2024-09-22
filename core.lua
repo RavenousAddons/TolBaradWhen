@@ -3,10 +3,10 @@ local L = ns.L
 
 local CT = C_Timer
 
-local allianceString = "|cff0078ff" .. L.Alliance .. "|r"
-local hordeString = "|cffb30000" .. L.Horde .. "|r"
-local enabledString = "|cff44ff44" .. L.Enabled .. "|r"
-local disabledString = "|cffff4444" .. L.Disabled .. "|r"
+local allianceString = "|cff" .. ns.data.colors.alliance .. L.Alliance .. "|r"
+local hordeString = "|cff" .. ns.data.colors.horde .. L.Horde .. "|r"
+local enabledString = "|cff" .. ns.data.colors.enabled .. L.Enabled .. "|r"
+local disabledString = "|cff" .. ns.data.colors.disabled .. L.Disabled .. "|r"
 
 -- Load the Addon
 
