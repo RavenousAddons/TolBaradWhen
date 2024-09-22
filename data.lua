@@ -82,6 +82,18 @@ ns.data = {
             control = 701,
         },
     },
+    durationColors = {
+        future = {
+            short = "9fee8d",
+            medium = "abe99d",
+            long = "b7e5ac",
+        },
+        past = {
+            short = "fbc7be",
+            medium = "ffab9c",
+            long = "ff9887",
+        },
+    },
     classColors = {
         deathknight = "c41e3a",
         demonhunter = "a330c9",

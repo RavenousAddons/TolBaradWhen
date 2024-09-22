@@ -23,7 +23,7 @@ local function PlaySound(id)
     end
 end
 
--- Set default values for options which are not yet set.
+-- Set default values for options which are not yet set
 -- @param {string} option
 -- @param {any} default
 local function RegisterDefaultOption(option, default)
@@ -37,7 +37,7 @@ local function RegisterDefaultOption(option, default)
     end
 end
 
--- Set default values for character data which are not yet set.
+-- Set default values for character data which are not yet set
 -- @param {string} option
 -- @param {any} default
 local function RegisterDefaultCharacterData(option, default)
@@ -46,7 +46,7 @@ local function RegisterDefaultCharacterData(option, default)
     end
 end
 
---- Get widget text.
+--- Get widget text
 -- @param {number}
 -- @return {table}
 local function GetWidget(id)
@@ -54,7 +54,7 @@ local function GetWidget(id)
     return widget
 end
 
---- Get remaining seconds in current battle (negative) or until next battle (positive).
+--- Get remaining seconds in current battle (negative) or until next battle (positive)
 -- @return {number|boolean}
 local function GetSeconds()
     -- Unknown when not in either zone
@@ -584,6 +584,7 @@ function ns:PrintCounts()
     print(string)
 end
 
+--- Build Data for Data Broker
 function ns:BuildLibData()
     if LibStub then
         local ldb = LibStub:GetLibrary("LibDataBroker-1.1")
@@ -639,20 +640,22 @@ function ns:BuildLibData()
     end
 end
 
+--- Set text value for Data Broker
 function ns:SetDataBrokerText()
     if ns.DataSource then
         local now = GetServerTime()
         local timestamp = ns.data.warmode and TBW_data.startTimestampWM or TBW_data.startTimestamp
         if now < timestamp then
-            ns.DataSource.text = L.AlertAnnounceFutureTime:format(ns:TimeFormat(timestamp))
+            ns.DataSource.text = L.AlertAnnounceFutureTime:format(ns:TimeFormat(timestamp)):gsub("%.", "")
         elseif now - ns.data.durations.full < timestamp then
-            ns.DataSource.text = L.AlertAnnouncePastTime:format(ns:TimeFormat(timestamp))
+            ns.DataSource.text = L.AlertAnnouncePastTime:format(ns:TimeFormat(timestamp)):gsub("%.", "")
         else
             ns.DataSource.text = L.Unknown
         end
     end
 end
 
+--- Set up Edit Box for share/announce via whisper
 function ns:SetupEditBox()
     ns.EditBox = CreateFrame("EditBox", nil, UIParent, "InputBoxTemplate")
     ns.EditBox:SetSize(200, 30)
@@ -702,6 +705,8 @@ function ns:SetupEditBox()
     ns.EditBoxLabel:Hide()
 end
 
+--- Prompt the user for whisper target
+-- @param {boolean} announce
 function ns:GetSendTarget(announce)
     ns.EditBox.announce = announce
     if announce then
@@ -718,12 +723,18 @@ function ns:GetSendTarget(announce)
     UIFrameFadeIn(ns.EditBoxLabel, 0.15, 0, 1)
 end
 
+--- Returns a formatted string for future alerts
+-- @param {number} now
+-- @param {number} timestamp
 function ns:AlertFuture(now, timestamp)
-    local durationColor = timestamp - now <= ns.data.durations.short and "44ff44" or timestamp - now <= ns.data.durations.medium and "66ff66" or timestamp - now <= ns.data.durations.long and "88ff88" or "aaffaa"
+    local durationColor = timestamp - now <= ns.data.durations.short and ns.data.durationColors.future.short or timestamp - now <= ns.data.durations.medium and ns.data.durationColors.future.medium or timestamp - now <= ns.data.durations.long and ns.data.durationColors.future.long or ns.color
     return L.AlertFuture:format(durationColor, ns:DurationFormat(timestamp - now), ns:TimeFormat(timestamp))
 end
 
+--- Returns a formatted string for past alerts
+-- @param {number} now
+-- @param {number} timestamp
 function ns:AlertPast(now, timestamp)
-    local durationColor = (timestamp - now) * -1 <= ns.data.durations.short and "ff8888" or (timestamp - now) * -1 <= ns.data.durations.medium and "ff6666" or "ff4444"
-    return L.AlertPast:format(durationColor, ns:DurationFormat((timestamp - now) * -1), ns:TimeFormat(timestamp))
+    local durationColor = now - timestamp <= ns.data.durations.short and ns.data.durationColors.past.short or now - timestamp <= ns.data.durations.medium and ns.data.durationColors.past.medium or ns.data.durationColors.past.long
+    return L.AlertPast:format(durationColor, ns:DurationFormat(now - timestamp), ns:TimeFormat(timestamp))
 end

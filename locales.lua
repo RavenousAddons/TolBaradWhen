@@ -157,7 +157,6 @@ L.OptionsExtra = {
         key = "warnAboutWMMismatch",
         name = "Warn about WM status",
         tooltip = "The addon will remind you whenever an alert fires for a battle in a Warmode that doesn't match your current setting.",
-        new = "1.4.10",
     },
     [4] = {
         key = "share",

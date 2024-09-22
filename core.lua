@@ -36,10 +36,10 @@ function TolBaradWhen_OnEvent(self, event, ...)
             -- Version-specific messages go here...
         end
         TBW_version = ns.version
-        if isInitialLogin then
+        local now = GetServerTime()
+        if isInitialLogin or (TBW_data.startTimestampWM < now and now <= TBW_data.startTimestampWM + 900) or (TBW_data.startTimestamp < now and now <= TBW_data.startTimestamp + 900) then
             ns:TimerCheck()
         else
-            local now = GetServerTime()
             if now < TBW_data.startTimestampWM then
                 ns:SetTimers(true, TBW_data.startTimestampWM)
             end
