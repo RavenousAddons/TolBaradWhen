@@ -12,6 +12,7 @@ ns.data = {
         sound = true,
         raidwarning = true,
         printWinsOnEnd = true,
+        warnAboutWMMismatch = true,
         share = true,
         allowDebug = false,
         debug = false,

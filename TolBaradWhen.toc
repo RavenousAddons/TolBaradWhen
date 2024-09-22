@@ -1,5 +1,5 @@
 ## Interface: 110005
-## Version: 1.4.9-beta.1
+## Version: 1.4.9
 
 ## Name: Tol Barad When?
 ## Title: Tol Barad When?

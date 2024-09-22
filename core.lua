@@ -5,6 +5,8 @@ local CT = C_Timer
 
 local allianceString = "|cff0078ff" .. L.Alliance .. "|r"
 local hordeString = "|cffb30000" .. L.Horde .. "|r"
+local enabledString = "|cff44ff44" .. L.Enabled .. "|r"
+local disabledString = "|cffff4444" .. L.Disabled .. "|r"
 
 -- Load the Addon
 
@@ -34,9 +36,7 @@ function TolBaradWhen_OnEvent(self, event, ...)
             -- Version-specific messages go here...
         end
         TBW_version = ns.version
-        if isInitialLogin then
-            ns:TimerCheck()
-        end
+        ns:TimerCheck()
         ns:SetDataBrokerText()
         self:UnregisterEvent("PLAYER_ENTERING_WORLD")
     elseif event == "GROUP_ROSTER_UPDATE" then
@@ -60,7 +60,7 @@ function TolBaradWhen_OnEvent(self, event, ...)
     elseif event == "PLAYER_FLAGS_CHANGED" then
         ns.data.warmode = C_PvP.IsWarModeDesired()
         if ns.DataSource then
-            ns.DataSource.label = L.TolBarad .. " (" .. (ns.data.warmode and L.On or L.Off) .. ")"
+            ns.DataSource.label = L.TolBarad .. " (" .. (ns.data.warmode and L.WMOn or L.WMOff) .. ")"
         end
     elseif event == "CHAT_MSG_ADDON" and ns:OptionValue("share") then
         local arg, message, channel, sender, _ = ...
@@ -164,17 +164,26 @@ AddonCompartmentFrame:RegisterAddon({
     funcOnEnter = function(menuItem)
         local now = GetServerTime()
         local timestamp = TBW_data[ns.data.warmode and "startTimestampWM" or "startTimestamp"]
-        local control = TBW_data[ns.data.warmode and "controlWM" or "control"]
-        local warmodeFormatted = "|cff" .. (ns.data.warmode and ("44ff44" .. L.Enabled) or ("ff4444" .. L.Disabled)) .. "|r"
-        local controlFormatted = ns.data.warmode and (TBW_data.controlWM == "alliance" and allianceString or hordeString) or (TBW_data.control == "alliance" and allianceString or hordeString)
+        local wmMismatchAlert
         GameTooltip:SetOwner(menuItem)
         GameTooltip:SetText(ns.name .. "        v" .. ns.version)
-        if now < timestamp then
+        if now < TBW_data.startTimestampWM + 900 then
+            wmMismatchAlert = (ns:OptionValue("warnAboutWMMismatch") and ns.data.warmode == false) and "|n|cffffff00" .. L.AlertToggleWarmode:format(enabledString) .. "|r" or ""
             GameTooltip:AddLine(" ", 1, 1, 1, true)
-            GameTooltip:AddLine("|cff" .. ns.color .. L.TimerRaidWarning:format(controlFormatted, warmodeFormatted) .. "|r " .. L.AlertFuture:format(ns:DurationFormat(timestamp - now), ns:TimeFormat(timestamp)), 1, 1, 1, true)
-        elseif now < timestamp + 900 then
+            if now < TBW_data.startTimestampWM then
+                GameTooltip:AddLine("|cff" .. ns.color .. L.TimerRaidWarning:format(TBW_data.controlWM == "alliance" and allianceString or hordeString, enabledString) .. "|r |cffffffff" .. ns:AlertFuture(now, TBW_data.startTimestampWM) .. wmMismatchAlert .. "|r", 1, 1, 1, true)
+            else
+                GameTooltip:AddLine("|cff" .. ns.color .. L.TimerRaidWarning:format(TBW_data.controlWM == "alliance" and allianceString or hordeString, enabledString) .. "|r |cffffffff" .. ns:AlertPast(now, TBW_data.startTimestampWM) .. wmMismatchAlert .. "|r", 1, 1, 1, true)
+            end
+        end
+        if now < TBW_data.startTimestamp + 900 then
+            wmMismatchAlert = (ns:OptionValue("warnAboutWMMismatch") and ns.data.warmode == true) and "|n|cffffff00" .. L.AlertToggleWarmode:format(disabledString) .. "|r" or ""
             GameTooltip:AddLine(" ", 1, 1, 1, true)
-            GameTooltip:AddLine("|cff" .. ns.color .. L.TimerRaidWarning:format(controlFormatted, warmodeFormatted) .. "|r " .. L.AlertPast:format(ns:DurationFormat((timestamp - now) * -1), ns:TimeFormat(timestamp)), 1, 1, 1, true)
+            if now < TBW_data.startTimestamp then
+                GameTooltip:AddLine("|cff" .. ns.color .. L.TimerRaidWarning:format(TBW_data.control == "alliance" and allianceString or hordeString, disabledString) .. "|r |cffffffff" .. ns:AlertFuture(now, TBW_data.startTimestamp) .. wmMismatchAlert .. "|r", 1, 1, 1, true)
+            else
+                GameTooltip:AddLine("|cff" .. ns.color .. L.TimerRaidWarning:format(TBW_data.control == "alliance" and allianceString or hordeString, disabledString) .. "|r |cffffffff" .. ns:AlertPast(now, TBW_data.startTimestamp) .. wmMismatchAlert .. "|r", 1, 1, 1, true)
+            end
         end
         GameTooltip:AddLine(" ", 1, 1, 1, true)
         GameTooltip:AddLine(L.AddonCompartmentTooltip1, 1, 1, 1, true)
