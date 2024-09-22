@@ -12,6 +12,7 @@ function TolBaradWhen_OnLoad(self)
     self:RegisterEvent("PLAYER_ENTERING_WORLD")
     self:RegisterEvent("CHAT_MSG_ADDON")
     self:RegisterEvent("GROUP_ROSTER_UPDATE")
+    self:RegisterEvent("PLAYER_FLAGS_CHANGED")
     self:RegisterEvent("ZONE_CHANGED_NEW_AREA")
     self:RegisterEvent("RAID_BOSS_EMOTE")
 end
@@ -24,6 +25,8 @@ function TolBaradWhen_OnEvent(self, event, ...)
         ns:SetPlayerState()
         ns:SetDefaultOptions()
         ns:CreateSettingsPanel()
+        ns:BuildLibData()
+        ns:SetupEditBox()
         C_ChatInfo.RegisterAddonMessagePrefix(ADDON_NAME)
         if not TBW_version then
             ns:PrettyPrint(L.Install:format(ns.color, ns.version))
@@ -34,6 +37,7 @@ function TolBaradWhen_OnEvent(self, event, ...)
         if isInitialLogin then
             ns:TimerCheck()
         end
+        ns:SetDataBrokerText()
         self:UnregisterEvent("PLAYER_ENTERING_WORLD")
     elseif event == "GROUP_ROSTER_UPDATE" then
         local partyMembers = GetNumSubgroupMembers()
@@ -53,6 +57,11 @@ function TolBaradWhen_OnEvent(self, event, ...)
         end
         ns.data.partyMembers = partyMembers
         ns.data.raidMembers = raidMembers
+    elseif event == "PLAYER_FLAGS_CHANGED" then
+        ns.data.warmode = C_PvP.IsWarModeDesired()
+        if ns.DataSource then
+            ns.DataSource.label = L.TolBarad .. " (" .. (ns.data.warmode and L.On or L.Off) .. ")"
+        end
     elseif event == "CHAT_MSG_ADDON" and ns:OptionValue("share") then
         local arg, message, channel, sender, _ = ...
         if arg ~= ADDON_NAME then
@@ -106,8 +115,7 @@ function TolBaradWhen_OnEvent(self, event, ...)
         end
     elseif event == "ZONE_CHANGED_NEW_AREA" then
         local newLocation = C_Map.GetBestMapForUnit("player")
-        local warmode = C_PvP.IsWarModeDesired()
-        if ns.data.location and (not ns:InTolBarad(ns.data.location) or ns:IsPast(warmode and TBW_data.startTimestampWM or TBW_data.startTimestamp)) and ns:InTolBarad(newLocation) then
+        if ns.data.location and (not ns:InTolBarad(ns.data.location) or ns:IsPast(ns.data.warmode and TBW_data.startTimestampWM or TBW_data.startTimestamp)) and ns:InTolBarad(newLocation) then
             ns:DebugPrint(L.DebugZoneChangedNewArea:format(ns.data.location, newLocation))
             CT.After(1, function()
                 ns:TimerCheck()
@@ -126,6 +134,9 @@ function TolBaradWhen_OnEvent(self, event, ...)
                     ns:PrintCounts()
                 end
                 ns:TimerCheck(false, 3600, control)
+                if ns.DataSource then
+                    ns.DataSource.text = ns:TimeFormat(GetServerTime() + 3600)
+                end
             end
         end
     end
@@ -140,19 +151,22 @@ AddonCompartmentFrame:RegisterAddon({
     notCheckable = true,
     func = function(button, menuInputData, menu)
         local mouseButton = menuInputData.buttonName
-        if mouseButton == "RightButton" then
+        if IsAltKeyDown() then
+            ns:SendStart(nil, nil, true, true)
+        elseif IsControlKeyDown() or IsShiftKeyDown() then
+            ns:GetSendTarget(IsControlKeyDown())
+        elseif mouseButton == "RightButton" then
             ns:SendStart(nil, nil, false, true)
-            return
+        else
+            ns:OpenSettings()
         end
-        ns:OpenSettings()
     end,
     funcOnEnter = function(menuItem)
         local now = GetServerTime()
-        local warmode = C_PvP.IsWarModeDesired()
-        local timestamp = TBW_data[warmode and "startTimestampWM" or "startTimestamp"]
-        local control = TBW_data[warmode and "controlWM" or "control"]
-        local warmodeFormatted = "|cff" .. (warmode and ("44ff44" .. L.Enabled) or ("ff4444" .. L.Disabled)) .. "|r"
-        local controlFormatted = warmode and (TBW_data.controlWM == "alliance" and allianceString or hordeString) or (TBW_data.control == "alliance" and allianceString or hordeString)
+        local timestamp = TBW_data[ns.data.warmode and "startTimestampWM" or "startTimestamp"]
+        local control = TBW_data[ns.data.warmode and "controlWM" or "control"]
+        local warmodeFormatted = "|cff" .. (ns.data.warmode and ("44ff44" .. L.Enabled) or ("ff4444" .. L.Disabled)) .. "|r"
+        local controlFormatted = ns.data.warmode and (TBW_data.controlWM == "alliance" and allianceString or hordeString) or (TBW_data.control == "alliance" and allianceString or hordeString)
         GameTooltip:SetOwner(menuItem)
         GameTooltip:SetText(ns.name .. "        v" .. ns.version)
         if now < timestamp then
@@ -165,6 +179,9 @@ AddonCompartmentFrame:RegisterAddon({
         GameTooltip:AddLine(" ", 1, 1, 1, true)
         GameTooltip:AddLine(L.AddonCompartmentTooltip1, 1, 1, 1, true)
         GameTooltip:AddLine(L.AddonCompartmentTooltip2, 1, 1, 1, true)
+        GameTooltip:AddLine(L.AddonCompartmentTooltip3, 1, 1, 1, true)
+        GameTooltip:AddLine(L.AddonCompartmentTooltip4, 1, 1, 1, true)
+        GameTooltip:AddLine(L.AddonCompartmentTooltip5, 1, 1, 1, true)
         GameTooltip:Show()
     end,
     funcOnLeave = function()

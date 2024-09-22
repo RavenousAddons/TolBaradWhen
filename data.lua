@@ -42,6 +42,7 @@ ns.data = {
     toggles = {
         timerActiveWM = false,
         timerActive = false,
+        dataBrokerTimerActive = false,
         recentlyOutputWM = false,
         recentlyOutput = false,
         recentlyReceivedStartWM = false,
@@ -90,6 +91,7 @@ ns.data = {
         warrior = "c69b6d",
     },
     location = C_Map.GetBestMapForUnit("player"),
+    warmode = C_PvP.IsWarModeDesired(),
     partyMembers = 0,
     raidMembers = 0,
 }

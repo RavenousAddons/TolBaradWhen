@@ -103,13 +103,13 @@ end
 -- @param {string} message
 -- @param {boolean} raidWarning
 local function TimerAlert(warmode, message, sound, raidWarningGate)
-    local warmodeFormatted = "|cff" .. (warmode and ("44ff44" .. L.Enabled) or ("ff4444" .. L.Disabled)) .. "|r"
-    local controlFormatted = warmode and (TBW_data.controlWM == "alliance" and allianceString or hordeString) or (TBW_data.control == "alliance" and allianceString or hordeString)
+    local warmodeFormatted = "|cff" .. (ns.data.warmode and ("44ff44" .. L.Enabled) or ("ff4444" .. L.Disabled)) .. "|r"
+    local controlFormatted = ns.data.warmode and (TBW_data.controlWM == "alliance" and allianceString or hordeString) or (TBW_data.control == "alliance" and allianceString or hordeString)
     if ns:OptionValue("printText") then
-        DEFAULT_CHAT_FRAME:AddMessage("|cff" .. ns.color .. L.TimerAlert:format(controlFormatted, warmodeFormatted) .. " |r" .. message .. (warmode ~= C_PvP.IsWarModeDesired() and " |cffffff00" .. L.AlertToggleWarmode:format(warmodeFormatted) .. "|r" or ""))
+        DEFAULT_CHAT_FRAME:AddMessage("|cff" .. ns.color .. L.TimerAlert:format(controlFormatted, warmodeFormatted) .. " |r" .. message .. (ns.data.warmode ~= C_PvP.IsWarModeDesired() and " |cffffff00" .. L.AlertToggleWarmode:format(warmodeFormatted) .. "|r" or ""))
     end
     if raidWarningGate and ns:OptionValue("raidwarning") then
-        RaidNotice_AddMessage(RaidWarningFrame, "|cff" .. ns.color .. L.TimerRaidWarning:format(controlFormatted, warmodeFormatted) .. "|r |cffffffff" .. message .. (warmode ~= C_PvP.IsWarModeDesired() and "|n|cffffff00" .. L.AlertToggleWarmode:format(warmodeFormatted) .. "|r" or "") .. "|r", ChatTypeInfo["RAID_WARNING"])
+        RaidNotice_AddMessage(RaidWarningFrame, "|cff" .. ns.color .. L.TimerRaidWarning:format(controlFormatted, warmodeFormatted) .. "|r |cffffffff" .. message .. (ns.data.warmode ~= C_PvP.IsWarModeDesired() and "|n|cffffff00" .. L.AlertToggleWarmode:format(warmodeFormatted) .. "|r" or "") .. "|r", ChatTypeInfo["RAID_WARNING"])
     end
     if sound then
         PlaySound(ns.data.sounds[sound])
@@ -121,7 +121,7 @@ end
 -- @param {number} timestamp
 -- @param {boolean} forced
 local function SetTimers(warmode, timestamp, forced)
-    ns:DebugPrint(L.DebugSetTimers:format(warmode and L.Enabled or L.Disabled, timestamp .. " " .. ns:TimeFormat(timestamp, true), forced and L.Enabled or L.Disabled))
+    ns:DebugPrint(L.DebugSetTimers:format(ns.data.warmode and L.Enabled or L.Disabled, timestamp .. " " .. ns:TimeFormat(timestamp, true), forced and L.Enabled or L.Disabled))
 
     local now = GetServerTime()
     local secondsUntil = timestamp - now
@@ -133,7 +133,7 @@ local function SetTimers(warmode, timestamp, forced)
     end
 
     -- Prevent duplicate timers
-    ns:Toggle(warmode and "timerActiveWM" or "timerActive", secondsUntil)
+    ns:Toggle(ns.data.warmode and "timerActiveWM" or "timerActive", secondsUntil)
 
     -- Set Pre-Defined Alerts
     for option, minutes in pairs(ns.data.timers) do
@@ -160,7 +160,7 @@ local function SetTimers(warmode, timestamp, forced)
     -- Set Start Alert
     CT.After(secondsUntil, function()
         if ns:OptionValue("alertStart") then
-            if warmode then
+            if ns.data.warmode then
                 ns:Toggle("recentlyOutputWM", ns.data.timeouts.long)
             else
                 ns:Toggle("recentlyOutput", ns.data.timeouts.long)
@@ -361,19 +361,21 @@ function ns:TimerCheck(forced, seconds, control)
     ns:DebugPrint(L.DebugTimerCheck:format(forced and L.Enabled or L.Disabled))
 
     local now = GetServerTime()
-    local warmode = C_PvP.IsWarModeDesired()
     -- Remaining time (negative) or Until (positive) or Unknown (nil)
     seconds = seconds and seconds or GetSeconds()
 
     -- If in Tol Barad, set the control based on WM enabled/disabled
     if control or ns:InTolBarad(ns.data.location) then
-        TBW_data[warmode and "controlWM" or "control"] = control and control or GetControl()
+        TBW_data[ns.data.warmode and "controlWM" or "control"] = control and control or GetControl()
     end
 
     -- If reliable seconds returned, then we're in Tol Barad, set the timestamp based on WM enabled/disabled
     if seconds ~= nil then
-        TBW_data[warmode and "startTimestampWM" or "startTimestamp"] = now + seconds
+        TBW_data[ns.data.warmode and "startTimestampWM" or "startTimestamp"] = now + seconds
     end
+
+    -- Set Data Broker text
+    ns:SetDataBrokerText()
 
     -- If within 15 minute window after start, battle may be active, display alert
     -- For WM Enabled
@@ -481,21 +483,21 @@ function ns:SendStart(channel, target, announce, manuallyInvoked)
                     -- WM Enabled
                     secondsUntil = TBW_data.startTimestampWM - now
                     if secondsUntil > 0 then
-                        message = L.AlertAnnounceFuture:format(ns:DurationFormat(secondsUntil))
+                        message = L.AlertAnnounceFutureDuration:format(ns:DurationFormat(secondsUntil))
                         SendChatMessage(L.TimerAlert:format(L.Enabled, ControlToString(TBW_data.controlWM)) .. " " .. message, string.upper(channel), nil, target)
                     elseif secondsUntil > -900 then
                         -- Convert absolute values to present elapsed time
-                        message = L.AlertAnnouncePast:format(ns:DurationFormat(secondsUntil * -1))
+                        message = L.AlertAnnouncePastDuration:format(ns:DurationFormat(secondsUntil * -1))
                         SendChatMessage(L.TimerAlert:format(L.Enabled, ControlToString(TBW_data.controlWM)) .. " " .. message, string.upper(channel), nil, target)
                     end
                     -- WM Disabled
                     secondsUntil = TBW_data.startTimestamp - now
                     if secondsUntil > 0 then
-                        message = L.AlertAnnounceFuture:format(ns:DurationFormat(secondsUntil))
+                        message = L.AlertAnnounceFutureDuration:format(ns:DurationFormat(secondsUntil))
                         SendChatMessage(L.TimerAlert:format(L.Disabled, ControlToString(TBW_data.control)) .. " " .. message, string.upper(channel), nil, target)
                     elseif secondsUntil > -900 then
                         -- Convert absolute values to present elapsed time
-                        message = L.AlertAnnouncePast:format(ns:DurationFormat(secondsUntil * -1))
+                        message = L.AlertAnnouncePastDuration:format(ns:DurationFormat(secondsUntil * -1))
                         SendChatMessage(L.TimerAlert:format(L.Disabled, ControlToString(TBW_data.control)) .. " " .. message, string.upper(channel), nil, target)
                     end
                     ns:DebugPrint(L.DebugAnnouncedStart:format(string.upper(channel)))
@@ -518,7 +520,7 @@ function ns:SendStart(channel, target, announce, manuallyInvoked)
                 end
             end
         else
-            ns:PrettyPrint(L.WarningShareUnable)
+            ns:GetSendTarget(false)
         end
     elseif manuallyInvoked then
         ns:PrettyPrint(L.WarningNoData)
@@ -528,9 +530,8 @@ end
 --- Increment wins & games based on WM enabled/disabled
 -- @param {string} message
 function ns:IncrementCounts(message)
-    local warmode = C_PvP.IsWarModeDesired()
-    local gamesKey = warmode and "gamesWM" or "games"
-    local winsKey = warmode and "winsWM" or "wins"
+    local gamesKey = ns.data.warmode and "gamesWM" or "games"
+    local winsKey = ns.data.warmode and "winsWM" or "wins"
 
     TBW_data.characters[ns.data.characterName][gamesKey] = TBW_data.characters[ns.data.characterName][gamesKey] + 1
     if message:match(ns.data.factionName) then
@@ -540,7 +541,6 @@ end
 
 --- Print wins / games
 function ns:PrintCounts()
-    local warmode = C_PvP.IsWarModeDesired()
     local string
 
     ns:PrettyPrint("Wins/Games Record")
@@ -574,4 +574,121 @@ function ns:PrintCounts()
     string = ns.data.characterNameFormatted .. ":  " .. characterWinsTotal .. "/" .. characterGamesTotal
     string = string .. "|n|cff" .. ns.color .. L.WarMode .. "|r:  |cff44ff44" .. L.Enabled .. "|r: " .. characterWinsWM .. "/" .. characterGamesWM .. "  |cffff4444" .. L.Disabled .. "|r " .. characterWins .. "/" .. characterGames
     print(string)
+end
+
+function ns:BuildLibData()
+    if LibStub then
+        local ldb = LibStub:GetLibrary("LibDataBroker-1.1")
+        ns.DataSource = ldb:NewDataObject(ns.name, {
+            id = ADDON_NAME,
+            type = "data source",
+            version = ns.version,
+            label = L.TolBarad .. " (" .. (ns.data.warmode and L.On or L.Off) .. ")",
+            icon = "Interface\\Icons\\achievement_zone_tolbarad",
+            notes = "Keep track of the next Tol Barad battles (War Mode enabled & disabled)",
+            OnClick = function(_, button)
+                if IsAltKeyDown() then
+                    ns:SendStart(nil, nil, true, true)
+                elseif IsControlKeyDown() or IsShiftKeyDown() then
+                    ns:GetSendTarget(IsControlKeyDown())
+                elseif button == "RightButton" then
+                    ns:SendStart(nil, nil, false, true)
+                else
+                    ns:OpenSettings()
+                end
+            end,
+            OnTooltipShow = function(tooltip)
+                local now = GetServerTime()
+                local timestamp = TBW_data[ns.data.warmode and "startTimestampWM" or "startTimestamp"]
+                local control = TBW_data[ns.data.warmode and "controlWM" or "control"]
+                local warmodeFormatted = "|cff" .. (ns.data.warmode and ("44ff44" .. L.Enabled) or ("ff4444" .. L.Disabled)) .. "|r"
+                local controlFormatted = ns.data.warmode and (TBW_data.controlWM == "alliance" and allianceString or hordeString) or (TBW_data.control == "alliance" and allianceString or hordeString)
+                tooltip:SetText(ns.name .. "        v" .. ns.version)
+                if now < timestamp then
+                    tooltip:AddLine("|n")
+                    tooltip:AddLine("|cffffffff|cff" .. ns.color .. L.TimerRaidWarning:format(controlFormatted, warmodeFormatted) .. "|r|n" .. L.AlertFuture:format(ns:DurationFormat(timestamp - now), ns:TimeFormat(timestamp)) .. "|r")
+                elseif now < timestamp + 900 then
+                    tooltip:AddLine("|n")
+                    tooltip:AddLine("|cffffffff|cff" .. ns.color .. L.TimerRaidWarning:format(controlFormatted, warmodeFormatted) .. "|r|n" .. L.AlertPast:format(ns:DurationFormat((timestamp - now) * -1), ns:TimeFormat(timestamp)) .. "|r")
+                end
+                tooltip:AddLine("|n")
+                tooltip:AddLine("|cffffffff" .. L.AddonCompartmentTooltip1 .. "|r")
+                tooltip:AddLine("|cffffffff" .. L.AddonCompartmentTooltip2 .. "|r")
+                tooltip:AddLine("|cffffffff" .. L.AddonCompartmentTooltip3 .. "|r")
+                tooltip:AddLine("|cffffffff" .. L.AddonCompartmentTooltip4 .. "|r")
+                tooltip:AddLine("|cffffffff" .. L.AddonCompartmentTooltip5 .. "|r")
+            end,
+        })
+    end
+end
+
+function ns:SetDataBrokerText()
+    if ns.DataSource then
+        local now = GetServerTime()
+        local timestamp = ns.data.warmode and TBW_data.startTimestampWM or TBW_data.startTimestamp
+        if now < timestamp then
+            ns.DataSource.text = L.AlertAnnounceFutureTime:format(ns:TimeFormat(timestamp))
+        elseif now - 900 < timestamp then
+            ns.DataSource.text = L.AlertAnnouncePastTime:format(ns:TimeFormat(timestamp))
+        else
+            ns.DataSource.text = L.Unknown
+        end
+    end
+end
+
+function ns:SetupEditBox()
+    ns.EditBox = CreateFrame("EditBox", nil, UIParent, "InputBoxTemplate")
+    ns.EditBox:SetSize(200, 30)
+    ns.EditBox:SetPoint("CENTER")
+    ns.EditBox:SetScale(1.5)
+    ns.EditBox:SetText("")
+    ns.EditBox:Hide()
+    ns.EditBox:SetAutoFocus(true)
+    ns.EditBox:SetScript("OnEnterPressed", function(self)
+        local userInput = self:GetText():gsub("%s+", "")
+        if userInput ~= "" then
+            if ns.EditBox.announce then
+                ns:SendStart("WHISPER", userInput, true, true)
+            else
+                ns:SendStart("WHISPER", userInput, false, true)
+            end
+        end
+        ns.EditBox:ClearFocus()
+        ns.EditBox:EnableKeyboard(false)
+        ns.EditBox:Hide()
+        ns.EditBoxLabel:Hide()
+    end)
+    ns.EditBox:SetScript("OnKeyDown", function(self, key)
+        if key == "ESCAPE" then
+            ns.EditBox:ClearFocus()
+            ns.EditBox:EnableKeyboard(false)
+            ns.EditBox:Hide()
+            ns.EditBoxLabel:Hide()
+        end
+    end)
+
+    ns.EditBoxLabel = CreateFrame("Frame", nil, UIParent)
+    ns.EditBoxLabel:SetWidth(1)
+    ns.EditBoxLabel:SetHeight(1)
+    ns.EditBoxLabel:SetPoint("CENTER", 0, 0)
+    ns.EditBoxLabel.text = ns.EditBoxLabel:CreateFontString(nil, "ARTWORK")
+    ns.EditBoxLabel.text:SetFont("Fonts\\ARIALN.ttf", 16, "OUTLINE")
+    ns.EditBoxLabel.text:SetPoint("BOTTOM", ns.EditBox, "TOP", 0, 0)
+    ns.EditBoxLabel:Hide()
+end
+
+function ns:GetSendTarget(announce)
+    ns.EditBox.announce = announce
+    if announce then
+        ns.EditBoxLabel.text:SetText(L.LabelAnnounceWhisper)
+    else
+        ns.EditBoxLabel.text:SetText(L.LabelShareWhisper)
+    end
+    ns.EditBox:EnableKeyboard(true)
+    ns.EditBox:SetAlpha(0)
+    ns.EditBox:Show()
+    UIFrameFadeIn(ns.EditBox, 0.15, 0, 1)
+    ns.EditBoxLabel:SetAlpha(0)
+    ns.EditBoxLabel:Show()
+    UIFrameFadeIn(ns.EditBoxLabel, 0.15, 0, 1)
 end
