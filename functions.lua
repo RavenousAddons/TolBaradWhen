@@ -489,24 +489,24 @@ function ns:SendStart(channel, target, announce, manuallyInvoked)
                     if secondsUntil > 0 then
                         message = L.AlertAnnounceFutureDuration:format(ns:DurationFormat(secondsUntil))
                         ns:Toggle("recentlyAnnouncedStart")
-                        SendChatMessage(L.TimerAlert:format(L.Enabled, ControlToString(TBW_data.controlWM)) .. " " .. message, string.upper(channel), nil, target)
+                        SendChatMessage(L.TimerAlert:format(ControlToString(TBW_data.controlWM), L.Enabled) .. " " .. message, string.upper(channel), nil, target)
                     elseif secondsUntil > (ns.data.durations.full * -1) then
                         -- Convert absolute values to present elapsed time
                         message = L.AlertAnnouncePastDuration:format(ns:DurationFormat(secondsUntil * -1))
                         ns:Toggle("recentlyAnnouncedStart")
-                        SendChatMessage(L.TimerAlert:format(L.Enabled, ControlToString(TBW_data.controlWM)) .. " " .. message, string.upper(channel), nil, target)
+                        SendChatMessage(L.TimerAlert:format(ControlToString(TBW_data.controlWM), L.Enabled) .. " " .. message, string.upper(channel), nil, target)
                     end
                     -- WM Disabled
                     secondsUntil = TBW_data.startTimestamp - now
                     if secondsUntil > 0 then
                         message = L.AlertAnnounceFutureDuration:format(ns:DurationFormat(secondsUntil))
                         ns:Toggle("recentlyAnnouncedStart")
-                        SendChatMessage(L.TimerAlert:format(L.Disabled, ControlToString(TBW_data.control)) .. " " .. message, string.upper(channel), nil, target)
+                        SendChatMessage(L.TimerAlert:format(ControlToString(TBW_data.control), L.Disabled) .. " " .. message, string.upper(channel), nil, target)
                     elseif secondsUntil > (ns.data.durations.full * -1) then
                         -- Convert absolute values to present elapsed time
                         message = L.AlertAnnouncePastDuration:format(ns:DurationFormat(secondsUntil * -1))
                         ns:Toggle("recentlyAnnouncedStart")
-                        SendChatMessage(L.TimerAlert:format(L.Disabled, ControlToString(TBW_data.control)) .. " " .. message, string.upper(channel), nil, target)
+                        SendChatMessage(L.TimerAlert:format(ControlToString(TBW_data.control), L.Disabled) .. " " .. message, string.upper(channel), nil, target)
                     end
                     ns:DebugPrint(L.DebugAnnouncedStart:format(string.upper(channel)))
                 else
