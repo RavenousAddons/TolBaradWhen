@@ -105,7 +105,7 @@ end
 -- @param {string} message
 -- @param {boolean} raidWarning
 local function TimerAlert(warmode, message, sound, raidWarningGate)
-    local controlFormatted = ns.data.warmode and (TBW_data.controlWM == "alliance" and allianceString or hordeString) or (TBW_data.control == "alliance" and allianceString or hordeString)
+    local controlFormatted = warmode and (TBW_data.controlWM == "alliance" and allianceString or hordeString) or (TBW_data.control == "alliance" and allianceString or hordeString)
     local wmMismatchAlert = (ns:OptionValue("warnAboutWMMismatch") and ns.data.warmode ~= warmode) and " |cffffff00" .. L.AlertToggleWarmode:format(warmode and enabledString or disabledString) .. "|r" or ""
     if ns:OptionValue("printText") then
         DEFAULT_CHAT_FRAME:AddMessage("|cff" .. ns.color .. L.TimerAlert:format(controlFormatted, warmode and enabledString or disabledString) .. " |r" .. message .. wmMismatchAlert)
@@ -308,7 +308,7 @@ end
 -- @param {number} timestamp
 -- @param {boolean} forced
 function ns:SetTimers(warmode, timestamp)
-    ns:DebugPrint(L.DebugSetTimers:format(ns.data.warmode and L.Enabled or L.Disabled, timestamp .. " " .. ns:TimeFormat(timestamp, true)))
+    ns:DebugPrint(L.DebugSetTimers:format(warmode and L.Enabled or L.Disabled, timestamp .. " " .. ns:TimeFormat(timestamp, true)))
 
     local now = GetServerTime()
     local secondsUntil = timestamp - now
@@ -320,8 +320,7 @@ function ns:SetTimers(warmode, timestamp)
     end
 
     -- Prevent duplicate timers
-    ns:Toggle(ns.data.warmode and "timerActiveWM" or "timerActive", secondsUntil)
-
+    ns:Toggle(warmode and "timerActiveWM" or "timerActive", secondsUntil)
 
     -- Set Pre-Defined Alerts
     for option, minutes in pairs(ns.data.timers) do
@@ -350,7 +349,7 @@ function ns:SetTimers(warmode, timestamp)
     -- Set Start Alert
     CT.After(secondsUntil, function()
         if ns:OptionValue("alertStart") then
-            if ns.data.warmode then
+            if warmode then
                 ns:Toggle("recentlyOutputWM", ns.data.timeouts.long)
             else
                 ns:Toggle("recentlyOutput", ns.data.timeouts.long)

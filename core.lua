@@ -23,6 +23,7 @@ end
 
 function TolBaradWhen_OnEvent(self, event, ...)
     if event == "PLAYER_ENTERING_WORLD" then
+        ns.data.warmode = C_PvP.IsWarModeDesired()
         local isInitialLogin, isReloadingUi = ...
         ns:SetPlayerState()
         ns:SetDefaultOptions()
@@ -52,7 +53,7 @@ function TolBaradWhen_OnEvent(self, event, ...)
     elseif event == "GROUP_ROSTER_UPDATE" then
         local partyMembers = GetNumSubgroupMembers()
         local raidMembers = IsInRaid() and GetNumGroupMembers() or 0
-        if not ns.version:match("-") and ns:OptionValue("share") and not IsInGroup(LE_PARTY_CATEGORY_INSTANCE) then
+        if not ns.version:match("-") and ns:OptionValue("share") and not IsInGroup(LE_PARTY_CATEGORY_INSTANCE) and (partyMembers > 1 or raidMembers > 1) then
             if raidMembers == 0 and ns.data.partyMembers < partyMembers then
                 ns:SendVersionUpdate("PARTY")
                 if not ns.data.toggles.recentlySentStart then
