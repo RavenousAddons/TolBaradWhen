@@ -37,7 +37,7 @@ function ns:CreateSettingsPanel()
 
     for index = 1, #L.OptionsWhen do
         local option = L.OptionsWhen[index]
-        if option.optionValue == nil or (option.optionValue and ns:OptionValue(option.optionValue)) then
+        if option.optionValue == nil or (option.optionValue and ns:OptionValue(TBW_options, option.optionValue)) then
             if option.fn then
                 CreateDropDown(category, option)
             else
@@ -50,7 +50,7 @@ function ns:CreateSettingsPanel()
 
     for index = 1, #L.OptionsHow do
         local option = L.OptionsHow[index]
-        if option.optionValue == nil or (option.optionValue and ns:OptionValue(option.optionValue)) then
+        if option.optionValue == nil or (option.optionValue and ns:OptionValue(TBW_options, option.optionValue)) then
             if option.fn then
                 CreateDropDown(category, option)
             else
@@ -63,7 +63,7 @@ function ns:CreateSettingsPanel()
 
     for index = 1, #L.OptionsExtra do
         local option = L.OptionsExtra[index]
-        if option.optionValue == nil or (option.optionValue and ns:OptionValue(option.optionValue)) then
+        if option.optionValue == nil or (option.optionValue and ns:OptionValue(TBW_options, option.optionValue)) then
             if option.fn then
                 CreateDropDown(category, option)
             else

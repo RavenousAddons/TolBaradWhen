@@ -49,20 +49,6 @@ L.WarningFastRequest = "You must wait %s seconds before requesting " .. L.TolBar
 L.ReceivedRequest = "Received request from %s in %s"
 L.SharedStart = "Send start times %s"
 L.DebugEnabled = "Debugging toggle enabled in Addon options. Reload your UI to see it."
-L.Units = {
-    minute = {
-        s = "minute",
-        p = "minutes",
-        a = "min.",
-        t = "m",
-    },
-    second = {
-        s = "second",
-        p = "seconds",
-        a = "sec.",
-        t = "s",
-    },
-}
 L.OpenSettings = "Open Settings"
 L.AddonCompartmentTooltip1 = "|cff" .. ns.color .. "Left-Click:|r " .. L.OpenSettings
 L.LabelShareGroup = "Share Timers in Group"
@@ -109,7 +95,7 @@ L.OptionsWhen = {
             local container = Settings.CreateControlTextContainer()
             container:Add(1, L.Disabled)
             for i = 15, 55, 5 do
-                container:Add(i, ns:DurationFormat(i  *60, 3))
+                container:Add(i, ns:DurationFormat(TBW_options, i  *60, 3))
             end
             return container:GetData()
         end,
@@ -143,7 +129,7 @@ L.OptionsExtra = {
         fn = function()
             local container = Settings.CreateControlTextContainer()
             for i = 1, 3, 1 do
-                container:Add(i, ns:DurationFormat(754, i))
+                container:Add(i, ns:DurationFormat(TBW_options, 754, i))
             end
             return container:GetData()
         end,

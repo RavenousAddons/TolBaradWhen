@@ -8,39 +8,14 @@ local hordeString = "|cff" .. ns.data.colors.horde .. L.Horde .. "|r"
 local enabledString = "|cff" .. ns.data.colors.enabled .. L.Enabled .. "|r"
 local disabledString = "|cff" .. ns.data.colors.disabled .. L.Disabled .. "|r"
 
-local minute = L.Units.minute
-local second = L.Units.second
-
 ---
 -- Local Functions
 ---
 
---- Plays a sound if "sound" option in enabled
--- @param {number} id
-local function PlaySound(id)
-    if ns:OptionValue("sound") then
-        PlaySoundFile(id)
-    end
-end
-
--- Set default values for options which are not yet set
--- @param {string} option
--- @param {any} default
-local function RegisterDefaultOption(option, default)
-    if TBW_options[ns.prefix .. option] == nil then
-        if TBW_options[option] ~= nil then
-            TBW_options[ns.prefix .. option] = TBW_options[option]
-            TBW_options[option] = nil
-        else
-            TBW_options[ns.prefix .. option] = default
-        end
-    end
-end
-
 -- Set default values for character data which are not yet set
 -- @param {string} option
 -- @param {any} default
-local function RegisterDefaultCharacterData(option, default)
+local function SetCharacterDataDefault(option, default)
     if TBW_data.characters[ns.data.characterName][option] == nil then
         TBW_data.characters[ns.data.characterName][option] = 0
     end
@@ -103,18 +78,19 @@ end
 --- Prints a message about the current battle state
 -- @param {boolean} warmode
 -- @param {string} message
--- @param {boolean} raidWarning
+-- @param {any} sound
+-- @param {boolean} raidWarningGate
 local function TimerAlert(warmode, message, sound, raidWarningGate)
     local controlFormatted = warmode and (TBW_data.controlWM == "alliance" and allianceString or hordeString) or (TBW_data.control == "alliance" and allianceString or hordeString)
-    local wmMismatchAlert = (ns:OptionValue("warnAboutWMMismatch") and ns.data.warmode ~= warmode) and " |cffffff00" .. L.AlertToggleWarmode:format(warmode and enabledString or disabledString) .. "|r" or ""
-    if ns:OptionValue("printText") then
+    local wmMismatchAlert = (ns:OptionValue(TBW_options, "warnAboutWMMismatch") and ns.data.warmode ~= warmode) and " |cffffff00" .. L.AlertToggleWarmode:format(warmode and enabledString or disabledString) .. "|r" or ""
+    if ns:OptionValue(TBW_options, "printText") then
         DEFAULT_CHAT_FRAME:AddMessage("|cff" .. ns.color .. L.TimerAlert:format(controlFormatted, warmode and enabledString or disabledString) .. " |r" .. message .. wmMismatchAlert)
     end
-    if raidWarningGate and ns:OptionValue("raidwarning") then
+    if raidWarningGate and ns:OptionValue(TBW_options, "raidwarning") then
         RaidNotice_AddMessage(RaidWarningFrame, "|cff" .. ns.color .. L.TimerRaidWarning:format(controlFormatted, warmode and enabledString or disabledString) .. "|r |cffffffff" .. message .. wmMismatchAlert .. "|r", ChatTypeInfo["RAID_WARNING"])
     end
     if sound then
-        PlaySound(ns.data.sounds[sound])
+        ns:PlaySound(TBW_options, ns.data.sounds[sound])
     end
 end
 
@@ -149,16 +125,11 @@ function ns:SetPlayerState()
     ns.data.factionName = factionName
     ns.data.location = C_Map.GetBestMapForUnit("player")
     ns.data.characterNameFormatted = "|cff" .. ns.data.classColors[ns.data.className:lower()] .. ns.data.characterName .. "|r"
-end
-
---- Returns an option from the options table
--- @return {any}
-function ns:OptionValue(option)
-    return TBW_options[ns.prefix .. option]
+    ns.data.warmode = C_PvP.IsWarModeDesired()
 end
 
 --- Sets default options if they are not already set
-function ns:SetDefaultOptions()
+function ns:SetOptionDefaults()
     TBW_data = TBW_data or {}
     TBW_data.startTimestampWM = TBW_data.startTimestampWM or 0
     TBW_data.startTimestamp = TBW_data.startTimestamp or 0
@@ -171,11 +142,11 @@ function ns:SetDefaultOptions()
     end
     TBW_data.characters[ns.data.characterName] = TBW_data.characters[ns.data.characterName] or {}
     for option, default in pairs(ns.data.characterDefaults) do
-        RegisterDefaultCharacterData(option, default)
+        SetCharacterDataDefault(option, default)
     end
     TBW_options = TBW_options or {}
     for option, default in pairs(ns.data.defaults) do
-        RegisterDefaultOption(option, default)
+        ns:SetOptionDefault(TBW_options, option, default)
     end
 end
 
@@ -192,60 +163,10 @@ function ns:SendVersionUpdate(channel)
     ns:DebugPrint(L.DebugSentVersion:format(channel, message))
 end
 
---- Formats a duration in seconds to a "Xm Xs" string
--- @param {number} duration
--- @param {number} [timeFormat]
--- @return {string}
-function ns:DurationFormat(duration, timeFormat)
-    timeFormat = timeFormat and timeFormat or ns:OptionValue("timeFormat")
-    local minutes = math.floor(duration / 60)
-    local seconds = math.fmod(duration, 60)
-    local m, s
-    if timeFormat == 3 then
-        m = " " .. (minutes > 1 and minute.p or minute.s)
-        s = " " .. (seconds > 1 and second.p or second.s)
-    elseif timeFormat == 2 then
-        m = " " .. minute.a
-        s = " " .. second.a
-    else
-        m = minute.t
-        s = second.t
-    end
-    if minutes > 0 then
-        if seconds > 0 then
-            return string.format("%d" .. m .. (timeFormat ~= 2 and "," or "") .. " %d" .. s, minutes, seconds)
-        end
-        return string.format("%d" .. m, minutes)
-    end
-    return string.format("%d" .. s, seconds)
-end
-
---- Format a timestamp to a local time string
--- @param {number} timestamp
--- @return {string}
-function ns:TimeFormat(timestamp, includeSeconds)
-    local useMilitaryTime = GetCVar("timeMgrUseMilitaryTime") == "1"
-    local timeFormat = useMilitaryTime and ("%H:%M" .. (includeSeconds and ":%S" or "")) or ("%I:%M" .. (includeSeconds and ":%S" or "") .. "%p")
-    local time = date(timeFormat, timestamp)
-
-    -- Remove starting zero from non-military time
-    if not useMilitaryTime then
-        time = time:gsub("^0", ""):lower()
-    end
-
-    return time
-end
-
---- Prints a formatted message to the chat
--- @param {string} message
-function ns:PrettyPrint(message)
-    DEFAULT_CHAT_FRAME:AddMessage("|cff" .. ns.color .. ns.name .. "|r " .. message)
-end
-
 --- Prints a debug message to the chat
 -- @param {string} message
 function ns:DebugPrint(message)
-    if ns:OptionValue("allowDebug") and ns:OptionValue("debug") then
+    if ns:OptionValue(TBW_options, "allowDebug") and ns:OptionValue(TBW_options, "debug") then
         print("|cff" .. ns.color .. "TBW|r |cfff8b700Debug|r " .. ns:TimeFormat(GetServerTime(), true) .. "|n" .. message)
     end
 end
@@ -271,12 +192,6 @@ function ns:Toggle(toggle, timeout)
             ns:DebugPrint(L.DebugToggleOff:format(toggle))
         end)
     end
-end
-
---- Opens the Addon settings menu and plays a sound
-function ns:OpenSettings()
-    PlaySound(SOUNDKIT.IG_MAINMENU_OPEN)
-    Settings.OpenToCategory(ns.Settings:GetID())
 end
 
 --- Returns true if timestamp is past the active battle time (by 15 min est.)
@@ -315,7 +230,7 @@ function ns:SetTimers(warmode, timestamp)
     local startTime = ns:TimeFormat(timestamp)
 
     -- If no alerts are enabled, exit function
-    if not ns:OptionValue("alertStart") and not ns:OptionValue("alert1Minute") and not ns:OptionValue("alert2Minutes") and not ns:OptionValue("alert10Minutes") and ns:OptionValue("alertCustomMinutes") == 1 then
+    if not ns:OptionValue(TBW_options, "alertStart") and not ns:OptionValue(TBW_options, "alert1Minute") and not ns:OptionValue(TBW_options, "alert2Minutes") and not ns:OptionValue(TBW_options, "alert10Minutes") and ns:OptionValue(TBW_options, "alertCustomMinutes") == 1 then
         return
     end
 
@@ -326,7 +241,7 @@ function ns:SetTimers(warmode, timestamp)
     for option, minutes in pairs(ns.data.timers) do
         if secondsUntil >= (minutes * 60) then
             CT.After(secondsUntil - (minutes * 60), function()
-                if ns:OptionValue(option) then
+                if ns:OptionValue(TBW_options, option) then
                     local futureNow = GetServerTime()
                     TimerAlert(warmode, ns:AlertFuture(futureNow, futureNow + minutes * 60), "future", true)
                 end
@@ -338,7 +253,7 @@ function ns:SetTimers(warmode, timestamp)
     for minutes = 15, 55, 5 do
         if secondsUntil >= (minutes * 60) then
             CT.After(secondsUntil - (minutes * 60), function()
-                if minutes == ns:OptionValue("alertCustomMinutes") then
+                if minutes == ns:OptionValue(TBW_options, "alertCustomMinutes") then
                     local futureNow = GetServerTime()
                     TimerAlert(warmode, ns:AlertFuture(futureNow, futureNow + minutes * 60), "future", true)
                 end
@@ -348,7 +263,7 @@ function ns:SetTimers(warmode, timestamp)
 
     -- Set Start Alert
     CT.After(secondsUntil, function()
-        if ns:OptionValue("alertStart") then
+        if ns:OptionValue(TBW_options, "alertStart") then
             if warmode then
                 ns:Toggle("recentlyOutputWM", ns.data.timeouts.long)
             else
@@ -486,24 +401,24 @@ function ns:SendStart(channel, target, announce, manuallyInvoked)
                     -- WM Enabled
                     secondsUntil = TBW_data.startTimestampWM - now
                     if secondsUntil > 0 then
-                        message = L.AlertAnnounceFutureDuration:format(ns:DurationFormat(secondsUntil))
+                        message = L.AlertAnnounceFutureDuration:format(ns:DurationFormat(TBW_options, secondsUntil))
                         ns:Toggle("recentlyAnnouncedStart")
                         SendChatMessage(L.TimerAlert:format(ControlToString(TBW_data.controlWM), L.Enabled) .. " " .. message, string.upper(channel), nil, target)
                     elseif secondsUntil > (ns.data.durations.full * -1) then
                         -- Convert absolute values to present elapsed time
-                        message = L.AlertAnnouncePastDuration:format(ns:DurationFormat(secondsUntil * -1))
+                        message = L.AlertAnnouncePastDuration:format(ns:DurationFormat(TBW_options, secondsUntil * -1))
                         ns:Toggle("recentlyAnnouncedStart")
                         SendChatMessage(L.TimerAlert:format(ControlToString(TBW_data.controlWM), L.Enabled) .. " " .. message, string.upper(channel), nil, target)
                     end
                     -- WM Disabled
                     secondsUntil = TBW_data.startTimestamp - now
                     if secondsUntil > 0 then
-                        message = L.AlertAnnounceFutureDuration:format(ns:DurationFormat(secondsUntil))
+                        message = L.AlertAnnounceFutureDuration:format(ns:DurationFormat(TBW_options, secondsUntil))
                         ns:Toggle("recentlyAnnouncedStart")
                         SendChatMessage(L.TimerAlert:format(ControlToString(TBW_data.control), L.Disabled) .. " " .. message, string.upper(channel), nil, target)
                     elseif secondsUntil > (ns.data.durations.full * -1) then
                         -- Convert absolute values to present elapsed time
-                        message = L.AlertAnnouncePastDuration:format(ns:DurationFormat(secondsUntil * -1))
+                        message = L.AlertAnnouncePastDuration:format(ns:DurationFormat(TBW_options, secondsUntil * -1))
                         ns:Toggle("recentlyAnnouncedStart")
                         SendChatMessage(L.TimerAlert:format(ControlToString(TBW_data.control), L.Disabled) .. " " .. message, string.upper(channel), nil, target)
                     end
@@ -611,7 +526,7 @@ function ns:BuildLibData()
                 local wmMismatchAlert
                 tooltip:SetText(ns.name .. "        v" .. ns.version)
                 if now < TBW_data.startTimestampWM + ns.data.durations.full then
-                    wmMismatchAlert = (ns:OptionValue("warnAboutWMMismatch") and ns.data.warmode == false) and "|n|cffffff00" .. L.AlertToggleWarmode:format(enabledString) .. "|r" or ""
+                    wmMismatchAlert = (ns:OptionValue(TBW_options, "warnAboutWMMismatch") and ns.data.warmode == false) and "|n|cffffff00" .. L.AlertToggleWarmode:format(enabledString) .. "|r" or ""
                     tooltip:AddLine(" ")
                     if now < TBW_data.startTimestampWM then
                         tooltip:AddLine("|cff" .. ns.color .. L.TimerRaidWarning:format(TBW_data.controlWM == "alliance" and allianceString or hordeString, enabledString) .. "|r|n|cffffffff" .. ns:AlertFuture(now, TBW_data.startTimestampWM) .. wmMismatchAlert .. "|r")
@@ -620,7 +535,7 @@ function ns:BuildLibData()
                     end
                 end
                 if now < TBW_data.startTimestamp + ns.data.durations.full then
-                    wmMismatchAlert = (ns:OptionValue("warnAboutWMMismatch") and ns.data.warmode == true) and "|n|cffffff00" .. L.AlertToggleWarmode:format(disabledString) .. "|r" or ""
+                    wmMismatchAlert = (ns:OptionValue(TBW_options, "warnAboutWMMismatch") and ns.data.warmode == true) and "|n|cffffff00" .. L.AlertToggleWarmode:format(disabledString) .. "|r" or ""
                     tooltip:AddLine(" ")
                     if now < TBW_data.startTimestamp then
                         tooltip:AddLine("|cff" .. ns.color .. L.TimerRaidWarning:format(TBW_data.control == "alliance" and allianceString or hordeString, disabledString) .. "|r|n|cffffffff" .. ns:AlertFuture(now, TBW_data.startTimestamp) .. wmMismatchAlert .. "|r")
@@ -727,7 +642,7 @@ end
 -- @param {number} timestamp
 function ns:AlertFuture(now, timestamp)
     local durationColor = timestamp - now <= ns.data.durations.short and ns.data.durationColors.future.short or timestamp - now <= ns.data.durations.medium and ns.data.durationColors.future.medium or timestamp - now <= ns.data.durations.long and ns.data.durationColors.future.long or ns.color
-    return L.AlertFuture:format(durationColor, ns:DurationFormat(timestamp - now), ns:TimeFormat(timestamp))
+    return L.AlertFuture:format(durationColor, ns:DurationFormat(TBW_options, timestamp - now), ns:TimeFormat(timestamp))
 end
 
 --- Returns a formatted string for past alerts
@@ -735,5 +650,5 @@ end
 -- @param {number} timestamp
 function ns:AlertPast(now, timestamp)
     local durationColor = now - timestamp <= ns.data.durations.short and ns.data.durationColors.past.short or now - timestamp <= ns.data.durations.medium and ns.data.durationColors.past.medium or ns.data.durationColors.past.long
-    return L.AlertPast:format(durationColor, ns:DurationFormat(now - timestamp), ns:TimeFormat(timestamp))
+    return L.AlertPast:format(durationColor, ns:DurationFormat(TBW_options, now - timestamp), ns:TimeFormat(timestamp))
 end

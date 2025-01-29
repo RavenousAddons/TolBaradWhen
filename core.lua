@@ -23,10 +23,9 @@ end
 
 function TolBaradWhen_OnEvent(self, event, ...)
     if event == "PLAYER_ENTERING_WORLD" then
-        ns.data.warmode = C_PvP.IsWarModeDesired()
         local isInitialLogin, isReloadingUi = ...
         ns:SetPlayerState()
-        ns:SetDefaultOptions()
+        ns:SetOptionDefaults()
         ns:CreateSettingsPanel()
         ns:BuildLibData()
         ns:SetupEditBox()
@@ -53,7 +52,7 @@ function TolBaradWhen_OnEvent(self, event, ...)
     elseif event == "GROUP_ROSTER_UPDATE" then
         local partyMembers = GetNumSubgroupMembers()
         local raidMembers = IsInRaid() and GetNumGroupMembers() or 0
-        if not ns.version:match("-") and ns:OptionValue("share") and not IsInGroup(LE_PARTY_CATEGORY_INSTANCE) and (partyMembers > 1 or raidMembers > 1) then
+        if not ns.version:match("-") and ns:OptionValue(TBW_options, "share") and not IsInGroup(LE_PARTY_CATEGORY_INSTANCE) and (partyMembers > 1 or raidMembers > 1) then
             if raidMembers == 0 and ns.data.partyMembers < partyMembers then
                 ns:SendVersionUpdate("PARTY")
                 if not ns.data.toggles.recentlySentStart then
@@ -73,7 +72,7 @@ function TolBaradWhen_OnEvent(self, event, ...)
         if ns.DataSource then
             ns.DataSource.label = L.TolBarad .. " (" .. (ns.data.warmode and L.WMOn or L.WMOff) .. ")"
         end
-    elseif event == "CHAT_MSG_ADDON" and ns:OptionValue("share") then
+    elseif event == "CHAT_MSG_ADDON" and ns:OptionValue(TBW_options, "share") then
         local arg, message, channel, sender, _ = ...
         if arg ~= ADDON_NAME then
             return
@@ -141,7 +140,7 @@ function TolBaradWhen_OnEvent(self, event, ...)
             if not ns.data.toggles.recentlyEnded then
                 ns:Toggle("recentlyEnded", ns.data.timeouts.short)
                 ns:IncrementCounts(string)
-                if ns:OptionValue("printWinsOnEnd") then
+                if ns:OptionValue(TBW_options, "printWinsOnEnd") then
                     ns:PrintCounts()
                 end
                 ns:TimerCheck(false, 3600, control)
@@ -156,7 +155,7 @@ end
 -- Addon Compartment Handling
 
 AddonCompartmentFrame:RegisterAddon({
-    text = ns.title,
+    text = ns.name,
     icon = ns.icon,
     registerForAnyClick = true,
     notCheckable = true,
@@ -179,7 +178,7 @@ AddonCompartmentFrame:RegisterAddon({
         GameTooltip:SetOwner(menuItem)
         GameTooltip:SetText(ns.name .. "        v" .. ns.version)
         if now < TBW_data.startTimestampWM + ns.data.durations.full then
-            wmMismatchAlert = (ns:OptionValue("warnAboutWMMismatch") and ns.data.warmode == false) and "|n|cffffff00" .. L.AlertToggleWarmode:format(enabledString) .. "|r" or ""
+            wmMismatchAlert = (ns:OptionValue(TBW_options, "warnAboutWMMismatch") and ns.data.warmode == false) and "|n|cffffff00" .. L.AlertToggleWarmode:format(enabledString) .. "|r" or ""
             GameTooltip:AddLine(" ", 1, 1, 1, true)
             if now < TBW_data.startTimestampWM then
                 GameTooltip:AddLine("|cff" .. ns.color .. L.TimerRaidWarning:format(TBW_data.controlWM == "alliance" and allianceString or hordeString, enabledString) .. "|r |cffffffff" .. ns:AlertFuture(now, TBW_data.startTimestampWM) .. wmMismatchAlert .. "|r", 1, 1, 1, true)
@@ -188,7 +187,7 @@ AddonCompartmentFrame:RegisterAddon({
             end
         end
         if now < TBW_data.startTimestamp + ns.data.durations.full then
-            wmMismatchAlert = (ns:OptionValue("warnAboutWMMismatch") and ns.data.warmode == true) and "|n|cffffff00" .. L.AlertToggleWarmode:format(disabledString) .. "|r" or ""
+            wmMismatchAlert = (ns:OptionValue(TBW_options, "warnAboutWMMismatch") and ns.data.warmode == true) and "|n|cffffff00" .. L.AlertToggleWarmode:format(disabledString) .. "|r" or ""
             GameTooltip:AddLine(" ", 1, 1, 1, true)
             if now < TBW_data.startTimestamp then
                 GameTooltip:AddLine("|cff" .. ns.color .. L.TimerRaidWarning:format(TBW_data.control == "alliance" and allianceString or hordeString, disabledString) .. "|r |cffffffff" .. ns:AlertFuture(now, TBW_data.startTimestamp) .. wmMismatchAlert .. "|r", 1, 1, 1, true)
@@ -223,7 +222,7 @@ SlashCmdList["TOLBARADWHEN"] = function(message)
         ns:OpenSettings()
     elseif message == "r" or message:match("req") then
         -- Request TB times from an appropriate chat channel
-        if ns:OptionValue("share") then
+        if ns:OptionValue(TBW_options, "share") then
             local _, channel, target = strsplit(" ", message)
             ns:RequestStart(channel, target)
         else
@@ -235,7 +234,7 @@ SlashCmdList["TOLBARADWHEN"] = function(message)
         ns:SendStart(channel, target, true, true)
     elseif message == "s" or message:match("send") or message:match("share") then
         -- Share your timers in an appropriate chat channel
-        if ns:OptionValue("share") then
+        if ns:OptionValue(TBW_options, "share") then
             local _, channel, target = strsplit(" ", message)
             ns:SendStart(channel, target, false, true)
         else
