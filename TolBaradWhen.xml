@@ -2,7 +2,6 @@
     <Script file="metadata.lua" />
     <Script file="data.lua" />
     <Script file="locales.lua" />
-    <Script file="options.lua" />
     <Script file="functions.lua" />
     <Script file="core.lua" />
 

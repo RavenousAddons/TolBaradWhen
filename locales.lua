@@ -59,103 +59,115 @@ L.LabelAnnounceGroup = "Announce Timers in Group"
 L.AddonCompartmentTooltip4 = "|cff" .. ns.color .. "Alt-Click:|r " .. L.LabelAnnounceGroup
 L.LabelAnnounceWhisper = "Announce Timers in Whisper"
 L.AddonCompartmentTooltip5 = "|cff" .. ns.color .. "Ctrl-Click:|r " .. L.LabelAnnounceWhisper
-L.OptionsTitle1 = "When do you want to be alerted?"
+
 L.OptionsWhenTooltip = "Sets up an alert %s the next battle." -- string
-L.OptionsWhen = {
-    [1] = {
-        key = "alertStart",
-        name = "Start of Battle",
-        tooltip = L.OptionsWhenTooltip:format("for the start of"),
-    },
-    [2] = {
-        key = "alert1Minute",
-        name = "1 minute before",
-        tooltip = L.OptionsWhenTooltip:format("1 minute before"),
-    },
-    [3] = {
-        key = "alert2Minutes",
-        name = "2 minutes before",
-        tooltip = L.OptionsWhenTooltip:format("2 minutes before"),
-    },
-    [4] = {
-        key = "alert5Minutes",
-        name = "5 minutes before",
-        tooltip = L.OptionsWhenTooltip:format("5 minutes before"),
-    },
-    [5] = {
-        key = "alert10Minutes",
-        name = "10 minutes before",
-        tooltip = L.OptionsWhenTooltip:format("10 minutes before"),
-    },
-    [6] = {
-        key = "alertCustomMinutes",
-        name = "Custom before",
-        tooltip = L.OptionsWhenTooltip:format("at a custom time before"),
-        fn = function()
-            local container = Settings.CreateControlTextContainer()
-            container:Add(1, L.Disabled)
-            for i = 15, 55, 5 do
-                container:Add(i, ns:DurationFormat(TBW_options, i  *60, 3))
-            end
-            return container:GetData()
-        end,
-    },
-}
-L.OptionsTitle2 = "How do you want to be alerted?"
 L.OptionsHowTooltip = "When important alerts go off, they will be accompanied by a %s."
-L.OptionsHow = {
+L.Settings = {
     [1] = {
-        key = "printText",
-        name = "Chat Messages",
-        tooltip = L.OptionsHowTooltip:format("chat message"),
+        title = "When do you want to be alerted?",
+        options = {
+            [1] = {
+                key = "alertStart",
+                name = "Start of Battle",
+                tooltip = L.OptionsWhenTooltip:format("for the start of"),
+            },
+            [2] = {
+                key = "alert1Minute",
+                name = "1 minute before",
+                tooltip = L.OptionsWhenTooltip:format("1 minute before"),
+            },
+            [3] = {
+                key = "alert2Minutes",
+                name = "2 minutes before",
+                tooltip = L.OptionsWhenTooltip:format("2 minutes before"),
+            },
+            [4] = {
+                key = "alert5Minutes",
+                name = "5 minutes before",
+                tooltip = L.OptionsWhenTooltip:format("5 minutes before"),
+            },
+            [5] = {
+                key = "alert10Minutes",
+                name = "10 minutes before",
+                tooltip = L.OptionsWhenTooltip:format("10 minutes before"),
+            },
+            [6] = {
+                key = "alertCustomMinutes",
+                name = "Custom before",
+                tooltip = L.OptionsWhenTooltip:format("at a custom time before"),
+                fn = function()
+                    local container = Settings.CreateControlTextContainer()
+                    container:Add(1, L.Disabled)
+                    for i = 15, 55, 5 do
+                        container:Add(i, ns:DurationFormat(TBW_options, i  *60, 3))
+                    end
+                    return container:GetData()
+                end,
+            },
+        },
     },
     [2] = {
-        key = "raidwarning",
-        name = "Raid Warning Messages",
-        tooltip = L.OptionsHowTooltip:format("raid warning message"),
+        title = "How do you want to be alerted?",
+        options = {
+            [1] = {
+                key = "printText",
+                name = "Chat Messages",
+                tooltip = L.OptionsHowTooltip:format("chat message"),
+            },
+            [2] = {
+                key = "raidwarning",
+                name = "Raid Warning Messages",
+                tooltip = L.OptionsHowTooltip:format("raid warning message"),
+            },
+            [3] = {
+                key = "sound",
+                name = "Sounds",
+                tooltip = L.OptionsHowTooltip:format("sound"),
+            },
+        },
     },
     [3] = {
-        key = "sound",
-        name = "Sounds",
-        tooltip = L.OptionsHowTooltip:format("sound"),
+        title = "Extra Options:",
+        options = {
+            [1] = {
+                key = "timeFormat",
+                name = "Time Format",
+                tooltip = "Choose a short or long time formatting.",
+                fn = function()
+                    local container = Settings.CreateControlTextContainer()
+                    for i = 1, 3, 1 do
+                        container:Add(i, ns:DurationFormat(TBW_options, 754, i))
+                    end
+                    return container:GetData()
+                end,
+            },
+            [2] = {
+                key = "printWinsOnEnd",
+                name = "Display wins/games stats at end",
+                tooltip = "Prints your win/games record in your chat window when battles end.",
+            },
+            [3] = {
+                key = "warnAboutWMMismatch",
+                name = "Warn about WM status",
+                tooltip = "The addon will remind you whenever an alert fires for a battle in a Warmode that doesn't match your current setting.",
+            },
+            [4] = {
+                key = "share",
+                name = "Sharing",
+                tooltip = "Enables silently sharing of start times with group members and through some chat channels.",
+            },
+            [5] = {
+                key = "debug",
+                name = "Debugging",
+                tooltip = "Enables messages for debugging.",
+                condition = function()
+                    return TBW_options ~= nil and TBW_options.TBW_allowDebug == true
+                end,
+            },
+        },
     },
 }
-L.OptionsTitle3 = "Extra Options:"
-L.OptionsExtra = {
-    [1] = {
-        key = "timeFormat",
-        name = "Time Format",
-        tooltip = "Choose a short or long time formatting.",
-        fn = function()
-            local container = Settings.CreateControlTextContainer()
-            for i = 1, 3, 1 do
-                container:Add(i, ns:DurationFormat(TBW_options, 754, i))
-            end
-            return container:GetData()
-        end,
-    },
-    [2] = {
-        key = "printWinsOnEnd",
-        name = "Display wins/games stats at end",
-        tooltip = "Prints your win/games record in your chat window when battles end.",
-    },
-    [3] = {
-        key = "warnAboutWMMismatch",
-        name = "Warn about WM status",
-        tooltip = "The addon will remind you whenever an alert fires for a battle in a Warmode that doesn't match your current setting.",
-    },
-    [4] = {
-        key = "share",
-        name = "Sharing",
-        tooltip = "Enables silently sharing of start times with group members and through some chat channels.",
-    },
-    [5] = {
-        key = "debug",
-        name = "Debugging",
-        tooltip = "Enables messages for debugging.",
-        optionValue ="allowDebug",
-    },
-}
+
 L.DebugToggleOn = "%s = true (%ss timeout)"
 L.DebugToggleOff = "%s = false"
 L.DebugTimerCheck = "TimerCheck()|n  Forced: %s"

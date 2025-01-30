@@ -4,3 +4,9 @@
 [submodule "Libs/RavenousUtilsTemporal"]
 	path = Libs/RavenousUtilsTemporal
 	url = https://github.com/RavenousAddons/RavenousUtilsTemporal
+[submodule "RavenousOptions"]
+	path = RavenousOptions
+	url = https://github.com/RavenousAddons/RavenousOptions
+[submodule "Libs/RavenousOptions"]
+	path = Libs/RavenousOptions
+	url = https://github.com/RavenousAddons/RavenousOptions

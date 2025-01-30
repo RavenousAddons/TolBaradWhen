@@ -1,8 +1,8 @@
 ## Interface: 110005
-## Version: 1.5.4-beta.1
+## Version: 1.5.4-beta.2
 
 ## Name: Tol Barad When?
-## Title: Tol Barad When?
+## Title: |cffc1e0baTol Barad When?|r
 ## Notes: Keep track of the next Tol Barad battles (War Mode enabled & disabled)|n|n|cffbbbbbbSlash command: /tb or /tbw|r
 ## Author: RavenousAddons
 ## IconAtlas: CrossedFlagsWithTimer
@@ -17,4 +17,5 @@
 
 Libs/RavenousUtils/RavenousUtils.xml
 Libs/RavenousUtilsTemporal/RavenousUtilsTemporal.xml
+Libs/RavenousOptions/RavenousOptions.xml
 TolBaradWhen.xml
