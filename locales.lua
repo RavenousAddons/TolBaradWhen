@@ -95,13 +95,11 @@ L.Settings = {
                 key = "alertCustomMinutes",
                 name = "Custom before",
                 tooltip = L.OptionsWhenTooltip:format("at a custom time before"),
-                fn = function()
-                    local container = Settings.CreateControlTextContainer()
+                choices = function(container)
                     container:Add(1, L.Disabled)
                     for i = 15, 55, 5 do
-                        container:Add(i, ns:DurationFormat(TBW_options, i  *60, 3))
+                        container:Add(i, ns:DurationFormat(nil, i * 60, 3))
                     end
-                    return container:GetData()
                 end,
             },
         },
@@ -127,19 +125,17 @@ L.Settings = {
         },
     },
     [3] = {
-        title = "Extra Options:",
+        title = "Extra Options",
         options = {
             [1] = {
                 key = "timeFormat",
                 name = "Time Format",
                 tooltip = "Choose a short or long time formatting.",
-                fn = function()
-                    local container = Settings.CreateControlTextContainer()
-                    for i = 1, 3, 1 do
-                        container:Add(i, ns:DurationFormat(TBW_options, 754, i))
-                    end
-                    return container:GetData()
-                end,
+                choices = {
+                    [1] = ns:DurationFormat(nil, 754, 1),
+                    [2] = ns:DurationFormat(nil, 754, 2),
+                    [3] = ns:DurationFormat(nil, 754, 3),
+                },
             },
             [2] = {
                 key = "printWinsOnEnd",
