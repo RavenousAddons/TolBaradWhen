@@ -524,7 +524,7 @@ function ns:BuildLibData()
                 local now = GetServerTime()
                 local timestamp = TBW_data[ns.data.warmode and "startTimestampWM" or "startTimestamp"]
                 local wmMismatchAlert
-                tooltip:SetText(ns.name .. "        v" .. ns.version)
+                tooltip:SetText(ns.name .. "  v" .. ns.version)
                 if now < TBW_data.startTimestampWM + ns.data.durations.full then
                     wmMismatchAlert = (ns:OptionValue(TBW_options, "warnAboutWMMismatch") and ns.data.warmode == false) and "|n|cffffff00" .. L.AlertToggleWarmode:format(enabledString) .. "|r" or ""
                     tooltip:AddLine(" ")

@@ -24,12 +24,12 @@ end
 function TolBaradWhen_OnEvent(self, event, ...)
     if event == "PLAYER_ENTERING_WORLD" then
         local isInitialLogin, isReloadingUi = ...
+        ns.registered = C_ChatInfo.RegisterAddonMessagePrefix(ADDON_NAME)
         ns:SetPlayerState()
         ns:SetOptionDefaults()
         ns:CreateSettingsPanel(TBW_options, ns.data.defaults, L.Settings, ns.name, ns.prefix, ns.version)
         ns:BuildLibData()
         ns:SetupEditBox()
-        C_ChatInfo.RegisterAddonMessagePrefix(ADDON_NAME)
         if not TBW_version then
             ns:PrettyPrint(L.Install:format(ns.color, ns.version))
         elseif TBW_version ~= ns.version then
@@ -73,8 +73,8 @@ function TolBaradWhen_OnEvent(self, event, ...)
             ns.DataSource.label = L.TolBarad .. " (" .. (ns.data.warmode and L.WMOn or L.WMOff) .. ")"
         end
     elseif event == "CHAT_MSG_ADDON" and ns:OptionValue(TBW_options, "share") then
-        local arg, message, channel, sender, _ = ...
-        if arg ~= ADDON_NAME then
+        local addonName, message, channel, sender, _ = ...
+        if addonName ~= ADDON_NAME then
             return
         end
         if sender == ns.data.characterName then
@@ -176,7 +176,7 @@ AddonCompartmentFrame:RegisterAddon({
         local timestamp = TBW_data[ns.data.warmode and "startTimestampWM" or "startTimestamp"]
         local wmMismatchAlert
         GameTooltip:SetOwner(menuItem)
-        GameTooltip:SetText(ns.name .. "        v" .. ns.version)
+        GameTooltip:SetText(ns.name .. "  v" .. ns.version)
         if now < TBW_data.startTimestampWM + ns.data.durations.full then
             wmMismatchAlert = (ns:OptionValue(TBW_options, "warnAboutWMMismatch") and ns.data.warmode == false) and "|n|cffffff00" .. L.AlertToggleWarmode:format(enabledString) .. "|r" or ""
             GameTooltip:AddLine(" ", 1, 1, 1, true)
