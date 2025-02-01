@@ -26,7 +26,7 @@ function TolBaradWhen_OnEvent(self, event, ...)
         local isInitialLogin, isReloadingUi = ...
         ns:SetPlayerState()
         ns:SetOptionDefaults()
-        ns:CreateSettingsPanel(TBW_options, L.Settings)
+        ns:CreateSettingsPanel(TBW_options, ns.data.defaults, L.Settings, ns.name, ns.prefix, ns.version)
         ns:BuildLibData()
         ns:SetupEditBox()
         C_ChatInfo.RegisterAddonMessagePrefix(ADDON_NAME)
