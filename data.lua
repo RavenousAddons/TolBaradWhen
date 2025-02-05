@@ -2,6 +2,8 @@ local _, ns = ...
 
 ns.data = {
     defaults = {
+        enable = true,
+        enableWM = true,
         alertStart =  true,
         alert1Minute =  false,
         alert2Minutes =  true,
@@ -16,7 +18,7 @@ ns.data = {
         share = true,
         allowDebug = false,
         debug = false,
-        timeFormat = 3,
+        timeFormat = "long",
         toggles = {},
         startTimestampWM = 0,
         startTimestamp = 0,

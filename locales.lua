@@ -19,7 +19,7 @@ L.WarbandWide = _G.ITEM_UPGRADE_DISCOUNT_TOOLTIP_ACCOUNT_WIDE
 L.Unknown = _G.QUEUED_STATUS_UNKNOWN
 
 -- English
-L.Version = "%s is the current version." -- ns.version
+L.Version = "Currently running version %s." -- ns.version
 L.Install = "Thanks for installing version |cff%1$s%2$s|r!" -- ns.color, ns.version
 L.UpdateFound = "Version %s is now available for download. Please update!" -- sentVersion
 L.Help = "This Addon sets alerts for future battles when you're in " .. L.TolBarad .. " and tracks some statistics.|nThere are also some slash commands available:|n/tbw options - Open options window|n/tbw share - Share your timers with group members|n/tbw request - Request timers from group members|n/tbw wins - See your win record across all tracked battles"
@@ -60,6 +60,7 @@ L.AddonCompartmentTooltip4 = "|cff" .. ns.color .. "Alt-Click:|r " .. L.LabelAnn
 L.LabelAnnounceWhisper = "Announce Timers in Whisper"
 L.AddonCompartmentTooltip5 = "|cff" .. ns.color .. "Ctrl-Click:|r " .. L.LabelAnnounceWhisper
 
+L.OptionsEnableTooltip = "Enables alerts for battles when Warmode is %s." -- string
 L.OptionsWhenTooltip = "Sets up an alert %s the next battle." -- string
 L.OptionsHowTooltip = "When important alerts go off, they will be accompanied by a %s."
 L.Settings = {
@@ -108,16 +109,26 @@ L.Settings = {
         title = "How do you want to be alerted?",
         options = {
             [1] = {
+                key = "enableWM",
+                name = "Alerts for Warmode On",
+                tooltip = L.OptionsEnableTooltip:format("enabled"),
+            },
+            [2] = {
+                key = "enable",
+                name = "Alerts for Warmode Off",
+                tooltip = L.OptionsEnableTooltip:format("disabled"),
+            },
+            [3] = {
                 key = "printText",
                 name = "Chat Messages",
                 tooltip = L.OptionsHowTooltip:format("chat message"),
             },
-            [2] = {
+            [4] = {
                 key = "raidwarning",
                 name = "Raid Warning Messages",
                 tooltip = L.OptionsHowTooltip:format("raid warning message"),
             },
-            [3] = {
+            [5] = {
                 key = "sound",
                 name = "Sounds",
                 tooltip = L.OptionsHowTooltip:format("sound"),
@@ -125,17 +136,17 @@ L.Settings = {
         },
     },
     [3] = {
-        title = "Extra Options",
+        title = "Extra Options:",
         options = {
             [1] = {
                 key = "timeFormat",
                 name = "Time Format",
                 tooltip = "Choose a short or long time formatting.",
-                choices = {
-                    [1] = ns:DurationFormat(nil, 754, 1),
-                    [2] = ns:DurationFormat(nil, 754, 2),
-                    [3] = ns:DurationFormat(nil, 754, 3),
-                },
+                choices = function(container)
+                    container:Add("narrow", ns:DurationFormat(nil, 754, "narrow"))
+                    container:Add("short", ns:DurationFormat(nil, 754, "short"))
+                    container:Add("long", ns:DurationFormat(nil, 754, "long"))
+                end,
             },
             [2] = {
                 key = "printWinsOnEnd",

@@ -81,16 +81,18 @@ end
 -- @param {any} sound
 -- @param {boolean} raidWarningGate
 local function TimerAlert(warmode, message, sound, raidWarningGate)
-    local controlFormatted = warmode and (TBW_data.controlWM == "alliance" and allianceString or hordeString) or (TBW_data.control == "alliance" and allianceString or hordeString)
-    local wmMismatchAlert = (ns:OptionValue(TBW_options, "warnAboutWMMismatch") and ns.data.warmode ~= warmode) and " |cffffff00" .. L.AlertToggleWarmode:format(warmode and enabledString or disabledString) .. "|r" or ""
-    if ns:OptionValue(TBW_options, "printText") then
-        DEFAULT_CHAT_FRAME:AddMessage("|cff" .. ns.color .. L.TimerAlert:format(controlFormatted, warmode and enabledString or disabledString) .. " |r" .. message .. wmMismatchAlert)
-    end
-    if raidWarningGate and ns:OptionValue(TBW_options, "raidwarning") then
-        RaidNotice_AddMessage(RaidWarningFrame, "|cff" .. ns.color .. L.TimerRaidWarning:format(controlFormatted, warmode and enabledString or disabledString) .. "|r |cffffffff" .. message .. wmMismatchAlert .. "|r", ChatTypeInfo["RAID_WARNING"])
-    end
-    if sound then
-        ns:PlaySound(TBW_options, ns.data.sounds[sound])
+    if ns:OptionValue(TBW_options, "enable" .. (warmode and "WM" or "")) then
+        local controlFormatted = warmode and (TBW_data.controlWM == "alliance" and allianceString or hordeString) or (TBW_data.control == "alliance" and allianceString or hordeString)
+        local wmMismatchAlert = (ns:OptionValue(TBW_options, "warnAboutWMMismatch") and ns.data.warmode ~= warmode) and " |cffffff00" .. L.AlertToggleWarmode:format(warmode and enabledString or disabledString) .. "|r" or ""
+        if ns:OptionValue(TBW_options, "printText") then
+            DEFAULT_CHAT_FRAME:AddMessage("|cff" .. ns.color .. L.TimerAlert:format(controlFormatted, warmode and enabledString or disabledString) .. " |r" .. message .. wmMismatchAlert)
+        end
+        if raidWarningGate and ns:OptionValue(TBW_options, "raidwarning") then
+            RaidNotice_AddMessage(RaidWarningFrame, "|cff" .. ns.color .. L.TimerRaidWarning:format(controlFormatted, warmode and enabledString or disabledString) .. "|r |cffffffff" .. message .. wmMismatchAlert .. "|r", ChatTypeInfo["RAID_WARNING"])
+        end
+        if sound then
+            ns:PlaySound(TBW_options, ns.data.sounds[sound])
+        end
     end
 end
 
